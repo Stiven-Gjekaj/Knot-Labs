@@ -193,6 +193,7 @@ class MeshDB:
             'CreatorScore': 0,
             'ViewerScore': {},
             'CategoryScores': {},
+            'PreferredCategories': [],
             'created_at': time.time(),
         }
         self.store.save_user(user)
@@ -244,6 +245,10 @@ class MeshDB:
         for cat in post['Categories']:
             cat_scores[cat] = cat_scores.get(cat, 0) + points
         user['CategoryScores'] = cat_scores
+        sorted_cats = sorted(
+            cat_scores.items(), key=lambda item: item[1], reverse=True
+        )
+        user['PreferredCategories'] = [c for c, _ in sorted_cats[:3]]
 
         self.store.save_post(post)
         self.store.save_user(user)

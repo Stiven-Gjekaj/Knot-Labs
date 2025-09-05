@@ -1,4 +1,5 @@
 """Interactive demo tying Mesh, Veil, Scribe and Drift together."""
+from pathlib import Path
 import shlex
 import uuid
 from typing import Callable, Dict
@@ -13,12 +14,21 @@ veil: Veil
 scribe: Scribe
 drift: Drift
 COMMANDS: Dict[str, Callable]
+DATA_DIR = Path("Knot-Mesh")
+
+
+def show_commands() -> None:
+    """Display available commands."""
+    print("Available commands:")
+    for name in sorted(COMMANDS):
+        print(f"  {name}")
+    print("  exit")
 
 
 def post(path: str) -> None:
-    tags = veil.classify(path)
-    pid = mesh.create_post(path, tags)
-    print(f"Posted {pid} with tags {tags}")
+    pid = mesh.create_post(path, veil=veil)
+    post = mesh.get_post(pid)
+    print(f"Posted {pid} with tags {post['tags']}")
 
 
 def like(pid: str) -> None:
@@ -61,15 +71,22 @@ def search(query: str) -> None:
 
 
 def populate_users(n: int) -> None:
+    users_dir = DATA_DIR / "users"
+    users_dir.mkdir(parents=True, exist_ok=True)
     for i in range(n):
-        mesh.add_user(f"user{i+1}")
+        name = f"user{i+1}"
+        mesh.add_user(name)
+        (users_dir / f"{name}.json").touch()
     print(f"Added {n} users")
 
 
 def populate_videos(n: int) -> None:
+    videos_dir = DATA_DIR / "videos"
+    videos_dir.mkdir(parents=True, exist_ok=True)
     for i in range(n):
-        path = f"sample_video_{i+1}.mp4"
-        pid = mesh.create_post(path, veil.classify(path))
+        path = videos_dir / f"sample_video_{i+1}.mp4"
+        path.touch()
+        mesh.create_post(str(path), veil=veil)
     print(f"Added {n} videos")
 
 
@@ -82,7 +99,8 @@ def setup(user_id: str) -> None:
     """Initialise module globals for a demo session."""
     global mesh, veil, scribe, drift, COMMANDS
 
-    mesh = Mesh(path=f"mesh_data_{user_id}.json")
+    DATA_DIR.mkdir(exist_ok=True)
+    mesh = Mesh(path=str(DATA_DIR / f"mesh_data_{user_id}.json"))
     veil = Veil()
     scribe = Scribe(mesh)
     drift = Drift()
@@ -99,6 +117,7 @@ def setup(user_id: str) -> None:
         "populate_users": lambda args: populate_users(int(args[0])),
         "populate_videos": lambda args: populate_videos(int(args[0])),
         "populate_categories": lambda args: populate_categories(int(args[0])),
+        "help": lambda args: show_commands(),
     }
 
 
@@ -108,6 +127,7 @@ def main() -> None:
     setup(user_id)
     mesh.add_user(f"user_{user_id}", uid=user_id)
     print(f"userID {user_id}")
+    show_commands()
 
     while True:
         try:
