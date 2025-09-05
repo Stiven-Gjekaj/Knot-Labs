@@ -21,7 +21,11 @@ from .utils import load_categories, min_max_norm, normalize_tensor
 from .fusion.label_loader import load_master_labels, select_labels
 from .video_clip import classify_video_clip, _labels_look_like_prompts
 from .image_clip import classify_image_clip
-from .audio_whisper import transcribe_audio, score_transcript_with_clip
+from .audio_whisper import (
+    transcribe_audio,
+    score_transcript_with_clip,
+    classify_audio_yamnet,
+)
 from .clip_utils import clip, get_clip_model
 
 
@@ -129,8 +133,10 @@ def main():
             model_name=args.model,
             label_emb=label_emb,
         )
+        yamnet_res = classify_audio_yamnet(args.path, topk=args.topk)
     else:
         aud_res = {"categories": categories, "scores": np.zeros(len(categories)), "chunk_count": 0}
+        yamnet_res = []
 
     v_scores = min_max_norm(vid_res["scores"])
     a_scores = min_max_norm(aud_res["scores"])
@@ -144,6 +150,10 @@ def main():
     print("Audio modality top-k:")
     for i in np.argsort(a_scores)[::-1][:args.topk]:
         print(f"  {categories[i]}: {a_scores[i]:.3f}")
+    if yamnet_res:
+        print("YAMNet top-k:")
+        for label, score in yamnet_res:
+            print(f"  {label}: {score:.3f}")
 
     print("Fused top-k:")
     for i in topk_idx:

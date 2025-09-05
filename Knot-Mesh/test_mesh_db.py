@@ -34,3 +34,14 @@ def test_gift_updates_post_and_user():
         assert post['Score'] == 5
         user = store.load_user('u1')
         assert user['CategoryScores'] == {'Cat1': 5}
+
+
+def test_viewer_score_tracks_creator():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = MeshStore(tmpdir)
+        db = MeshDB(store)
+        db.create_user('viewer', 'male')
+        db.create_user('creator', 'female')
+        db.create_post('p1', 'creator', ['Cat1'])
+        db.record_engagement('viewer', 'p1', 'like')
+        assert db.get_viewer_score('viewer', 'creator') == 1

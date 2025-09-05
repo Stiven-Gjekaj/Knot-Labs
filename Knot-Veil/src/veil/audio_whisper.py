@@ -69,6 +69,43 @@ def _read_wav_to_np(path: str) -> tuple[np.ndarray, int]:
     return audio, fr
 
 
+def classify_audio_yamnet(video_path: str, topk: int = 3) -> List[tuple[str, float]]:
+    """Classify audio events in *video_path* using YAMNet.
+
+    Returns a list of ``(label, score)`` pairs for the top *topk* classes.
+    If TensorFlow or the YAMNet model is unavailable the function returns an
+    empty list and issues a warning.
+    """
+    try:  # Import TensorFlow lazily so installs without TF still work
+        import tensorflow as tf  # type: ignore
+        import tensorflow_hub as hub  # type: ignore
+    except Exception:  # pragma: no cover - depends on optional deps
+        warnings.warn("TensorFlow not available; YAMNet classification skipped.")
+        return []
+
+    wav_path = None
+    try:
+        wav_path, sr = _extract_wav_ffmpeg(video_path, sr=16000)
+        waveform, sr = _read_wav_to_np(wav_path)
+        model = hub.load("https://tfhub.dev/google/yamnet/1")
+        scores, _, _ = model(waveform)
+        scores = scores.numpy().mean(axis=0)
+        class_map_path = model.class_map_path().numpy().decode("utf-8")
+        with open(class_map_path, "r", encoding="utf-8") as f:
+            class_names = [c.strip() for c in f.readlines()]
+        top_idx = scores.argsort()[::-1][:topk]
+        return [(class_names[i], float(scores[i])) for i in top_idx]
+    except Exception as e:  # pragma: no cover - runtime warning only
+        warnings.warn(f"YAMNet classification failed ({e!r}); returning empty results.")
+        return []
+    finally:
+        if wav_path and os.path.exists(wav_path):
+            try:
+                os.unlink(wav_path)
+            except OSError:
+                pass
+
+
 def transcribe_audio(video_path, model_size="small"):
     """Transcribe audio from a video (or fallback WAV) using faster-whisper.
 

@@ -37,7 +37,12 @@ def compute_score(user: User, video: VideoCandidate) -> float:
 
     # User preference alignment
     if video.category in user.preferred_categories:
-        score += 25.0
+        # Earlier categories in the preference list are weighted more heavily.
+        rank = len(user.preferred_categories) - user.preferred_categories.index(video.category)
+        score += 5.0 * rank
+    if video.creator_id in getattr(user, "favorite_creators", []):
+        # Strong boost for explicitly favoured creators
+        score += 30.0
     over = user.recent_creators.count(video.creator_id)
     score -= over * 10.0
     bonus = random.random() * (5.0 if video.creator_id not in user.seen_creators else 2.5)

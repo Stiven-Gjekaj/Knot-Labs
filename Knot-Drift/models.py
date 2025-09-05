@@ -58,6 +58,7 @@ class User(_BaseSchema):
     recent_creators: List[str] = Field(default_factory=list)  # List of creator IDs the user has recently seen
     watched_videos: List[str] = Field(default_factory=list)  # IDs of videos the user has watched
     creator_engagement: Dict[str, int] = Field(default_factory=dict)  # Creator ID -> engagement count
+    favorite_creators: List[str] = Field(default_factory=list)  # Creators explicitly favored by the user
 
 class RankingRequest(_BaseSchema):
     # Request model for ranking API.

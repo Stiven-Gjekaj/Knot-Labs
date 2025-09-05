@@ -250,6 +250,11 @@ class MeshDB:
         if creator['userID'] != user_id:
             self.store.save_user(creator)
 
+    def get_viewer_score(self, user_id: str, creator_id: str) -> int:
+        """Return the accumulated score for *creator_id* from *user_id*'s perspective."""
+        user = self.store.load_user(user_id)
+        return int(user.get('ViewerScore', {}).get(creator_id, 0))
+
     # --- queries ---------------------------------------------------------
     def query(self, prompt: str) -> List[Dict[str, Any]]:
         parts = prompt.split()
