@@ -6,7 +6,7 @@ def test_mesh_crud(tmp_path):
     m = Mesh(str(path))
     uid = m.add_user("Alice")
     assert uid
-    pid = m.create_post("video.mp4", ["fun"])
+    pid = m.create_post("video.mp4", ["fun", "music", "travel"])
     assert pid
     post = m.get_post(pid)
     assert post["path"] == "video.mp4"

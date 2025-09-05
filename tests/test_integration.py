@@ -12,8 +12,7 @@ def test_end_to_end(tmp_path):
     s = Scribe(m)
     d = Drift()
     path = "fun_music_clip.mp4"
-    tags = v.classify(path)
-    pid = m.create_post(path, tags)
+    pid = m.create_post(path, veil=v)
     m.increment(pid, "likes")
     results = s.search("#music")
     assert results and results[0][0] == pid

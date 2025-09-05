@@ -16,7 +16,7 @@ def generate(users: int, videos: int) -> None:
         mesh.add_user(f"user{i+1}")
     for i in range(videos):
         path = f"sample_{i+1}.mp4"
-        mesh.create_post(path, veil.classify(path))
+        mesh.create_post(path, veil=veil)
     print(f"Generated {users} users and {videos} videos")
 
 

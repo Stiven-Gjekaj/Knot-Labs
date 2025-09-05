@@ -2,7 +2,10 @@
 import json
 import os
 import uuid
+import time
 from typing import Dict, List, Tuple, Optional
+
+from veil import Veil
 
 
 class Mesh:
@@ -39,16 +42,25 @@ class Mesh:
         return uid
 
     # post operations
-    def create_post(self, content_path: str, tags: List[str]) -> str:
+    def create_post(
+        self, content_path: str, tags: Optional[List[str]] = None, veil: Optional[Veil] = None
+    ) -> str:
         data = self._load()
         pid = str(uuid.uuid4())
+        if tags is None:
+            if veil is None:
+                raise ValueError("Either tags or a Veil instance must be provided")
+            tags = veil.classify(content_path)
+        if len(tags) < 3:
+            raise ValueError("Post requires three categories")
         data["posts"][pid] = {
             "path": content_path,
-            "tags": tags,
+            "tags": tags[:3],
             "likes": 0,
             "comments": 0,
             "gifts": 0,
             "shares": 0,
+            "created_at": time.time(),
         }
         self._save(data)
         return pid
