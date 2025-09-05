@@ -2,6 +2,7 @@
 import os
 import random
 from typing import List, Dict
+import argparse
 
 
 class Veil:
@@ -71,3 +72,28 @@ class Veil:
             if choice not in tags:
                 tags.append(choice)
         return tags[:3]
+
+
+def main() -> None:
+    """Simple command line interface for the lightweight classifier.
+
+    The heavy fusion runner lives in ``veil.classify_veil``.  For tests and
+    demos we expose a minimal CLI that mirrors the behaviour of the ``Veil``
+    class.  Usage is simply::
+
+        python -m veil <path>
+
+    It prints three whitespace separated categories.
+    """
+
+    parser = argparse.ArgumentParser(description="Classify a media file with Veil")
+    parser.add_argument("path", help="Path to image or video file")
+    args = parser.parse_args()
+
+    v = Veil()
+    tags = v.classify(args.path)
+    print(" ".join(tags))
+
+
+if __name__ == "__main__":  # pragma: no cover - exercised via CLI test
+    main()
