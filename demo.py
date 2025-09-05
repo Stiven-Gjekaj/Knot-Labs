@@ -3,6 +3,14 @@ from pathlib import Path
 import shlex
 import uuid
 from typing import Callable, Dict
+import sys
+
+# Allow imports from component directories
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "Knot-Mesh"))
+sys.path.insert(0, str(ROOT / "Knot-Veil"))
+sys.path.insert(0, str(ROOT / "Knot-Scribe"))
+sys.path.insert(0, str(ROOT / "Knot-Drift"))
 
 from mesh import Mesh
 from veil import Veil
@@ -14,7 +22,7 @@ veil: Veil
 scribe: Scribe
 drift: Drift
 COMMANDS: Dict[str, Callable]
-DATA_DIR = Path("Knot-Mesh")
+DATA_DIR = Path("Knot-Mesh/data")
 
 
 def show_commands() -> None:
@@ -71,7 +79,7 @@ def search(query: str) -> None:
 
 
 def populate_users(n: int) -> None:
-    users_dir = DATA_DIR / "users"
+    users_dir = DATA_DIR / "Users"
     users_dir.mkdir(parents=True, exist_ok=True)
     for i in range(n):
         name = f"user{i+1}"
@@ -80,18 +88,24 @@ def populate_users(n: int) -> None:
     print(f"Added {n} users")
 
 
-def populate_videos(n: int) -> None:
-    videos_dir = DATA_DIR / "videos"
-    videos_dir.mkdir(parents=True, exist_ok=True)
+def populate_posts(n: int) -> None:
+    posts_dir = DATA_DIR / "Posts"
+    posts_dir.mkdir(parents=True, exist_ok=True)
     for i in range(n):
-        path = videos_dir / f"sample_video_{i+1}.mp4"
+        path = posts_dir / f"sample_video_{i+1}.mp4"
         path.touch()
         mesh.create_post(str(path), veil=veil)
     print(f"Added {n} videos")
 
 
 def populate_categories(n: int) -> None:
-    veil.categories = Veil.DEFAULT_CATEGORIES[:n]
+    categories_dir = DATA_DIR / "categories"
+    categories_dir.mkdir(parents=True, exist_ok=True)
+    selected = Veil.DEFAULT_CATEGORIES[:n]
+    with open(categories_dir / "mastercategories.txt", "w", encoding="utf-8") as f:
+        for cat in selected:
+            f.write(f"a video about {cat} | a photo of {cat}\n")
+    veil.categories = selected
     print(f"Loaded {n} categories")
 
 
@@ -115,7 +129,7 @@ def setup(user_id: str) -> None:
         "feed": lambda args: feed(int(args[0])),
         "search": lambda args: search(" ".join(args)),
         "populate_users": lambda args: populate_users(int(args[0])),
-        "populate_videos": lambda args: populate_videos(int(args[0])),
+        "populate_posts": lambda args: populate_posts(int(args[0])),
         "populate_categories": lambda args: populate_categories(int(args[0])),
         "help": lambda args: show_commands(),
     }

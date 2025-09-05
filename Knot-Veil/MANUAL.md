@@ -29,7 +29,7 @@ veil path/to/video.mp4 --labels "sports,cars,cooking,news,cat,dog,music,gaming"
 
 Using a labels file:
 ```bash
-veil path/to/video.mp4 --labels examples/mastercategories.txt
+veil path/to/video.mp4 --labels ../Knot-Mesh/data/categories/mastercategories.txt
 ```
 
 ## 3. Classify an Image
@@ -40,7 +40,7 @@ veil path/to/image.jpg --labels "cat,dog,car,person"
 ```
 Using a labels file:
 ```bash
-veil path/to/image.jpg --labels examples/mastercategories.txt
+veil path/to/image.jpg --labels ../Knot-Mesh/data/categories/mastercategories.txt
 ```
 
  ### Master Labels File (two-column)
@@ -50,12 +50,12 @@ veil path/to/image.jpg --labels examples/mastercategories.txt
  ```
  The CLI automatically picks the video column for videos and the photo column for images.
 ```bash
-veil path/to/video.mp4 --labels examples/mastercategories.txt
-veil path/to/image.jpg  --labels examples/mastercategories.txt
+veil path/to/video.mp4 --labels ../Knot-Mesh/data/categories/mastercategories.txt
+veil path/to/image.jpg  --labels ../Knot-Mesh/data/categories/mastercategories.txt
 ```
 
  Deprecated:
- - `examples/phcategories.txt` and `examples/vdcategories.txt` are deprecated. Prefer `examples/mastercategories.txt` or your own two-column file.
+ - `phcategories.txt` and `vdcategories.txt` are deprecated. Prefer `../Knot-Mesh/data/categories/mastercategories.txt` or your own two-column file.
 
  ## 4. Adjust Options
  - `--frames`: number of frames to sample (default 16)

@@ -18,10 +18,13 @@ class MeshStore:
         """
         if base_path is None:
             base_path = os.path.dirname(os.path.abspath(__file__))
-        self.user_path = os.path.join(base_path, 'Users')
-        self.post_path = os.path.join(base_path, 'Posts')
+        data_root = os.path.join(base_path, 'data')
+        self.user_path = os.path.join(data_root, 'Users')
+        self.post_path = os.path.join(data_root, 'Posts')
+        self.category_path = os.path.join(data_root, 'categories')
         os.makedirs(self.user_path, exist_ok=True)
         os.makedirs(self.post_path, exist_ok=True)
+        os.makedirs(self.category_path, exist_ok=True)
 
     # --- helpers ---------------------------------------------------------
     def _atomic_write(self, path: str, data: Dict[str, Any]) -> None:

@@ -1,0 +1,27 @@
+fastapi
+ffmpeg-python
+faster-whisper
+ftfy
+git+https://github.com/openai/CLIP.git
+keras>=3.11.0
+librosa>=0.10.1
+numpy>=1.23.0
+opencv-python
+openai>=1.35.0
+pandas>=2.0.0
+pillow
+pytest
+rapidfuzz>=3.0.0
+redis
+regex
+sentence-transformers
+soundfile>=0.12.1
+tensorflow>=2.12.0
+tensorflow_hub>=0.16.1
+tf-keras>=2.20.0
+torch>=2.0.0
+torchaudio>=2.0.0
+torchvision
+tqdm>=4.66.0
+uvicorn
+whisper @ git+https://github.com/openai/whisper.git

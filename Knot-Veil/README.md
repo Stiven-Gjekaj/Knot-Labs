@@ -70,13 +70,13 @@ video-label | photo-label
 Use the same file for both tasks; the CLI auto-selects the right column:
 
 ```bash
-veil path/to/video.mp4 --labels examples/mastercategories.txt
-veil path/to/image.jpg  --labels examples/mastercategories.txt
+veil path/to/video.mp4 --labels ../Knot-Mesh/data/categories/mastercategories.txt
+veil path/to/image.jpg  --labels ../Knot-Mesh/data/categories/mastercategories.txt
 ```
 
 Deprecated:
 
-- `examples/phcategories.txt` and `examples/vdcategories.txt` are deprecated. Use `examples/mastercategories.txt` or a two-column labels file you maintain.
+- `phcategories.txt` and `vdcategories.txt` are deprecated. Use `../Knot-Mesh/data/categories/mastercategories.txt` or a two-column labels file you maintain.
 
 Key options:
 
@@ -122,7 +122,7 @@ export OPENAI_API_KEY=sk-...
 python -m veil.run \
   --mode video \
   --video path/to/video.mp4 \
-  --master_labels_file examples/mastercategories.txt \
+  --master_labels_file ../Knot-Mesh/data/categories/mastercategories.txt \
   --use_whisper true --whisper_model base \
   --w_video 0.5 --w_speech 0.3 --w_audio 0.2 \
   --threshold 0.25 \
