@@ -1,0 +1,8 @@
+rapidfuzz==3.9.6
+numpy>=1.23
+# Optional heavy models (uncomment if you want real inference):
+# torch
+# torchvision
+# openai-whisper
+# git+https://github.com/openai/CLIP.git
+# tensorflow
