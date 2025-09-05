@@ -85,7 +85,16 @@ def main():
         else:
             categories = load_categories(args.labels, modality=("video" if mode == "video" else "photo"))
     else:
-        default_labels = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "examples", "mastercategories.txt")
+        default_labels = os.path.join(
+            os.path.dirname(__file__),
+            os.pardir,
+            os.pardir,
+            os.pardir,
+            "Knot-Mesh",
+            "data",
+            "categories",
+            "mastercategories.txt",
+        )
         master = load_master_labels(default_labels, expect_exact_count=False)
         categories = select_labels(master, "video" if mode == "video" else "photo")
 

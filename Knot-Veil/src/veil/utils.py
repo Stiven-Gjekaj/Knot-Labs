@@ -20,7 +20,7 @@ def load_categories(spec: str, modality: Optional[str] = None, master_delim: str
         if base in {"phcategories.txt", "vdcategories.txt"}:
             warnings.warn(
                 (
-                    f"Deprecated labels file '{base}'. Use 'examples/mastercategories.txt' "
+                    f"Deprecated labels file '{base}'. Use 'Knot-Mesh/data/categories/mastercategories.txt' "
                     "or a two-column labels file with 'video | photo' per line."
                 ),
                 category=UserWarning,

@@ -8,7 +8,7 @@ Example:
   python -m veil.run \
     --mode video \
     --video path/to/video.mp4 \
-  --master_labels_file examples/mastercategories.txt \
+  --master_labels_file ../Knot-Mesh/data/categories/mastercategories.txt \
     --use_whisper true --whisper_model base \
     --w_video 0.5 --w_speech 0.3 --w_audio 0.2 \
     --threshold 0.25 \
@@ -68,7 +68,19 @@ def main() -> None:
     p.add_argument("--mode", choices=["video", "image"], required=True)
     p.add_argument("--video")
     p.add_argument("--image")
-    p.add_argument("--master_labels_file", default="examples/mastercategories.txt")
+    p.add_argument(
+        "--master_labels_file",
+        default=os.path.join(
+            os.path.dirname(__file__),
+            os.pardir,
+            os.pardir,
+            os.pardir,
+            "Knot-Mesh",
+            "data",
+            "categories",
+            "mastercategories.txt",
+        ),
+    )
     p.add_argument("--model", default="ViT-B/32")
     p.add_argument("--frames", type=int, default=16)
     p.add_argument("--topk", type=int, default=5)
