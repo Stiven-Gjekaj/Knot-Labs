@@ -1,92 +1,72 @@
 # Knot-Labs
 
-Knot-Labs is a unified, multi-component lab for prototyping a social media stack. It integrates four systems that now work together:
+Knot-Labs is a unified, multi-component lab for prototyping a social media stack. It integrates four systems that work together:
 
 - Veil: zero-shot media classification for uploads
 - Mesh: lightweight local engagement database and utilities
 - Drift: simple feed ranking over candidates
 - Scribe: simple text search over posts
 
-All per-project generators/validators and per-project READMEs have been removed in favor of a single, consolidated workflow documented here. The only requirements file is the root `requirements.txt`.
+The only requirements file is the root `requirements.txt`.
 
 ## Quick Start
 
-1. Install dependencies (Python 3.10+):
+- Install (Python 3.10+):
+  - `pip install -r requirements.txt`
 
-```bash
-pip install -r requirements.txt
-```
+- Build master categories (writes `Mesh/mastercategories.txt`):
+  - `python Mesh/tools/build_mastercategories.py`
 
-2. Build or refresh the master categories list (written to `Mesh/mastercategories.txt`):
+- Generate some data:
+  - Users: `python Mesh/tools/gen_videos.py 3 --users-dir Mesh/Users`
+  - Posts: `python Mesh/tools/gen_videos.py 10 --posts-dir Mesh/Posts`
 
-```bash
-python Mesh/tools/build_mastercategories.py
-```
+- Run demo (CLI):
+  - `python demo.py`
 
-3. Run the integrated demo (CLI):
+- Optional GUI (PySimpleGUI):
+  - `python gui_demo.py`
 
-```bash
-python demo.py
-```
-Veil’s examples directory and Scribe’s data directory were removed. Veil’s category build tool was moved to Mesh and standardized to output `Mesh/mastercategories.txt`.
+- Scribe search (CLI):
+  - `python -m Scribe.cli --posts-dir Mesh/Posts --backend bow "cats funny"`
+  - Use backend `st` to switch to Sentence-Transformers if installed.
+
+- Start API (FastAPI):
+  - `uvicorn api.main:app --reload`
+  - Endpoints:
+    - `POST /users`
+    - `POST /posts` (optionally enqueues Veil classification when `media_path` provided)
+    - `POST /interactions/{like|comment|share|gift}`
+    - `GET /rank?user=<id-or-username>&k=20`
+    - `GET /search?q=...&k=10&backend=bow|st`
+    - `GET /analytics/categories`
+
+- Run tests:
+  - `pytest -q`
 
 ## Components
 
-- Veil: Zero-shot audio+video classifier for uploads. Encodes video frames and/or audio transcripts, performs label scoring, and can be used to annotate posts during upload.
-- Mesh: Local JSON-backed store for users and posts with engagement tracking (views, likes, comments, shares, gifts) and simple query helpers. Hosts the canonical `mastercategories.txt` and the script to rebuild it.
-- Drift: Feed ranking that scores candidate posts for a user using simple, explainable features.
-- Scribe: Lightweight harness for category experiments and demos. Sample generators/validators were removed to centralize the workflow.
+- Veil: Zero-shot audio+video classifier. Encodes video frames and/or audio transcripts, performs label scoring, and annotates posts on upload.
+- Mesh: JSON-backed store (Users, Posts) with engagement tracking and utilities. Hosts the canonical `mastercategories.txt` and tools to rebuild it.
+- Drift: Ranking over candidate posts using simple, explainable signals.
+- Scribe: Text search over posts with TF‑IDF (default) or Sentence‑Transformers.
 
 ## Data: Master Categories
 
 - Canonical file: `Mesh/mastercategories.txt`
 - Rebuild with: `python Mesh/tools/build_mastercategories.py`
 
-This file can be used by Veil for classification prompts and by other components for category-aware behavior.
+## Notes
 
-## Notes on Cleanup
+- “Posts” are the primary content unit. Older “video” function/flag names are kept as wrappers for compatibility (e.g., `make_video` -> `make_post`).
+- Per-project READMEs and requirements are consolidated into this root README and the root requirements file.
 
-- Removed sample generators and validators across projects.
-- Moved `Veil/tools/build_mastercategories.py` to `Mesh/tools/` and updated it to write to `Mesh/mastercategories.txt`.
-- Removed per-project `requirements.txt`; only the root `requirements.txt` is used.
-- Removed `Veil/examples/` and `Scribe/data/`.
-- Consolidated documentation into this root README.
+## Scripts & Tasks
+
+- Makefile targets: `install`, `test`, `demo`, `gui`, `labels`, `cli`
+- PowerShell: `scripts/tasks.ps1 -Task Install|Test|Demo|GUI|Labels|CLI`
 
 ## License
 
 This repository is released under the [MIT License](LICENSE).
 
-
-
-4. Optional GUI demo (PySimpleGUI):
-
-```bash
-python gui_demo.py
-```
-
-5. Run tests (pytest):
-
-```bash
-pytest -q
-
-6. Start API (FastAPI):
-
-```bash
-uvicorn api.main:app --reload
-```
-
-Key endpoints:
-- POST /users: create user
-- POST /posts: create post (optionally enqueue Veil classification if media_path provided)
-- POST /interactions/{like|comment|share|gift}
-- GET /rank?user=<id-or-username>
-- GET /search?q=...&k=10
-- GET /analytics/categories
-```
-7. Scribe search (CLI):
-
-```bash
-python -m Scribe.cli --posts-dir Mesh/Posts --backend bow "cats funny"
-```
-
-Use backend "st" to switch to Sentence-Transformers if installed and model available.
