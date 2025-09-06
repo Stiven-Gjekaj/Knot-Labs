@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import random
+import time
+import uuid
+from typing import Dict, List
+
+
+COUNTRIES = [
+    "US", "CA", "GB", "DE", "FR", "BR", "IN", "JP", "KR", "AU",
+    "MX", "ID", "NG", "ZA", "EG", "IT", "ES", "NL", "SE", "NO",
+]
+
+
+def ensure_dir(path: str) -> None:
+    os.makedirs(path, exist_ok=True)
+
+
+def load_users(users_dir: str) -> List[Dict]:
+    if not os.path.isdir(users_dir):
+        return []
+    users: List[Dict] = []
+    for name in os.listdir(users_dir):
+        if not name.endswith(".json"):
+            continue
+        p = os.path.join(users_dir, name)
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                users.append(json.load(f))
+        except Exception:
+            continue
+    return users
+
+
+def load_master_categories(path: str) -> List[str]:
+    cats: List[str] = []
+    if not os.path.isfile(path):
+        return cats
+    with open(path, "r", encoding="utf-8") as f:
+        for raw in f:
+            raw = raw.strip()
+            if not raw or raw.startswith("#"):
+                continue
+            if "|" not in raw:
+                continue
+            left = raw.split("|", 1)[0].strip()
+            if not left.startswith("a video about "):
+                continue
+            cat = left[len("a video about "):].strip()
+            if cat:
+                cats.append(cat)
+    return cats
+
+
+def make_video(creator_id: str, categories: List[str]) -> Dict:
+    post_id = uuid.uuid4().hex
+    # pick up to 5 unique categories
+    if categories:
+        picks = random.sample(categories, k=min(5, len(categories)))
+    else:
+        picks = []
+    return {
+        "postID": post_id,
+        "creator": creator_id,
+        "description": "Description Here",
+        "Score": 0.0,
+        "Categories": picks,
+        "country": random.choice(COUNTRIES),
+        "created_at": time.time(),
+        "isPayPerView": False,
+        "PostType": "Video",
+        "isPromotion": False,
+        "isFlagged": False,
+        "isActive": True,
+        "isDeleted": False,
+        "payPerViewCount": 0,
+        "likesCount": 0,
+        "commentsCount": 0,
+        "giftsCount": 0,
+        "isSuggested": False,
+        "shareCount": 0,
+        "star": 0,
+    }
+
+
+def save_video(post: Dict, videos_dir: str) -> str:
+    ensure_dir(videos_dir)
+    path = os.path.join(videos_dir, f"{post['postID']}.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(post, f, indent=2, ensure_ascii=False)
+    return path
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Generate N posts under Mesh/Posts/")
+    p.add_argument("N", type=int, help="number of videos to create")
+    p.add_argument("--users-dir", default=os.path.join("Mesh", "Users"))
+    # Backward-compatible flag name, but default points to Posts
+    p.add_argument("--videos-dir", default=os.path.join("Mesh", "Posts"))
+    p.add_argument("--master", default=os.path.join("Mesh", "mastercategories.txt"))
+    p.add_argument("--creator", help="optional creator userID; if omitted, pick a random user from Users/")
+    args = p.parse_args()
+
+    users = load_users(args.users_dir)
+    if not users and not args.creator:
+        raise SystemExit("No users found in Users/ and no --creator provided")
+    cats = load_master_categories(args.master)
+
+    created = []
+    for _ in range(args.N):
+        creator_id = args.creator or random.choice(users)["userID"]
+        video = make_video(creator_id, cats)
+        path = save_video(video, args.videos_dir)
+        created.append((video["postID"], path))
+    for vid, path in created:
+        print(f"Created video {vid} at {path}")
+
+
+if __name__ == "__main__":
+    main()
