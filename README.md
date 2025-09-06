@@ -1,7 +1,5 @@
 # Knot-Labs
 
-[![CI](https://github.com/OWNER/Knot-Labs/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/Knot-Labs/actions/workflows/ci.yml)
-
 Knot-Labs is a unified, multi-component lab for prototyping a social media stack. It integrates four systems that work together:
 
 - Veil: zero-shot media classification for uploads
