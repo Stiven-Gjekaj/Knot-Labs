@@ -5,7 +5,7 @@ Knot-Labs is a unified, multi-component lab for prototyping a social media stack
 - Veil: zero-shot media classification for uploads
 - Mesh: lightweight local engagement database and utilities
 - Drift: simple feed ranking over candidates
-- Scribe: search engine AI
+- Scribe: simple text search over posts
 
 All per-project generators/validators and per-project READMEs have been removed in favor of a single, consolidated workflow documented here. The only requirements file is the root `requirements.txt`.
 
@@ -68,4 +68,25 @@ python gui_demo.py
 
 ```bash
 pytest -q
+
+6. Start API (FastAPI):
+
+```bash
+uvicorn api.main:app --reload
 ```
+
+Key endpoints:
+- POST /users: create user
+- POST /posts: create post (optionally enqueue Veil classification if media_path provided)
+- POST /interactions/{like|comment|share|gift}
+- GET /rank?user=<id-or-username>
+- GET /search?q=...&k=10
+- GET /analytics/categories
+```
+7. Scribe search (CLI):
+
+```bash
+python -m Scribe.cli --posts-dir Mesh/Posts --backend bow "cats funny"
+```
+
+Use backend "st" to switch to Sentence-Transformers if installed and model available.

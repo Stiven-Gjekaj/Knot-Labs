@@ -1,32 +1,31 @@
 # Knot-Labs TODOs (Next Iterations)
 
-1) API layer (FastAPI)
-- Expose endpoints for creating users/posts, recording interactions, running Veil classification, and ranking via Drift. Enables programmatic E2E flows and future UI integration.
+1) Improved ranking signals (Drift)
+- Add recency decay, category affinity weights, dwell-time proxy, creator freshness, and diversity penalties; make weights configurable.
 
-2) Background jobs + queue
-- Add a lightweight job runner (e.g., threading + queue) to process Veil classification and score updates asynchronously. Keep demo/GUI responsive and allow batching.
+2) GUI enhancements
+- Thumbnails, progress bars for Veil jobs, sortable ranking table, and inline actions from search results with live updates.
 
-3) Config + ENV
-- Centralize paths (Users/Posts/Master file) and model options (CLIP, Whisper size, YAMNet enable) in a single config file and environment variables.
+3) SQLite persistence for Mesh
+- Introduce SQLite with schemas for users, posts, and engagements; add DAO layer, migrations, and JSON import/export tools.
 
-4) Data validation (Pydantic schemas for Mesh)
-- Define Mesh User/Post models and validate on load/save. Provide migration helpers to evolve schemas safely.
+4) Auth & API keys
+- Add simple auth (JWT or API keys) to FastAPI; enforce scoped actions per user and protect write endpoints.
 
-5) Category analytics
-- Track per-category engagement aggregates (global + per-user) and surface top categories/trends over time. Add a simple report command.
+5) Rate limiting & quotas
+- Per-IP and per-user throttles for posts/interactions/search; FastAPI dependency for limits and clear error responses.
 
-6) Improved ranking signals
-- Incorporate category affinity, recency decay, dwell time proxies, creator freshness, and diversity penalties directly into Drift, with tunable weights.
+6) Observability & metrics
+- Structured logging, request/handler timing, Prometheus metrics for API and job queue; basic dashboard.
 
-7) Veil caching + warmups
-- Cache label embeddings and media fingerprints to avoid reprocessing the same post. Optional pre-warm of CLIP/Whisper to reduce first-call latency.
+7) Lint/format/type + CI upgrades
+- Add pyproject, ruff/black config, mypy; expand CI to run linting and type checks in addition to tests.
 
-8) Scribe integration
-- Plug Scribe embedding/search (e.g., sentence-transformers) to support semantic retrieval of posts and feed reranking with hybrid (BM25 + dense) signals.
+8) Multi‑modal Scribe
+- Fuse text embeddings with Veil outputs (visual/audio) and support hybrid search (BM25/TF‑IDF + dense) with tunable weights.
 
-9) Packaging + CI
-- Add pyproject/ruff/black config, pinned lockfile, pre-commit hooks, and a minimal CI pipeline that runs tests and lints on push.
+9) Personalization pipeline
+- Offline jobs to compute per-user/category embeddings and creator affinity; persist vectors and use in ranking/search.
 
-10) GUI enhancements
-- Display thumbnails, progress bars for analysis, sortable tables for rankings, and inline actions (like/comment/share) with live updates.
-
+10) Export/Import tooling
+- NDJSON export of Mesh entities and import with deduplication; admin scripts and docs.

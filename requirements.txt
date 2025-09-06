@@ -1,9 +1,9 @@
 fastapi
 uvicorn
-pandas
-numpy
+pydantic>=1.10
+numpy>=1.23.0
+pandas>=2.0.0
 redis
-pytest
 pytest
 sentence-transformers
 ftfy
@@ -19,8 +19,6 @@ torchaudio>=2.0.0
 git+https://github.com/openai/CLIP.git
 openai>=1.35.0
 whisper @ git+https://github.com/openai/whisper.git
-numpy>=1.23.0
-pandas>=2.0.0
 librosa>=0.10.1
 soundfile>=0.12.1
 tensorflow>=2.12.0

@@ -163,9 +163,9 @@ def post_and_classify(creator_identifier: Optional[str] = None, media_path: Opti
         return {}
     user_path, user = found
     # Create base post JSON via Mesh tool
-    from Mesh.tools.gen_videos import make_video, save_video  # type: ignore
-    post = make_video(user["userID"], categories=[])  # start empty
-    post_path = save_video(post, POSTS_DIR)
+    from Mesh.tools.gen_videos import make_post, save_post  # type: ignore
+    post = make_post(user["userID"], categories=[])  # start empty
+    post_path = save_post(post, POSTS_DIR)
     print(f"Created post at {post_path}. Running Veil classification...")
     cats = _run_veil_and_get_categories(media)
     post["Categories"] = cats[:5]
@@ -302,6 +302,26 @@ def rank_for_user(identifier: Optional[str] = None) -> List[Tuple[str, float]]:
     return out
 
 
+def search_posts_ui(query: Optional[str] = None, k: int = 10, backend: str = "bow") -> List[Tuple[str, float]]:
+    # Run Scribe search over Mesh posts
+    if not query:
+        query = input("Enter search query: ").strip()
+    if not query:
+        print("Empty query")
+        return []
+    try:
+        from Scribe.search import build_index  # type: ignore
+    except Exception as e:
+        print(f"Search not available: {e}")
+        return []
+    idx = build_index(POSTS_DIR, backend=backend)
+    results = idx.search(query, k=k)
+    print("Search results:")
+    for pid, sc in results:
+        print(f"  {pid} | score={sc:.3f}")
+    return results
+
+
 def simulate_update() -> None:
     # Simulate some interactions across posts for basic sanity
     _ensure_dirs()
@@ -357,14 +377,15 @@ def main() -> None:
         "6": ("Gift a post", gift_post),
         "7": ("Rank (top 20 for user)", rank_for_user),
         "8": ("Update (simulate interactions)", simulate_update),
-        "9": ("Quit", None),
+        "9": ("Search posts", search_posts_ui),
+        "q": ("Quit", None),
     }
     while True:
         print("\nKnot-Labs Demo")
-        for k in sorted(menu.keys()):
+        for k in menu.keys():
             print(f"{k}. {menu[k][0]}")
         choice = input("Choose an option: ").strip()
-        if choice == "9" or choice.lower() in {"q", "quit", "exit"}:
+        if choice == "q" or choice.lower() in {"q", "quit", "exit"}:
             print("Goodbye.")
             break
         item = menu.get(choice)

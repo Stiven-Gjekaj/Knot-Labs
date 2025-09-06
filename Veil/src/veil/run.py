@@ -63,6 +63,14 @@ def fuse_scores(
     return w_video * v + w_speech * s + w_audio * e
 
 
+_LABEL_CACHE: Dict[Tuple[str, str, int], torch.Tensor] = {}
+
+
+def _cache_key(model_name: str, mode: str, labels: List[str]) -> Tuple[str, str, int]:
+    # Use a simple hash of labels list for key stability
+    return (model_name, mode, hash(tuple(labels)))
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Veil fusion runner")
     p.add_argument("--mode", choices=["video", "image"], required=True)
@@ -105,9 +113,14 @@ def main() -> None:
     else:
         tmpl = "a video about {}" if args.mode == "video" else "a photo of {}"
         label_prompts = [tmpl.format(c) for c in labels]
-    text_tokens = clip.tokenize(label_prompts, truncate=True).to(device)
-    with torch.no_grad():
-        label_emb = normalize_tensor(model.encode_text(text_tokens).float())
+    ck = _cache_key(args.model, args.mode, label_prompts)
+    if ck in _LABEL_CACHE:
+        label_emb = _LABEL_CACHE[ck]
+    else:
+        text_tokens = clip.tokenize(label_prompts, truncate=True).to(device)
+        with torch.no_grad():
+            label_emb = normalize_tensor(model.encode_text(text_tokens).float())
+        _LABEL_CACHE[ck] = label_emb
 
     # Launch modality scorers concurrently
     use_whisper = _parse_bool(args.use_whisper)
@@ -228,4 +241,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

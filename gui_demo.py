@@ -8,6 +8,7 @@ import PySimpleGUI as sg
 from typing import Optional
 
 import demo as core
+from Scribe.search import build_index
 
 
 def _ensure_paths_on_sys_path() -> None:
@@ -39,6 +40,10 @@ def create_layout() -> list:
         ])],
         [sg.Frame('Rank', [
             [sg.Text('Active User'), sg.Input(key='-ACTIVE-')], sg.Button('Rank Top 20')
+        ])],
+        [sg.Frame('Search', [
+            [sg.Text('Query'), sg.Input(key='-SEARCH-Q-'), sg.Text('Top K'), sg.Input(key='-SEARCH-K-', size=(6,1))],
+            [sg.Button('Search')]
         ])],
         [sg.Frame('Simulate', [
             [sg.Button('Simulate Interactions')]
@@ -113,6 +118,24 @@ def main() -> None:
                     _notify(window, 'Simulation complete.')
                 threading.Thread(target=run_sim, daemon=True).start()
 
+            elif event == 'Search':
+                q = values.get('-SEARCH-Q-') or ''
+                try:
+                    k = int(values.get('-SEARCH-K-', '10') or '10')
+                except Exception:
+                    k = 10
+                if not q.strip():
+                    _notify(window, 'Enter a query')
+                    continue
+                try:
+                    idx = build_index(core.POSTS_DIR, backend='bow')
+                    res = idx.search(q, k=k)
+                    _notify(window, f"Search results ({len(res)}):")
+                    for pid, sc in res:
+                        _notify(window, f"  {pid} | score={sc:.3f}")
+                except Exception as e:
+                    _notify(window, f"Search failed: {e}")
+
         except Exception as e:
             _notify(window, f"Error: {e}")
 
@@ -121,4 +144,3 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-

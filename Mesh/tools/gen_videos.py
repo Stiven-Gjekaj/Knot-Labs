@@ -56,7 +56,7 @@ def load_master_categories(path: str) -> List[str]:
     return cats
 
 
-def make_video(creator_id: str, categories: List[str]) -> Dict:
+def make_post(creator_id: str, categories: List[str]) -> Dict:
     post_id = uuid.uuid4().hex
     # pick up to 5 unique categories
     if categories:
@@ -87,20 +87,29 @@ def make_video(creator_id: str, categories: List[str]) -> Dict:
     }
 
 
-def save_video(post: Dict, videos_dir: str) -> str:
-    ensure_dir(videos_dir)
-    path = os.path.join(videos_dir, f"{post['postID']}.json")
+def save_post(post: Dict, posts_dir: str) -> str:
+    ensure_dir(posts_dir)
+    path = os.path.join(posts_dir, f"{post['postID']}.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(post, f, indent=2, ensure_ascii=False)
     return path
+
+# Backwards-compatible aliases
+def make_video(creator_id: str, categories: List[str]) -> Dict:  # type: ignore[override]
+    return make_post(creator_id, categories)
+
+def save_video(post: Dict, videos_dir: str) -> str:  # type: ignore[override]
+    return save_post(post, videos_dir)
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Generate N posts under Mesh/Posts/")
     p.add_argument("N", type=int, help="number of videos to create")
     p.add_argument("--users-dir", default=os.path.join("Mesh", "Users"))
-    # Backward-compatible flag name, but default points to Posts
+    # Backward-compatible flag name, default points to Posts
     p.add_argument("--videos-dir", default=os.path.join("Mesh", "Posts"))
+    # Preferred new flag name (alias)
+    p.add_argument("--posts-dir", default=None)
     p.add_argument("--master", default=os.path.join("Mesh", "mastercategories.txt"))
     p.add_argument("--creator", help="optional creator userID; if omitted, pick a random user from Users/")
     args = p.parse_args()
@@ -109,15 +118,15 @@ def main() -> None:
     if not users and not args.creator:
         raise SystemExit("No users found in Users/ and no --creator provided")
     cats = load_master_categories(args.master)
-
+    posts_dir = args.posts_dir or args.videos_dir
     created = []
     for _ in range(args.N):
         creator_id = args.creator or random.choice(users)["userID"]
-        video = make_video(creator_id, cats)
-        path = save_video(video, args.videos_dir)
-        created.append((video["postID"], path))
+        post = make_post(creator_id, cats)
+        path = save_post(post, posts_dir)
+        created.append((post["postID"], path))
     for vid, path in created:
-        print(f"Created video {vid} at {path}")
+        print(f"Created post {vid} at {path}")
 
 
 if __name__ == "__main__":

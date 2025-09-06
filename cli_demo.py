@@ -33,6 +33,11 @@ def main() -> None:
     s = sub.add_parser("rank")
     s.add_argument("--user", required=True)
 
+    s = sub.add_parser("search")
+    s.add_argument("--query", required=True)
+    s.add_argument("--k", type=int, default=10)
+    s.add_argument("--backend", default='bow', choices=['bow','st'])
+
     sub.add_parser("simulate")
 
     args = p.parse_args()
@@ -54,6 +59,9 @@ def main() -> None:
     elif args.cmd == "rank":
         out = demo.rank_for_user(args.user)
         print(json.dumps(out, indent=2))
+    elif args.cmd == "search":
+        out = demo.search_posts_ui(args.query, k=args.k, backend=args.backend)
+        print(json.dumps(out, indent=2))
     elif args.cmd == "simulate":
         demo.simulate_update()
     else:
@@ -62,4 +70,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
