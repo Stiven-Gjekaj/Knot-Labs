@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from models import RankingRequest, RankingResponse
-from drift_ranker import rank_videos
+from .models import RankingRequest, RankingResponse
+from .drift_ranker import rank_videos
 
 app = FastAPI()
 

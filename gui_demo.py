@@ -4,7 +4,29 @@ from __future__ import annotations
 import os
 import sys
 import threading
-import PySimpleGUI as sg
+try:
+    import PySimpleGUI as sg  # type: ignore
+except Exception as _e:  # pragma: no cover
+    print(
+        "PySimpleGUI failed to import. Please reinstall from the private index:\n"
+        "  python -m pip uninstall -y PySimpleGUI\n"
+        "  python -m pip cache purge\n"
+        "  python -m pip install --force-reinstall --extra-index-url https://PySimpleGUI.net/install PySimpleGUI\n"
+        "(Use 'python3' on macOS/Linux.)\n"
+        f"Details: {_e}"
+    )
+    raise SystemExit(1)
+
+# Validate the installed PySimpleGUI provides the expected API
+if not hasattr(sg, "Window"):
+    print(
+        "PySimpleGUI installed does not provide Window(). Reinstall from the private index:\n"
+        "  python -m pip uninstall -y PySimpleGUI\n"
+        "  python -m pip cache purge\n"
+        "  python -m pip install --force-reinstall --extra-index-url https://PySimpleGUI.net/install PySimpleGUI\n"
+        "(Use 'python3' on macOS/Linux.)"
+    )
+    raise SystemExit(1)
 from typing import Optional
 
 import demo as core

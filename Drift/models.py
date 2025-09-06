@@ -32,7 +32,7 @@ class VideoCandidate(_BaseSchema):
 
     # Flags and status (flat, Knot Drift style)
     is_pay_per_view: bool = Field(default=False, alias="isPayPerView")
-    content_type: Optional[Literal["Image", "Status", "Video"]] = Field(default="Video", alias="ContentType")
+    content_type: Optional[Literal["Image", "Photo", "Status", "Video"]] = Field(default="Video", alias="ContentType")
     is_promotion: bool = Field(default=False, alias="isPromotion")
     is_flagged: bool = Field(default=False, alias="isFlagged")
     content_status: Optional[Literal["Active", "Unavailable"]] = Field(default="Active", alias="ContentStatus")

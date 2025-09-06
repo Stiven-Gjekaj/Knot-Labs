@@ -97,6 +97,9 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 5) -> List[str]:
         "true",
         "--use_yamnet",
         "true",
+        "--w_video","0.7",
+        "--w_speech","0.2",
+        "--w_audio","0.1",
         "--topk",
         str(topk),
     ]

@@ -1,5 +1,7 @@
 # Knot-Labs
 
+[![CI](https://github.com/OWNER/Knot-Labs/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/Knot-Labs/actions/workflows/ci.yml)
+
 Knot-Labs is a unified, multi-component lab for prototyping a social media stack. It integrates four systems that work together:
 
 - Veil: zero-shot media classification for uploads
@@ -13,6 +15,10 @@ The only requirements file is the root `requirements.txt`.
 
 - Install (Python 3.10+):
   - `pip install -r requirements.txt`
+  - Note for GUI users: PySimpleGUI is hosted on a private index. The requirements file includes an `--extra-index-url` so it installs automatically. If you installed earlier from PyPI and see errors like "module 'PySimpleGUI' has no attribute 'Window'", reinstall from the private index:
+    - `python -m pip uninstall -y PySimpleGUI`
+    - `python -m pip cache purge`
+    - `python -m pip install --force-reinstall --extra-index-url https://PySimpleGUI.net/install PySimpleGUI`
 
 - Build master categories (writes `Mesh/mastercategories.txt`):
   - `python Mesh/tools/build_mastercategories.py`
@@ -26,6 +32,7 @@ The only requirements file is the root `requirements.txt`.
 
 - Optional GUI (PySimpleGUI):
   - `python gui_demo.py`
+  - If it prints an install note, follow the commands above to reinstall from the private index.
 
 - Scribe search (CLI):
   - `python -m Scribe.cli --posts-dir Mesh/Posts --backend bow "cats funny"`
@@ -43,6 +50,11 @@ The only requirements file is the root `requirements.txt`.
 
 - Run tests:
   - `pytest -q`
+  - Includes Veil unit tests that avoid large downloads and exercise label loading, prompt parsing, fusion, and helper logic.
+
+CI notes
+- The workflow runs unit tests on Ubuntu and performs an optional Windows step that (re)installs PySimpleGUI from its private index for the GUI demo.
+- Update the badge URL above by replacing `OWNER` with your GitHub username or org if needed.
 
 ## Components
 
@@ -69,4 +81,3 @@ The only requirements file is the root `requirements.txt`.
 ## License
 
 This repository is released under the [MIT License](LICENSE).
-

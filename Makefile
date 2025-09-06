@@ -1,6 +1,6 @@
 PY=python
 
-.PHONY: install test demo gui labels cli
+.PHONY: install test demo gui labels cli psg-reinstall gui-fix
 
 install:
 	$(PY) -m pip install -r requirements.txt
@@ -20,3 +20,10 @@ labels:
 cli:
 	$(PY) cli_demo.py --help
 
+psg-reinstall:
+	-$(PY) -m pip uninstall -y PySimpleGUI
+	-$(PY) -m pip cache purge
+	$(PY) -m pip install --force-reinstall --extra-index-url https://PySimpleGUI.net/install PySimpleGUI
+
+gui-fix:
+	$(PY) scripts/reinstall_pysimplegui.py

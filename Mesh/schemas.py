@@ -25,7 +25,7 @@ class MeshPost(BaseModel):
     country: Optional[str] = None
     created_at: float
     isPayPerView: bool = False
-    PostType: Literal['Video','Image','Status'] = 'Video'
+    PostType: Literal['Video','Photo'] = 'Video'
     isPromotion: bool = False
     isFlagged: bool = False
     isActive: bool = True
@@ -37,4 +37,3 @@ class MeshPost(BaseModel):
     isSuggested: bool = False
     shareCount: int = 0
     star: int = 0
-

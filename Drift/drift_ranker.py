@@ -2,7 +2,7 @@ from __future__ import annotations
 import random
 from typing import List, Optional
 import math
-from models import VideoCandidate, User, RankedVideo
+from .models import VideoCandidate, User, RankedVideo
 
 
 def compute_score(user: User, video: VideoCandidate) -> float:

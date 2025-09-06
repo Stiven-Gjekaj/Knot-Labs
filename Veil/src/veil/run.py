@@ -32,7 +32,7 @@ warnings.filterwarnings(
 
 import argparse
 import os
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 import numpy as np
 import torch
 import concurrent.futures
@@ -71,6 +71,85 @@ def _cache_key(model_name: str, mode: str, labels: List[str]) -> Tuple[str, str,
     return (model_name, mode, hash(tuple(labels)))
 
 
+def _strip_prompt_prefix(label: str, mode: str) -> str:
+    """Strip common prefixes from master label prompts to get base category.
+
+    Examples:
+      - "a video about trains" -> "trains"
+      - "a photo of train stations" -> "train stations"
+    """
+    l = label.strip()
+    low = l.lower()
+    prefixes = (
+        ("video", [
+            "a video of ",
+            "a video about ",
+            "video of ",
+            "video about ",
+        ]),
+        ("photo", [
+            "a photo of ",
+            "photo of ",
+        ]),
+    )
+    for m, pres in prefixes:
+        if mode == m:
+            for p in pres:
+                if low.startswith(p):
+                    return l[len(p):].strip()
+    return l
+
+
+def _build_label_embeddings(
+    base_labels: List[str],
+    mode: str,
+    model_name: str,
+    device: str,
+) -> Tuple[torch.Tensor, List[str]]:
+    """Create robust label embeddings via multi-template ensembling.
+
+    We form several text prompts per base label (e.g., "a video of a {}",
+    "a video of {}") and average their CLIP embeddings. This typically
+    improves zero-shot alignment versus relying on a single phrasing like
+    "about".
+    """
+    model, _ = get_clip_model(model_name, device=device)
+
+    if mode == "video":
+        templates = [
+            "a video of a {}",
+            "a video of {}",
+            "a clip of a {}",
+            "a recording of a {}",
+        ]
+    else:
+        templates = [
+            "a photo of a {}",
+            "a photo of {}",
+            "an image of a {}",
+            "a picture of a {}",
+        ]
+
+    # Build prompts per template and encode
+    emb_accum: Optional[torch.Tensor] = None
+    # Keep one representative prompt list for diagnostics (first template)
+    rep_prompts = [templates[0].format(c) for c in base_labels]
+    for tmpl in templates:
+        prompts = [tmpl.format(c) for c in base_labels]
+        tokens = clip.tokenize(prompts, truncate=True).to(device)
+        with torch.no_grad():
+            emb = normalize_tensor(model.encode_text(tokens).float())  # [L, D]
+        if emb_accum is None:
+            emb_accum = emb
+        else:
+            emb_accum = emb_accum + emb
+    assert emb_accum is not None
+    # Average and renormalize per label
+    emb_avg = emb_accum / float(len(templates))
+    emb_avg = normalize_tensor(emb_avg)
+    return emb_avg, rep_prompts
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Veil fusion runner")
     p.add_argument("--mode", choices=["video", "image"], required=True)
@@ -105,21 +184,20 @@ def main() -> None:
     master = load_master_labels(args.master_labels_file, expect_exact_count=False)
     labels: List[str] = select_labels(master, "video" if args.mode == "video" else "photo")
 
-    # Precompute label embeddings once
+    # Precompute label embeddings once with multi-template ensembling
     device = "cpu"
-    model, _ = get_clip_model(args.model, device=device)
-    if _labels_look_like_prompts(labels):
-        label_prompts = labels
-    else:
-        tmpl = "a video about {}" if args.mode == "video" else "a photo of {}"
-        label_prompts = [tmpl.format(c) for c in labels]
-    ck = _cache_key(args.model, args.mode, label_prompts)
+    # Derive base category strings from prompts and build robust embeddings
+    base_labels = [_strip_prompt_prefix(l, "video" if args.mode == "video" else "photo") for l in labels]
+    # Cache by the representative prompt list
+    rep_prompts = [
+        ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
+        for c in base_labels
+    ]
+    ck = _cache_key(args.model, args.mode, rep_prompts)
     if ck in _LABEL_CACHE:
         label_emb = _LABEL_CACHE[ck]
     else:
-        text_tokens = clip.tokenize(label_prompts, truncate=True).to(device)
-        with torch.no_grad():
-            label_emb = normalize_tensor(model.encode_text(text_tokens).float())
+        label_emb, rep = _build_label_embeddings(base_labels, args.mode, args.model, device)
         _LABEL_CACHE[ck] = label_emb
 
     # Launch modality scorers concurrently
@@ -133,7 +211,7 @@ def main() -> None:
                 labels,
                 model_name=args.model,
                 frames=args.frames,
-                prompt_template="a video about {}",
+                prompt_template="a video of {}",
                 label_emb=label_emb,
             )
         else:
@@ -150,7 +228,7 @@ def main() -> None:
         return score_transcript_with_clip(
             transcript,
             labels,
-            prompt_template=("a video about {}" if args.mode == "video" else "a photo of {}"),
+            prompt_template=("a video of {}" if args.mode == "video" else "a photo of {}"),
             model_name=args.model,
             label_emb=label_emb,
         )
@@ -195,14 +273,31 @@ def main() -> None:
         escores = np.zeros(len(labels), dtype=np.float32)
         ydiag = None
 
-    # Fuse
+    # Fuse with simple reliability-based gating for speech/events
+    v_mmn = min_max_norm(vres["scores"]) if isinstance(vres.get("scores"), np.ndarray) else np.zeros(len(labels))
+    s_mmn = min_max_norm(sres["scores"]) if isinstance(sres.get("scores"), np.ndarray) else np.zeros(len(labels))
+    e_mmn = min_max_norm(escores)
+    speech_conf = float(s_mmn.max()) if s_mmn.size else 0.0
+    event_conf = float(e_mmn.max()) if e_mmn.size else 0.0
+    # Scale non-visual weights down when evidence is weak
+    w_s_eff = args.w_speech * min(1.0, speech_conf / 0.7)
+    w_a_eff = args.w_audio * min(1.0, event_conf / 0.7)
+    w_v_eff = args.w_video
+    # Optionally renormalize to keep total weight comparable
+    total_w = w_v_eff + w_s_eff + w_a_eff
+    if total_w > 1e-6:
+        scale = (args.w_video + args.w_speech + args.w_audio) / total_w
+        w_v_eff *= scale
+        w_s_eff *= scale
+        w_a_eff *= scale
+
     fused = fuse_scores(
         video_scores=vres["scores"],
         speech_scores=sres["scores"],
         event_scores=escores,
-        w_video=args.w_video,
-        w_speech=args.w_speech,
-        w_audio=args.w_audio,
+        w_video=w_v_eff,
+        w_speech=w_s_eff,
+        w_audio=w_a_eff,
     )
 
     topk = np.argsort(fused)[::-1][: args.topk]
