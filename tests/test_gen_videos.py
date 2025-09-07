@@ -15,8 +15,8 @@ def test_load_master_categories(tmp_path):
 def test_make_video_and_save(tmp_path):
     post = make_video('creator123', ['cats', 'dogs', 'birds'])
     assert post['creator'] == 'creator123'
-    assert len(post['Categories']) <= 5
+    assert 'Category' in post and isinstance(post['Category'], dict)
+    assert len(post['Category']['micro']) <= 5
     out = save_video(post, str(tmp_path))
     data = json.load(open(out, 'r', encoding='utf-8'))
     assert data['postID'] == post['postID']
-

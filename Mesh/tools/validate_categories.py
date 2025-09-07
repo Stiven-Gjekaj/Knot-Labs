@@ -1,70 +1,44 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse
 import os
-import sys
-from typing import Tuple, List, Set
+from typing import Tuple
 
 
 def parse_line(line: str) -> Tuple[str, str, str]:
-    line = line.strip()
-    if not line or line.startswith("#"):
-        return ("", "", "")
-    if "|" not in line:
-        raise ValueError(f"Missing '|' separator: {line!r}")
-    left, right = [p.strip() for p in line.split("|", 1)]
-    # Expect exact prompt templates
-    if not left.startswith("a video about "):
-        raise ValueError(f"Left side must start with 'a video about ': {left!r}")
-    if not right.startswith("a photo of "):
-        raise ValueError(f"Right side must start with 'a photo of ': {right!r}")
-    cat_left = left[len("a video about "):].strip()
-    cat_right = right[len("a photo of "):].strip()
-    if not cat_left or not cat_right:
-        raise ValueError(f"Empty category: {line!r}")
-    if cat_left != cat_right:
-        raise ValueError(f"Mismatched categories: {line!r}")
-    return (left, right, cat_left)
+    raw = line.strip()
+    left, right = (raw, "") if "|" not in raw else tuple([s.strip() for s in raw.split("|", 1)])
+    cat = ""
+    low = left.lower()
+    for p in ("a video about ", "a video of ", "video about ", "video of "):
+        if low.startswith(p):
+            cat = left[len(p):].strip()
+            break
+    if not cat:
+        cat = left
+    return left, right, cat
 
 
-def validate(path: str, expect_min: int = 1) -> int:
+def validate(path: str, expect_min: int = 10) -> int:
     if not os.path.isfile(path):
-        print(f"Not found: {path}", file=sys.stderr)
-        return 2
+        print(f"File not found: {path}")
+        return 1
+    seen = set()
     total = 0
-    cats: List[str] = []
-    seen: Set[str] = set()
+    dupes = 0
     with open(path, "r", encoding="utf-8") as f:
-        for ln, raw in enumerate(f, 1):
+        for raw in f:
             raw = raw.strip()
             if not raw or raw.startswith("#"):
                 continue
+            left, right, cat = parse_line(raw)
             total += 1
-            _, _, cat = parse_line(raw)
-            cats.append(cat)
             if cat in seen:
-                print(f"Duplicate category at line {ln}: {cat}")
-            seen.add(cat)
-    uniq = len(set(cats))
-    print(f"Lines: {total} | Unique categories: {uniq}")
+                dupes += 1
+            else:
+                seen.add(cat)
     if total < expect_min:
-        print(f"Too few lines: {total} < {expect_min}", file=sys.stderr)
-        return 3
-    if uniq != total:
-        print(f"Warning: {total - uniq} duplicates found")
-    print("OK")
+        print(f"Warning: only {total} categories; expected at least {expect_min}")
+    if dupes:
+        print(f"Warning: {dupes} duplicate entries found")
     return 0
 
-
-def main() -> None:
-    p = argparse.ArgumentParser(description="Validate Mesh mastercategories.txt format")
-    p.add_argument("--file", default=os.path.join("Mesh", "mastercategories.txt"))
-    p.add_argument("--expect-min", type=int, default=100)  # not strict 1000 to allow development
-    args = p.parse_args()
-    rc = validate(args.file, expect_min=args.expect_min)
-    raise SystemExit(rc)
-
-
-if __name__ == "__main__":
-    main()

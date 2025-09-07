@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 
 from api.jobs import job_queue
+from Mesh.category import make_category_from_micro
 
 from Mesh.tools.gen_user import make_user, save_user
 from Mesh.tools.gen_videos import make_post, save_post
@@ -95,7 +96,7 @@ def _handle_job(job: Dict[str, Any]) -> Any:
         media_path = job['media_path']
         cats = _run_veil_and_get_categories(media_path, topk=5)
         post = _load_json(post_path)
-        post['Categories'] = cats
+        post['Category'] = make_category_from_micro(cats)
         _save_json(post_path, post)
         return {'post': post.get('postID'), 'categories': cats}
     return {'status': 'unknown'}
@@ -178,10 +179,10 @@ def api_interaction(action: str, req: Interaction, request: Request):
     c_path, creator = fc
     p_path, post = fp
     amount = float(req.amount or 0)
-    cats = post.get('Categories', [])
+    cat = post.get('Category') or {}
     v_delta = 1 if action == 'like' else 2 if action == 'comment' else 3 if action == 'share' else int(max(1, amount))
     c_delta = v_delta
-    viewer, creator = _bump_user_after_action(viewer, creator, cats, v_delta, c_delta)
+    viewer, creator = _bump_user_after_action(viewer, creator, cat, v_delta, c_delta)
     post = _apply_action_to_post(post, action, amount)
     _save_json(v_path, viewer)
     _save_json(c_path, creator)

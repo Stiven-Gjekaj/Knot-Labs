@@ -4,6 +4,7 @@ import json
 import os
 import sqlite3
 from typing import Dict, Optional
+from .category import ensure_category
 
 
 def _db_path() -> str:
@@ -75,8 +76,8 @@ def save_post(post: Dict, path: Optional[str] = None) -> None:
     con = sqlite3.connect(dbp)
     try:
         cur = con.cursor()
-        cats = post.get("Categories") or []
-        category = cats[0] if cats else None
+        cat = ensure_category(post)
+        category = cat.get("macro") or (cat.get("micro")[:1] or [None])[0]
         cur.execute(
             "REPLACE INTO posts(postID, creator, category, country, created_at, json) VALUES (?, ?, ?, ?, ?, ?)",
             (
@@ -91,4 +92,3 @@ def save_post(post: Dict, path: Optional[str] = None) -> None:
         con.commit()
     finally:
         con.close()
-

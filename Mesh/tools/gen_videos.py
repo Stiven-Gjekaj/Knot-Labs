@@ -9,6 +9,8 @@ import time
 import uuid
 from typing import Dict, List
 
+from Mesh.category import make_category_from_micro
+
 
 COUNTRIES = [
     "US", "CA", "GB", "DE", "FR", "BR", "IN", "JP", "KR", "AU",
@@ -65,12 +67,13 @@ def make_post(creator_id: str, categories: List[str], country: str | None = None
         picks = []
     if country is None or country not in COUNTRIES:
         country = random.choice(COUNTRIES)
+    category_obj = make_category_from_micro(picks)
     return {
         "postID": post_id,
         "creator": creator_id,
         "description": "Description Here",
         "Score": 0.0,
-        "Categories": picks,
+        "Category": category_obj,
         "country": country,
         "created_at": time.time(),
         "isPayPerView": False,
@@ -134,3 +137,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

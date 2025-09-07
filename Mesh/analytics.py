@@ -4,12 +4,13 @@ import os
 import json
 from collections import defaultdict
 from typing import Dict
+from .category import ensure_category
 
 
 def category_stats(posts_dir: str) -> Dict[str, Dict[str, float]]:
     """Compute simple category aggregates across posts.
 
-    Returns a mapping: category -> { count, likes, comments, shares, gifts, score }
+    Returns a mapping: macro-category -> { count, likes, comments, shares, gifts, score }
     """
     stats: Dict[str, Dict[str, float]] = {}
     def ensure(cat: str):
@@ -27,14 +28,13 @@ def category_stats(posts_dir: str) -> Dict[str, Dict[str, float]]:
             post = json.load(open(p, 'r', encoding='utf-8'))
         except Exception:
             continue
-        cats = post.get('Categories', []) or ['uncategorized']
-        for c in cats:
-            s = ensure(c)
-            s['count'] += 1
-            s['likes'] += float(post.get('likesCount', 0))
-            s['comments'] += float(post.get('commentsCount', 0))
-            s['shares'] += float(post.get('shareCount', 0))
-            s['gifts'] += float(post.get('giftsCount', 0))
-            s['score'] += float(post.get('Score', 0.0))
+        cat = ensure_category(post)
+        c = cat.get('macro') or 'uncategorized'
+        s = ensure(c)
+        s['count'] += 1
+        s['likes'] += float(post.get('likesCount', 0))
+        s['comments'] += float(post.get('commentsCount', 0))
+        s['shares'] += float(post.get('shareCount', 0))
+        s['gifts'] += float(post.get('giftsCount', 0))
+        s['score'] += float(post.get('Score', 0.0))
     return stats
-

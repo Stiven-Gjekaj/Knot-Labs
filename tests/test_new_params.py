@@ -13,6 +13,6 @@ def test_make_user_gender_param():
 def test_make_post_country_param():
     p = make_post("c1", ["cats"], country="US")
     assert p["country"] == "US"
+    assert p["Category"]["macro"]
     p2 = make_post("c1", ["cats"], country="ZZ")
     assert p2["country"] in COUNTRIES
-

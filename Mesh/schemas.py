@@ -21,7 +21,7 @@ class MeshPost(BaseModel):
     creator: str
     description: Optional[str] = "Description Here"
     Score: float = 0.0
-    Categories: List[str] = []
+    Category: Dict[str, object] = {"macro": "uncategorized", "meso": "uncategorized", "micro": []}
     country: Optional[str] = None
     created_at: float
     isPayPerView: bool = False

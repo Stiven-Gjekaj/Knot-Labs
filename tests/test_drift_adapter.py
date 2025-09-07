@@ -20,7 +20,7 @@ def test_mesh_post_to_drift_video_and_dir(tmp_path):
     post = {
         'postID': 'p1',
         'creator': 'c1',
-        'Categories': ['cats','dogs'],
+        'Category': { 'macro': 'cats', 'meso': 'mammals', 'micro': ['cats','dogs'] },
         'isActive': True,
         'isDeleted': False,
         'isFlagged': False,
@@ -40,4 +40,3 @@ def test_mesh_post_to_drift_video_and_dir(tmp_path):
         json.dump(post, f)
     cands = mesh_posts_to_drift_candidates(str(d))
     assert cands and cands[0].id == 'p1'
-

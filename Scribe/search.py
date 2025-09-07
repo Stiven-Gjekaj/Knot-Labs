@@ -5,6 +5,7 @@ import json
 import math
 import re
 from typing import Dict, List, Tuple, Optional
+from Mesh.category import ensure_category, category_texts
 
 
 def _tokenize(text: str) -> List[str]:
@@ -98,7 +99,7 @@ def build_index(
     *,
     backend: str = "bow",
     model_name: Optional[str] = None,
-    fields: Tuple[str, ...] = ("description", "Categories"),
+    fields: Tuple[str, ...] = ("description",),
 ) -> Index:
     posts = load_posts(posts_dir)
     ids: List[str] = []
@@ -114,6 +115,9 @@ def build_index(
                 chunks.append(v)
             elif isinstance(v, list):
                 chunks.extend([str(it) for it in v])
+        # Add category tokens (macro, meso, micro)
+        cat = ensure_category(p)
+        chunks.extend(category_texts(cat))
         if not chunks:
             continue
         ids.append(pid)

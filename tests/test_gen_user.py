@@ -17,4 +17,3 @@ def test_save_user(tmp_path):
     assert os.path.isfile(path)
     data = json.load(open(path, 'r', encoding='utf-8'))
     assert data["userID"] == u["userID"]
-

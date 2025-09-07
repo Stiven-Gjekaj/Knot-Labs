@@ -35,4 +35,3 @@ def test_api_auth_and_rate_limit(monkeypatch):
         resp = client.get("/search", params={"q": "cats", "k": 1})
         status_codes.append(resp.status_code)
     assert 429 in status_codes
-

@@ -20,8 +20,8 @@ def test_apply_action_to_post_like():
 def test_bump_user_after_action_basic():
     viewer = {'ViewerScore': {}, 'CategoryScores': {}, 'RecentCreators': []}
     creator = {'userID': 'c1', 'CreatorScore': 0}
-    categories = ['cats', 'dogs']
-    v, c = demo._bump_user_after_action(viewer, creator, categories, 2, 3)
+    category = {'macro': 'animals', 'meso': 'pets', 'micro': ['cats', 'dogs']}
+    v, c = demo._bump_user_after_action(viewer, creator, category, 2, 3)
     assert v['ViewerScore']['c1'] >= 2
     assert v['CategoryScores']['cats'] >= 1
     assert c['CreatorScore'] >= 3

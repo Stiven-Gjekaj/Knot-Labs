@@ -5,6 +5,7 @@ import json
 from typing import Dict, List, Optional
 
 from Drift.models import User as DriftUser, VideoCandidate as DriftVideo  # type: ignore
+from .category import ensure_category
 from Drift.drift_ranker import rank_videos as drift_rank_videos  # type: ignore
 
 
@@ -26,8 +27,8 @@ def mesh_user_to_drift_user(mesh_user: Dict) -> DriftUser:
 def mesh_post_to_drift_video(post: Dict) -> Optional[DriftVideo]:
     if not (post.get("isActive", True) and not post.get("isDeleted", False) and not post.get("isFlagged", False)):
         return None
-    cats = post.get("Categories", [])
-    cat = cats[0] if cats else "uncategorized"
+    cat_obj = ensure_category(post)
+    cat = cat_obj.get("macro") or (cat_obj.get("micro")[:1] or ["uncategorized"])[0]
     drift_video_dict = {
         "id": post.get("postID"),
         "creatorId": post.get("creator"),

@@ -11,7 +11,7 @@ def test_sqlite_write(tmp_path):
     u = {"userID": "u1", "username": "alice", "Gender": "female", "created_at": 1.0}
     save_user(u, str(db))
     # Save a post
-    p = {"postID": "p1", "creator": "u1", "Categories": ["cats"], "country": "US", "created_at": 2.0}
+    p = {"postID": "p1", "creator": "u1", "Category": {"macro": "cats", "meso": "pets", "micro": ["cats"]}, "country": "US", "created_at": 2.0}
     save_post(p, str(db))
     # Verify rows
     con = sqlite3.connect(str(db))
@@ -23,4 +23,3 @@ def test_sqlite_write(tmp_path):
         assert cur.fetchone()[0] == 1
     finally:
         con.close()
-

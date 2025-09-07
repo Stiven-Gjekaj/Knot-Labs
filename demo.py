@@ -7,6 +7,10 @@ import subprocess
 import sys
 import time
 from typing import Dict, List, Optional, Tuple
+from Mesh.tools.gen_videos import make_post, save_post  # type: ignore
+from Mesh.category import make_category_from_micro, ensure_category
+from Mesh.tools.gen_videos import make_post, save_post  # type: ignore
+from Mesh.category import make_category_from_micro, ensure_category
 
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -171,7 +175,6 @@ def post_and_classify(creator_identifier: Optional[str] = None, media_path: Opti
         return {}
     user_path, user = found
     # Create base post JSON via Mesh tool
-    from Mesh.tools.gen_videos import make_post, save_post  # type: ignore
     post = make_post(user["userID"], categories=[], country=country)  # start empty
     post_path = save_post(post, POSTS_DIR)
     try:
@@ -181,21 +184,22 @@ def post_and_classify(creator_identifier: Optional[str] = None, media_path: Opti
         pass
     print(f"Created post at {post_path}. Running Veil classification...")
     cats = _run_veil_and_get_categories(media)
-    post["Categories"] = cats[:5]
+    post["Category"] = make_category_from_micro(cats[:5])
     _save_json(post_path, post)
-    print(f"Updated post categories: {post['Categories']}")
+    print(f"Updated post category: {post['Category']}")
     return post
 
 
-def _bump_user_after_action(viewer: Dict, creator: Dict, categories: List[str], viewer_delta: int, creator_delta: int) -> Tuple[Dict, Dict]:
+def _bump_user_after_action(viewer: Dict, creator: Dict, category: Dict, viewer_delta: int, creator_delta: int) -> Tuple[Dict, Dict]:
     # ViewerScore: map creatorID -> points
     cid = creator.get("userID")
     if cid:
         viewer.setdefault("ViewerScore", {})
         viewer["ViewerScore"][cid] = int(viewer["ViewerScore"].get(cid, 0) + viewer_delta)
-    # CategoryScores: bump each category
+    # CategoryScores: bump each micro category
     viewer.setdefault("CategoryScores", {})
-    for c in categories:
+    micro = (category.get("micro") if isinstance(category, dict) else []) or []
+    for c in micro:
         viewer["CategoryScores"][c] = int(viewer["CategoryScores"].get(c, 0) + max(1, viewer_delta))
     # RecentCreators tracking
     if cid:
@@ -250,7 +254,7 @@ def _interaction(action: str, viewer_identifier: Optional[str] = None, creator_i
     p_path, post = fp
 
     # Apply increments
-    categories = post.get("Categories", [])
+    category = ensure_category(post)
     if action == "like":
         v_delta, c_delta = 1, 1
     elif action == "comment":
@@ -262,7 +266,7 @@ def _interaction(action: str, viewer_identifier: Optional[str] = None, creator_i
     else:
         v_delta, c_delta = 1, 1
 
-    viewer, creator = _bump_user_after_action(viewer, creator, categories, v_delta, c_delta)
+    viewer, creator = _bump_user_after_action(viewer, creator, category, v_delta, c_delta)
     viewer.setdefault("SeenPosts", [])
     viewer["SeenPosts"].append(post.get("postID"))
 
@@ -368,10 +372,10 @@ def simulate_update() -> None:
         p_path, post = random.choice(videos)
         act = random.choice(actions)
         amount = random.choice([1, 2, 5, 10]) if act == "gift" else 0
-        cats = post.get("Categories", [])
+        category = ensure_category(post)
         v_delta = 1 if act == "like" else 2 if act == "comment" else 3 if act == "share" else int(max(1, amount))
         c_delta = v_delta
-        viewer, creator = _bump_user_after_action(viewer, creator, cats, v_delta, c_delta)
+        viewer, creator = _bump_user_after_action(viewer, creator, category, v_delta, c_delta)
         post = _apply_action_to_post(post, act, amount)
         _save_json(v_path, viewer)
         _save_json(c_path, creator)
@@ -415,3 +419,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

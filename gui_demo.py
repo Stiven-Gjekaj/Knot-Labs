@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import json
 import sys
 import threading
 import tkinter as tk
@@ -156,11 +157,18 @@ class App:
         self.active_user = ttk.Entry(f_rank)
         self.active_user.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
         ttk.Button(f_rank, text="Rank Top 20", command=self.on_rank).grid(row=0, column=2, padx=5, pady=5)
+        ttk.Label(f_rank, text="Filter Level").grid(row=1, column=0, padx=5, pady=2, sticky="e")
+        self.rank_filter_level = ttk.Combobox(f_rank, values=["None","macro","meso"], state="readonly", width=10)
+        self.rank_filter_level.grid(row=1, column=1, padx=5, pady=2, sticky="w")
+        self.rank_filter_level.set("None")
+        ttk.Label(f_rank, text="Filter Value").grid(row=1, column=2, padx=5, pady=2, sticky="e")
+        self.rank_filter_value = ttk.Entry(f_rank, width=18)
+        self.rank_filter_value.grid(row=1, column=3, padx=5, pady=2, sticky="w")
 
         # Search
         f_search = ttk.LabelFrame(main, text="Search")
         f_search.grid(row=6, column=0, sticky="ew", pady=4)
-        for c in range(4):
+        for c in range(5):
             f_search.columnconfigure(c, weight=1 if c == 1 else 0)
         ttk.Label(f_search, text="Query").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.search_q = ttk.Entry(f_search)
@@ -170,6 +178,13 @@ class App:
         self.search_k.insert(0, "10")
         self.search_k.grid(row=0, column=3, padx=5, pady=5, sticky="w")
         ttk.Button(f_search, text="Search", command=self.on_search).grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(f_search, text="Filter Level").grid(row=1, column=1, padx=5, pady=5, sticky="e")
+        self.search_filter_level = ttk.Combobox(f_search, values=["None","macro","meso"], state="readonly", width=10)
+        self.search_filter_level.grid(row=1, column=2, padx=5, pady=5, sticky="w")
+        self.search_filter_level.set("None")
+        ttk.Label(f_search, text="Filter Value").grid(row=1, column=3, padx=5, pady=5, sticky="e")
+        self.search_filter_value = ttk.Entry(f_search, width=18)
+        self.search_filter_value.grid(row=1, column=4, padx=5, pady=5, sticky="w")
 
         # Simulate
         f_sim = ttk.LabelFrame(main, text="Simulate")
@@ -217,7 +232,11 @@ class App:
             try:
                 post = core.post_and_classify(creator, media, country)
                 if post:
-                    self.root.after(0, lambda: _notify(self.log, f"Created post {post.get('postID')} with cats: {post.get('Categories')}"))
+                    def _msg():
+                        cat = post.get('Category') or {}
+                        micro = (cat.get('micro') if isinstance(cat, dict) else []) or []
+                        _notify(self.log, f"Created post {post.get('postID')} with cats: {micro}")
+                    self.root.after(0, _msg)
                 else:
                     self.root.after(0, lambda: _notify(self.log, "Post creation failed (check creator)"))
             except Exception as e:
@@ -293,8 +312,31 @@ class App:
             out = core.rank_for_user(active)
             if out:
                 _notify(self.log, "Top 20:")
-                for pid, sc in out[:20]:
-                    _notify(self.log, f"  {pid} | score={sc}")
+                # Filter controls
+                level = (self.rank_filter_level.get() or "None").strip().lower()
+                val = (self.rank_filter_value.get() or "").strip().lower()
+                shown = 0
+                for pid, sc in out:
+                    macro = meso = ""
+                    micro = []
+                    try:
+                        p = os.path.join(core.POSTS_DIR, f"{pid}.json")
+                        data = json.load(open(p, 'r', encoding='utf-8'))
+                        cat = data.get('Category') or {}
+                        macro = cat.get('macro') or ''
+                        meso = cat.get('meso') or ''
+                        micro = (cat.get('micro') if isinstance(cat, dict) else []) or []
+                    except Exception:
+                        pass
+                    # Apply filter if requested
+                    if level == 'macro' and val and macro.lower() != val:
+                        continue
+                    if level == 'meso' and val and meso.lower() != val:
+                        continue
+                    _notify(self.log, f"  {pid} | score={sc} | {macro} | {meso} | {micro}")
+                    shown += 1
+                    if shown >= 20:
+                        break
             else:
                 _notify(self.log, "No ranking results for user")
         except Exception as e:
@@ -314,8 +356,25 @@ class App:
                 idx = build_index(core.POSTS_DIR, backend='bow')
                 res = idx.search(q, k=k)
                 _notify(self.log, f"Search results ({len(res)}):")
+                level = (self.search_filter_level.get() or "None").strip().lower()
+                val = (self.search_filter_value.get() or "").strip().lower()
                 for pid, sc in res:
-                    _notify(self.log, f"  {pid} | score={sc:.3f}")
+                    macro = meso = ""
+                    micro = []
+                    try:
+                        p = os.path.join(core.POSTS_DIR, f"{pid}.json")
+                        data = json.load(open(p, 'r', encoding='utf-8'))
+                        cat = data.get('Category') or {}
+                        macro = cat.get('macro') or ''
+                        meso = cat.get('meso') or ''
+                        micro = (cat.get('micro') if isinstance(cat, dict) else []) or []
+                    except Exception:
+                        pass
+                    if level == 'macro' and val and macro.lower() != val:
+                        continue
+                    if level == 'meso' and val and meso.lower() != val:
+                        continue
+                    _notify(self.log, f"  {pid} | score={sc:.3f} | {macro} | {meso} | {micro}")
             except Exception as e:
                 _notify(self.log, f"Search failed: {e}")
         except Exception as e:

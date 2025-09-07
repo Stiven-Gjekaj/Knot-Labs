@@ -70,6 +70,27 @@ CI notes
 - Canonical file: `Mesh/mastercategories.txt`
 - Rebuild with: `python Mesh/tools/build_mastercategories.py`
 
+## Data Model
+
+- Category field on posts: each post now stores a `Category` object, not a flat list.
+  - Shape:
+    - `macro`: top-level category name (string)
+    - `meso`: mid-level category (string)
+    - `micro`: fine-grained labels (array of strings)
+  - Example:
+    ```json
+    {
+      "postID": "p1",
+      "Category": {
+        "macro": "animals",
+        "meso": "pets",
+        "micro": ["cats", "kittens"]
+      }
+    }
+    ```
+- Backward compatibility: if older posts contain `Categories: ["cats", ...]`, the code converts them on the fly using the first item as `macro` and second as `meso`.
+- Search indexes description plus category tokens (macro, meso, micro). Analytics aggregate on the macro level.
+
 ## Notes
 
 - “Posts” are the primary content unit. Older “video” function/flag names are kept as wrappers for compatibility (e.g., `make_video` -> `make_post`).
