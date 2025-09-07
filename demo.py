@@ -70,13 +70,18 @@ def _find_post(post_id: str) -> Optional[Tuple[str, Dict]]:
     return None
 
 
-def create_test_user(username: Optional[str] = None) -> Dict:
+def create_test_user(username: Optional[str] = None, gender: Optional[str] = None) -> Dict:
     _ensure_dirs()
     from Mesh.tools.gen_user import make_user, save_user  # type: ignore
     if username is None:
         username = input("Enter a username for the test user: ").strip() or None
-    user = make_user(username=username)
+    user = make_user(username=username, gender=gender)
     path = save_user(user, USERS_DIR)
+    try:
+        from Mesh.sqlite_store import save_user as save_user_db  # type: ignore
+        save_user_db(user)
+    except Exception:
+        pass
     print(f"Created user at {path}\n{json.dumps(user, indent=2)}")
     return user
 
@@ -156,7 +161,7 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 5) -> List[str]:
     return cats[:topk]
 
 
-def post_and_classify(creator_identifier: Optional[str] = None, media_path: Optional[str] = None) -> Dict:
+def post_and_classify(creator_identifier: Optional[str] = None, media_path: Optional[str] = None, country: Optional[str] = None) -> Dict:
     _ensure_dirs()
     creator = creator_identifier or input("Enter creator userID or username: ").strip()
     media = media_path or input("Enter path to media file for Veil: ").strip()
@@ -167,8 +172,13 @@ def post_and_classify(creator_identifier: Optional[str] = None, media_path: Opti
     user_path, user = found
     # Create base post JSON via Mesh tool
     from Mesh.tools.gen_videos import make_post, save_post  # type: ignore
-    post = make_post(user["userID"], categories=[])  # start empty
+    post = make_post(user["userID"], categories=[], country=country)  # start empty
     post_path = save_post(post, POSTS_DIR)
+    try:
+        from Mesh.sqlite_store import save_post as save_post_db  # type: ignore
+        save_post_db(post)
+    except Exception:
+        pass
     print(f"Created post at {post_path}. Running Veil classification...")
     cats = _run_veil_and_get_categories(media)
     post["Categories"] = cats[:5]

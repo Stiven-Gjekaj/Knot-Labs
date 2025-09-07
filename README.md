@@ -13,10 +13,6 @@ The only requirements file is the root `requirements.txt`.
 
 - Install (Python 3.10+):
   - `pip install -r requirements.txt`
-  - Note for GUI users: PySimpleGUI is hosted on a private index. The requirements file includes an `--extra-index-url` so it installs automatically. If you installed earlier from PyPI and see errors like "module 'PySimpleGUI' has no attribute 'Window'", reinstall from the private index:
-    - `python -m pip uninstall -y PySimpleGUI`
-    - `python -m pip cache purge`
-    - `python -m pip install --force-reinstall --extra-index-url https://PySimpleGUI.net/install PySimpleGUI`
 
 - Build master categories (writes `Mesh/mastercategories.txt`):
   - `python Mesh/tools/build_mastercategories.py`
@@ -28,9 +24,10 @@ The only requirements file is the root `requirements.txt`.
 - Run demo (CLI):
   - `python demo.py`
 
-- Optional GUI (PySimpleGUI):
+- Optional GUI (Tkinter):
   - `python gui_demo.py`
-  - If it prints an install note, follow the commands above to reinstall from the private index.
+  - Tkinter ships with Python on most platforms. If missing, install your OS package for Tk (e.g., `sudo apt-get install python3-tk`).
+  - GUI now includes generators for users/posts plus selectors for gender and country.
 
 - Scribe search (CLI):
   - `python -m Scribe.cli --posts-dir Mesh/Posts --backend bow "cats funny"`
@@ -45,13 +42,14 @@ The only requirements file is the root `requirements.txt`.
     - `GET /rank?user=<id-or-username>&k=20`
     - `GET /search?q=...&k=10&backend=bow|st`
     - `GET /analytics/categories`
+  - Optional auth: set `KNOT_API_KEY` env var to require `X-API-Key` header for write endpoints. Basic in-memory rate limiting is enabled for all endpoints.
 
 - Run tests:
   - `pytest -q`
   - Includes Veil unit tests that avoid large downloads and exercise label loading, prompt parsing, fusion, and helper logic.
 
 CI notes
-- The workflow runs unit tests on Ubuntu and performs an optional Windows step that (re)installs PySimpleGUI from its private index for the GUI demo.
+- The workflow runs unit tests on Ubuntu.
 - Update the badge URL above by replacing `OWNER` with your GitHub username or org if needed.
 
 ## Components
@@ -60,6 +58,12 @@ CI notes
 - Mesh: JSON-backed store (Users, Posts) with engagement tracking and utilities. Hosts the canonical `mastercategories.txt` and tools to rebuild it.
 - Drift: Ranking over candidate posts using simple, explainable signals.
 - Scribe: Text search over posts with TF‑IDF (default) or Sentence‑Transformers.
+
+## Recent Updates
+- GUI migrated to Tkinter; added generators and gender/country selectors.
+- Added lightweight SQLite write-through store for users/posts (`Mesh/sqlite_store.py`).
+- FastAPI now supports `X-API-Key` auth (when `KNOT_API_KEY` is set) and has simple rate limiting.
+- Drift ranking weights tuned and are configurable in `Drift/drift_ranker.py` via `WEIGHTS`.
 
 ## Data: Master Categories
 

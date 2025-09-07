@@ -2,7 +2,27 @@ from __future__ import annotations
 import random
 from typing import List, Optional
 import math
+import time
 from .models import VideoCandidate, User, RankedVideo
+
+# Configurable weights for ranking signals
+WEIGHTS = {
+    "likes": 1.0,
+    "comments": 1.75,
+    "shares": 3.0,
+    "gift_count": 4.0,
+    "ppv": 0.25,
+    "star": 15.0,
+    "suggested": 4.0,
+    "promotion_penalty": -15.0,
+    "flag_penalty": -1000.0,
+    "non_video_penalty": -20.0,
+    "category_affinity": 30.0,
+    "creator_overexposure": -12.0,  # per repeat in recent_creators
+    "engagement_weight": 18.0,
+    "recency_half_life_days": 2.0,  # half-life for exponential decay
+    "recency_weight": 0.5,  # blend weight for recency boost
+}
 
 
 def compute_score(user: User, video: VideoCandidate) -> float:
@@ -16,30 +36,30 @@ def compute_score(user: User, video: VideoCandidate) -> float:
     # Compute score for one video.
     score = 0.0
     # Core engagement signals
-    score += video.likes * 1.0
-    score += video.comments * 2.0
-    score += video.shares * 3.0
-    score += video.gift_count * 2.0
-    score += video.pay_per_view_count * 0.5
-    score += video.star * 20.0
+    score += video.likes * WEIGHTS["likes"]
+    score += video.comments * WEIGHTS["comments"]
+    score += video.shares * WEIGHTS["shares"]
+    score += video.gift_count * WEIGHTS["gift_count"]
+    score += video.pay_per_view_count * WEIGHTS["ppv"]
+    score += video.star * WEIGHTS["star"]
 
     # Content flags (Knot Drift structure)
     if getattr(video, "is_suggested", False):
-        score += 5.0
+        score += WEIGHTS["suggested"]
     if video.is_promotion:
-        score -= 10.0
+        score += WEIGHTS["promotion_penalty"]
     if video.is_flagged:
-        score -= 500.0
+        score += WEIGHTS["flag_penalty"]
     if getattr(video, "content_status", "Active") != "Active": # If video not active, don't suggest
         score = 0
     if getattr(video, "content_type", "Video") != "Video": # Prefer video type slightly
-        score -= 25.0
+        score += WEIGHTS["non_video_penalty"]
 
     # User preference alignment
     if video.category in user.preferred_categories:
-        score += 25.0
+        score += WEIGHTS["category_affinity"]
     over = user.recent_creators.count(video.creator_id)
-    score -= over * 10.0
+    score += over * WEIGHTS["creator_overexposure"]
     bonus = random.random() * (5.0 if video.creator_id not in user.seen_creators else 2.5)
     score += bonus
 
@@ -49,10 +69,18 @@ def compute_score(user: User, video: VideoCandidate) -> float:
         score = 0
 
     # Boost creators the user engages with more (tempered by sqrt)
-    ENGAGEMENT_WEIGHT = 15.0
     eng_count = getattr(user, "creator_engagement", {}).get(video.creator_id, 0)
     if eng_count > 0:
-        score += math.sqrt(eng_count) * ENGAGEMENT_WEIGHT
+        score += math.sqrt(eng_count) * WEIGHTS["engagement_weight"]
+
+    # Recency decay (newer content gets a boost)
+    if getattr(video, "created_at", None):
+        age_seconds = max(0.0, (time.time() - float(video.created_at)))
+        age_days = age_seconds / 86400.0
+        # exponential decay to [0,1] with specified half-life
+        hl = max(0.1, WEIGHTS["recency_half_life_days"])
+        decay = 0.5 ** (age_days / hl)
+        score = score * (1 - WEIGHTS["recency_weight"]) + score * decay * WEIGHTS["recency_weight"]
     return score
 
 

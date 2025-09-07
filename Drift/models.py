@@ -29,6 +29,8 @@ class VideoCandidate(_BaseSchema):
     description: Optional[str] = None  # Content description text
     comment_text: Optional[str] = Field(default=None, alias="comment")  # A top-level comment/caption
     category: str  # Category of the content
+    country: Optional[str] = None  # Country of the content/creator
+    created_at: Optional[float] = None  # Unix timestamp when content created
 
     # Flags and status (flat, Knot Drift style)
     is_pay_per_view: bool = Field(default=False, alias="isPayPerView")

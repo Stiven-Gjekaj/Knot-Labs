@@ -33,6 +33,9 @@ def mesh_post_to_drift_video(post: Dict) -> Optional[DriftVideo]:
         "creatorId": post.get("creator"),
         "description": post.get("description"),
         "category": cat,
+        # metadata
+        "country": post.get("country"),
+        "created_at": post.get("created_at"),
         "isPayPerView": post.get("isPayPerView", False),
         "ContentType": post.get("PostType", "Video"),
         "isPromotion": post.get("isPromotion", False),
@@ -94,4 +97,3 @@ def rank_for_mesh_user_identifier(identifier: str, users_dir: str, posts_dir: st
     duser = mesh_user_to_drift_user(mesh_user)
     cands = mesh_posts_to_drift_candidates(posts_dir)
     return drift_rank_videos(duser, cands)
-

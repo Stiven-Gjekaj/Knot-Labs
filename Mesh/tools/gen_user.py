@@ -17,11 +17,12 @@ def ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
-def make_user(username: str | None = None) -> Dict:
+def make_user(username: str | None = None, gender: str | None = None) -> Dict:
     user_id = uuid.uuid4().hex
     if not username:
         username = f"user_{user_id[:8]}"
-    gender = random.choice(GENDERS)
+    if gender is None or gender not in GENDERS:
+        gender = random.choice(GENDERS)
     return {
         "username": username,
         "userID": user_id,
@@ -48,6 +49,7 @@ def main() -> None:
     p.add_argument("N", type=int, help="number of users to create")
     p.add_argument("--users-dir", default=os.path.join("Mesh", "Users"))
     p.add_argument("--username", help="custom username to use when N=1")
+    p.add_argument("--gender", choices=GENDERS, help="optional gender to assign (applies to all created)")
     args = p.parse_args()
 
     if args.N <= 0:
@@ -57,7 +59,7 @@ def main() -> None:
 
     created = []
     for i in range(args.N):
-        user = make_user(username=args.username if args.N == 1 else None)
+        user = make_user(username=args.username if args.N == 1 else None, gender=args.gender)
         path = save_user(user, args.users_dir)
         created.append((user["userID"], path))
     for uid, path in created:

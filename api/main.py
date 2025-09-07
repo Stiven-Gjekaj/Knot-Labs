@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import uuid
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 
 from api.jobs import job_queue
@@ -23,6 +23,44 @@ POSTS_DIR = os.path.join(MESH_DIR, 'Posts')
 MASTER_PATH = os.path.join(MESH_DIR, 'mastercategories.txt')
 
 app = FastAPI(title="Knot-Labs API")
+
+# Simple API key auth and rate limiting (in-memory)
+API_KEY = os.environ.get("KNOT_API_KEY")
+RATE_WINDOW_SECS = 60
+DEFAULT_LIMIT = 60  # requests per window
+_rate_store: dict[tuple[str, str], list[float]] = {}
+
+
+def _client_id(req: Request) -> str:
+    # Use API key if provided; else fall back to client host
+    key = req.headers.get("x-api-key") or ""
+    if key:
+        return f"key:{key}"
+    # On some servers, client host may be None
+    return f"ip:{getattr(req.client, 'host', 'unknown')}"
+
+
+def _check_auth(req: Request) -> None:
+    if API_KEY is None:
+        return  # auth disabled if key not set
+    key = req.headers.get("x-api-key")
+    if not key or key != API_KEY:
+        raise HTTPException(401, "Unauthorized")
+
+
+def _check_rate(req: Request, limit: int = DEFAULT_LIMIT) -> None:
+    import time
+    now = time.time()
+    ident = _client_id(req)
+    scope = req.url.path
+    k = (ident, scope)
+    arr = _rate_store.get(k) or []
+    # prune old
+    arr = [t for t in arr if now - t <= RATE_WINDOW_SECS]
+    if len(arr) >= limit:
+        raise HTTPException(429, "Too Many Requests")
+    arr.append(now)
+    _rate_store[k] = arr
 
 
 class CreateUser(BaseModel):
@@ -64,14 +102,23 @@ def _handle_job(job: Dict[str, Any]) -> Any:
 
 
 @app.post("/users")
-def api_create_user(req: CreateUser):
+def api_create_user(req: CreateUser, request: Request):
+    _check_auth(request)
+    _check_rate(request)
     u = make_user(username=req.username)
     save_user(u, USERS_DIR)
+    try:
+        from Mesh.sqlite_store import save_user as save_user_db  # type: ignore
+        save_user_db(u)
+    except Exception:
+        pass
     return u
 
 
 @app.post("/posts")
-def api_create_post(req: CreatePost):
+def api_create_post(req: CreatePost, request: Request):
+    _check_auth(request)
+    _check_rate(request)
     # Find creator by ID or username
     creator_id = req.creator
     # If username was supplied, scan users dir
@@ -92,6 +139,11 @@ def api_create_post(req: CreatePost):
     if req.description:
         post['description'] = req.description
     path = save_post(post, POSTS_DIR)
+    try:
+        from Mesh.sqlite_store import save_post as save_post_db  # type: ignore
+        save_post_db(post)
+    except Exception:
+        pass
     job_id = None
     if req.media_path:
         job = {
@@ -105,12 +157,15 @@ def api_create_post(req: CreatePost):
 
 
 @app.get('/jobs/{job_id}')
-def api_job_status(job_id: str):
+def api_job_status(job_id: str, request: Request):
+    _check_rate(request)
     return job_queue.status(job_id)
 
 
 @app.post('/interactions/{action}')
-def api_interaction(action: str, req: Interaction):
+def api_interaction(action: str, req: Interaction, request: Request):
+    _check_auth(request)
+    _check_rate(request)
     if action not in {'like','comment','share','gift'}:
         raise HTTPException(400, 'Unknown action')
     from demo import _find_user, _find_post, _apply_action_to_post, _bump_user_after_action, _save_json
@@ -135,7 +190,8 @@ def api_interaction(action: str, req: Interaction):
 
 
 @app.get('/rank')
-def api_rank(user: str, k: int = 20):
+def api_rank(request: Request, user: str, k: int = 20):
+    _check_rate(request)
     # Map Mesh user/posts to Drift
     # Load mesh user by id or username
     u: Optional[Dict[str, Any]] = None
@@ -161,14 +217,15 @@ def api_rank(user: str, k: int = 20):
 
 
 @app.get('/search')
-def api_search(q: str, k: int = 10, backend: str = 'bow'):
+def api_search(request: Request, q: str, k: int = 10, backend: str = 'bow'):
+    _check_rate(request)
     idx = build_index(POSTS_DIR, backend=backend)
     res = idx.search(q, k=k)
     return {'results': [{'postID': pid, 'score': sc} for pid, sc in res]}
 
 
 @app.get('/analytics/categories')
-def api_category_stats():
+def api_category_stats(request: Request):
+    _check_rate(request)
     stats = category_stats(POSTS_DIR)
     return stats
-

@@ -56,20 +56,22 @@ def load_master_categories(path: str) -> List[str]:
     return cats
 
 
-def make_post(creator_id: str, categories: List[str]) -> Dict:
+def make_post(creator_id: str, categories: List[str], country: str | None = None) -> Dict:
     post_id = uuid.uuid4().hex
     # pick up to 5 unique categories
     if categories:
         picks = random.sample(categories, k=min(5, len(categories)))
     else:
         picks = []
+    if country is None or country not in COUNTRIES:
+        country = random.choice(COUNTRIES)
     return {
         "postID": post_id,
         "creator": creator_id,
         "description": "Description Here",
         "Score": 0.0,
         "Categories": picks,
-        "country": random.choice(COUNTRIES),
+        "country": country,
         "created_at": time.time(),
         "isPayPerView": False,
         "PostType": "Video",
@@ -112,6 +114,7 @@ def main() -> None:
     p.add_argument("--posts-dir", default=None)
     p.add_argument("--master", default=os.path.join("Mesh", "mastercategories.txt"))
     p.add_argument("--creator", help="optional creator userID; if omitted, pick a random user from Users/")
+    p.add_argument("--country", choices=COUNTRIES, help="optional country to assign (applies to all created)")
     args = p.parse_args()
 
     users = load_users(args.users_dir)
@@ -122,7 +125,7 @@ def main() -> None:
     created = []
     for _ in range(args.N):
         creator_id = args.creator or random.choice(users)["userID"]
-        post = make_post(creator_id, cats)
+        post = make_post(creator_id, cats, country=args.country)
         path = save_post(post, posts_dir)
         created.append((post["postID"], path))
     for vid, path in created:
