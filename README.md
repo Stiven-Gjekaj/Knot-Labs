@@ -48,10 +48,6 @@ The only requirements file is the root `requirements.txt`.
   - `pytest -q`
   - Includes Veil unit tests that avoid large downloads and exercise label loading, prompt parsing, fusion, and helper logic.
 
-CI notes
-- The workflow runs unit tests on Ubuntu.
-- Update the badge URL above by replacing `OWNER` with your GitHub username or org if needed.
-
 ## Components
 
 - Veil: Zero-shot audio+video classifier. Encodes video frames and/or audio transcripts, performs label scoring, and annotates posts on upload.
