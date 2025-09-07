@@ -77,7 +77,11 @@ def save_post(post: Dict, path: Optional[str] = None) -> None:
     try:
         cur = con.cursor()
         cat = ensure_category(post)
-        category = cat.get("macro") or (cat.get("micro")[:1] or [None])[0]
+        macros = cat.get("macro")
+        if isinstance(macros, list) and macros:
+            category = macros[0]
+        else:
+            category = macros if isinstance(macros, str) and macros else (cat.get("micro")[:1] or [None])[0]
         cur.execute(
             "REPLACE INTO posts(postID, creator, category, country, created_at, json) VALUES (?, ?, ?, ?, ?, ?)",
             (

@@ -28,7 +28,11 @@ def mesh_post_to_drift_video(post: Dict) -> Optional[DriftVideo]:
     if not (post.get("isActive", True) and not post.get("isDeleted", False) and not post.get("isFlagged", False)):
         return None
     cat_obj = ensure_category(post)
-    cat = cat_obj.get("macro") or (cat_obj.get("micro")[:1] or ["uncategorized"])[0]
+    macros = cat_obj.get("macro")
+    if isinstance(macros, list) and macros:
+        cat = macros[0]
+    else:
+        cat = macros if isinstance(macros, str) and macros else (cat_obj.get("micro")[:1] or ["uncategorized"])[0]
     drift_video_dict = {
         "id": post.get("postID"),
         "creatorId": post.get("creator"),

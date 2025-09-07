@@ -8,27 +8,33 @@ Completed in this iteration
 - Auth & API keys: FastAPI now checks `X-API-Key` when `KNOT_API_KEY` is set.
 - Rate limiting & quotas: simple in-memory per-identity, per-endpoint limiter over a 60s window.
 
+- Observability & metrics: structured logging; Prometheus counters/histograms with `/metrics`; basic request timing middleware; job metrics.
+- Lint/format/type config: added `pyproject.toml` with ruff/black/mypy defaults (CI wiring pending).
+- Multi-modal Scribe: added `backend="hybrid"` combining BoW and Sentence-Transformers with a tunable weight.
+- Personalization pipeline (initial): offline job `Mesh/tools/personalize.py` recomputes per-user `CategoryScores` from `SeenPosts`.
+- Export/Import tooling: `Mesh/tools/export_import.py` for NDJSON export/import with simple dedup.
+
 Next Updates:
 
-1. Observability & metrics
+1. CI wiring for lint/type
 
-- Structured logging, request/handler timing, Prometheus metrics for API and job queue; basic dashboard.
+- Add GitHub Actions (or preferred CI) to run ruff/black/mypy.
 
-2. Lint/format/type + CI upgrades
+2. Metrics dashboard
 
-- Add pyproject, ruff/black config, mypy; expand CI to run linting and type checks in addition to tests.
+- Simple Grafana/Prometheus docker-compose to visualize request rates/latency and job throughput.
 
-3. Multi-modal Scribe
+3. Veil caching + warmup
 
-- Fuse text embeddings with Veil outputs (visual/audio) and support hybrid search (BM25/TF-IDF + dense) with tunable weights.
+- Cache CLIP/ST models; add warmup job and configurable device (CPU/GPU) selection.
 
-4. Personalization pipeline
+4. Hybrid search scoring knobs
 
-- Offline jobs to compute per-user/category embeddings and creator affinity; persist vectors and use in ranking/search.
+- Expose `dense_weight` and category token weights via API/UI; add quick A/B hooks.
 
-5. Export/Import tooling
+5. Category browser/admin
 
-- NDJSON export of Mesh entities and import with deduplication; admin scripts and docs.
+- GUI panel to browse categories, rebuild labels to N, and validate/resolve duplicates.
 
 Newly Added Next Updates:
 

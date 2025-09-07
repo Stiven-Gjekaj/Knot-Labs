@@ -5,7 +5,7 @@ import json
 import math
 import re
 from typing import Dict, List, Tuple, Optional
-from Mesh.category import ensure_category, category_texts
+from Mesh.category import ensure_category
 
 
 def _tokenize(text: str) -> List[str]:
@@ -100,6 +100,9 @@ def build_index(
     backend: str = "bow",
     model_name: Optional[str] = None,
     fields: Tuple[str, ...] = ("description",),
+    macro_weight: int = 3,
+    meso_weight: int = 2,
+    micro_weight: int = 1,
 ) -> Index:
     posts = load_posts(posts_dir)
     ids: List[str] = []
@@ -115,9 +118,26 @@ def build_index(
                 chunks.append(v)
             elif isinstance(v, list):
                 chunks.extend([str(it) for it in v])
-        # Add category tokens (macro, meso, micro)
+        # Add weighted category tokens (macro > meso > micro)
         cat = ensure_category(p)
-        chunks.extend(category_texts(cat))
+        macros = cat.get("macro")
+        meso = cat.get("meso")
+        micro = cat.get("micro")
+        macro_list = macros if isinstance(macros, list) else [macros] if isinstance(macros, str) else []
+        meso_list = meso if isinstance(meso, list) else [meso] if isinstance(meso, str) else []
+        micro_list = micro if isinstance(micro, list) else []
+        for m in macro_list:
+            mm = (m or "").strip()
+            if mm:
+                chunks.extend([mm] * max(0, int(macro_weight)))
+        for m in meso_list:
+            mm = (m or "").strip()
+            if mm:
+                chunks.extend([mm] * max(0, int(meso_weight)))
+        for m in micro_list:
+            mm = (m or "").strip()
+            if mm:
+                chunks.extend([mm] * max(0, int(micro_weight)))
         if not chunks:
             continue
         ids.append(pid)
@@ -125,15 +145,74 @@ def build_index(
 
     if backend == "bow":
         emb = BowEmbedder()
-    else:
+        vecs = emb.fit_transform(texts)
+        return Index(emb, ids, texts, vecs)
+    elif backend == "st":
         try:
             emb = SentenceTransformerEmbedder(model_name or "sentence-transformers/all-MiniLM-L6-v2")
         except Exception:
-            # Fallback to bow if ST model fails
             emb = BowEmbedder()
+        vecs = emb.fit_transform(texts)
+        return Index(emb, ids, texts, vecs)
+    elif backend == "hybrid":
+        # Build both and blend scores at query time by patching Index.search
+        bow = BowEmbedder()
+        bow_vecs = bow.fit_transform(texts)
+        try:
+            st = SentenceTransformerEmbedder(model_name or "sentence-transformers/all-MiniLM-L6-v2")
+            st_vecs = st.fit_transform(texts)
+        except Exception:
+            st = None
+            st_vecs = None
 
-    vecs = emb.fit_transform(texts)
-    return Index(emb, ids, texts, vecs)
+        class HybridIndex(Index):  # type: ignore
+            def __init__(self, ids, texts, bow, bow_vecs, st=None, st_vecs=None):
+                self.embedder = None  # unused
+                self.ids = ids
+                self.texts = texts
+                self._bow = bow
+                self._bow_vecs = bow_vecs
+                self._st = st
+                self._st_vecs = st_vecs
+
+            def search(self, query: str, k: int = 10, dense_weight: float = 0.3) -> List[Tuple[str, float]]:  # type: ignore[override]
+                # Compute bow scores
+                bq = self._bow.transform_one(query)
+                bow_scores = []
+                for pid, pv in zip(self.ids, self._bow_vecs):
+                    bow_scores.append((pid, float(sum(a * b for a, b in zip(bq, pv)))))
+
+                if self._st is not None and self._st_vecs is not None:
+                    sq = self._st.transform_one(query)
+                    st_scores = {pid: float(sum(a * b for a, b in zip(sq, pv))) for pid, pv in zip(self.ids, self._st_vecs)}
+                else:
+                    st_scores = {pid: 0.0 for pid in self.ids}
+
+                # Normalize scores to [0,1]
+                def _norm(arr):
+                    if not arr:
+                        return []
+                    vals = [sc for _, sc in arr]
+                    mn, mx = min(vals), max(vals)
+                    if mx - mn < 1e-8:
+                        return [(pid, 0.0) for pid, _ in arr]
+                    return [(pid, (sc - mn) / (mx - mn)) for pid, sc in arr]
+
+                bow_n = _norm(bow_scores)
+                # align
+                st_n = {pid: st_scores.get(pid, 0.0) for pid, _ in bow_scores}
+                # combine
+                w = max(0.0, min(1.0, dense_weight))
+                scores = [(pid, (1 - w) * sc + w * st_n[pid]) for pid, sc in bow_n]
+                scores.sort(key=lambda x: x[1], reverse=True)
+                return scores[:k]
+
+        return HybridIndex(ids, texts, bow, bow_vecs, st, st_vecs)
+    else:
+        # default fallback
+        emb = BowEmbedder()
+        vecs = emb.fit_transform(texts)
+        return Index(emb, ids, texts, vecs)
 
 
 def search_posts(query: str, posts_dir: str, *, k: int = 10, backend: str = "bow") -> List[Tuple[str, float]]:

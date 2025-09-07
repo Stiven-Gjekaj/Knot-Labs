@@ -29,12 +29,17 @@ def category_stats(posts_dir: str) -> Dict[str, Dict[str, float]]:
         except Exception:
             continue
         cat = ensure_category(post)
-        c = cat.get('macro') or 'uncategorized'
-        s = ensure(c)
-        s['count'] += 1
-        s['likes'] += float(post.get('likesCount', 0))
-        s['comments'] += float(post.get('commentsCount', 0))
-        s['shares'] += float(post.get('shareCount', 0))
-        s['gifts'] += float(post.get('giftsCount', 0))
-        s['score'] += float(post.get('Score', 0.0))
+        macros = cat.get('macro')
+        macro_list = macros if isinstance(macros, list) else [macros] if isinstance(macros, str) else []
+        if not macro_list:
+            macro_list = ['uncategorized']
+        # Count towards each macro present (unique per post)
+        for c in set(macro_list):
+            s = ensure(c)
+            s['count'] += 1
+            s['likes'] += float(post.get('likesCount', 0))
+            s['comments'] += float(post.get('commentsCount', 0))
+            s['shares'] += float(post.get('shareCount', 0))
+            s['gifts'] += float(post.get('giftsCount', 0))
+            s['score'] += float(post.get('Score', 0.0))
     return stats

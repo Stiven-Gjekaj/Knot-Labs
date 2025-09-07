@@ -3,7 +3,16 @@ from __future__ import annotations
 import os
 import uuid
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
+import logging
+import time as _time
+try:
+    from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST  # type: ignore
+except Exception:  # pragma: no cover
+    Counter = Histogram = None  # type: ignore
+    def generate_latest():  # type: ignore
+        return b""
+    CONTENT_TYPE_LATEST = "text/plain"
 from pydantic import BaseModel
 
 from api.jobs import job_queue
@@ -24,6 +33,34 @@ POSTS_DIR = os.path.join(MESH_DIR, 'Posts')
 MASTER_PATH = os.path.join(MESH_DIR, 'mastercategories.txt')
 
 app = FastAPI(title="Knot-Labs API")
+
+# Structured logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+
+# Metrics
+REQ_COUNT = Counter('knot_requests_total', 'Total API requests', ['path', 'method']) if Counter else None
+REQ_LAT = Histogram('knot_request_latency_seconds', 'Request latency', ['path', 'method']) if Histogram else None
+JOBS_COUNT = Counter('knot_jobs_total', 'Jobs processed', ['type', 'status']) if Counter else None
+
+@app.get('/metrics')
+def _metrics():  # type: ignore
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)  # type: ignore
+
+@app.middleware('http')
+async def _timing_mw(request: Request, call_next):  # type: ignore
+    path = request.url.path
+    method = request.method
+    start = _time.time()
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        dur = max(0.0, _time.time() - start)
+        if REQ_COUNT:
+            REQ_COUNT.labels(path=path, method=method).inc()
+        if REQ_LAT:
+            REQ_LAT.labels(path=path, method=method).observe(dur)
+        logging.info({'event': 'request', 'path': path, 'method': method, 'latency_s': round(dur, 4)})
 
 # Simple API key auth and rate limiting (in-memory)
 API_KEY = os.environ.get("KNOT_API_KEY")
@@ -94,10 +131,12 @@ def _handle_job(job: Dict[str, Any]) -> Any:
         from demo import _run_veil_and_get_categories, _load_json, _save_json
         post_path = job['post_path']
         media_path = job['media_path']
-        cats = _run_veil_and_get_categories(media_path, topk=5)
+        cats = _run_veil_and_get_categories(media_path, topk=26)
         post = _load_json(post_path)
         post['Category'] = make_category_from_micro(cats)
         _save_json(post_path, post)
+        if JOBS_COUNT:
+            JOBS_COUNT.labels(type='classify_post', status='ok').inc()
         return {'post': post.get('postID'), 'categories': cats}
     return {'status': 'unknown'}
 

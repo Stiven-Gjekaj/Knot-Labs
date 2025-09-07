@@ -110,6 +110,12 @@ class App:
         self.gen_posts_n.insert(0, "1")
         self.gen_posts_n.grid(row=1, column=1, padx=5, pady=5, sticky="w")
         ttk.Button(f_gen, text="Generate Posts", command=self.on_gen_posts).grid(row=1, column=2, padx=5, pady=5)
+        # Labels builder (count)
+        ttk.Label(f_gen, text="Labels N").grid(row=2, column=0, padx=5, pady=5, sticky="e")
+        self.gen_labels_n = ttk.Entry(f_gen, width=6)
+        self.gen_labels_n.insert(0, "1000")
+        self.gen_labels_n.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        ttk.Button(f_gen, text="Rebuild Categories", command=self.on_build_labels).grid(row=2, column=2, padx=5, pady=5)
 
         # Interact
         f_inter = ttk.LabelFrame(main, text="Interact")
@@ -252,20 +258,51 @@ class App:
             n = int(self.gen_posts_n.get().strip() or "1")
             users = load_users(os.path.join("Mesh", "Users"))
             if not users:
-                _notify(self.log, "No users found and no creator specified")
-                return
+                # QoL: auto-create one user if none exist
+                try:
+                    from Mesh.tools.gen_user import make_user, save_user  # type: ignore
+                    u = make_user(gender=None)
+                    save_user(u, os.path.join("Mesh", "Users"))
+                    users = [u]
+                    _notify(self.log, f"No users found; created user {u.get('userID')}")
+                except Exception:
+                    _notify(self.log, "No users found and could not auto-create one")
+                    return
             cats = load_master_categories(os.path.join("Mesh", "mastercategories.txt"))
             posts_dir = os.path.join("Mesh", "Posts")
             created = []
             import random
             for _ in range(max(1, n)):
-                cid = random.choice(users)["userID"]
+                # users may be list of dicts or loaded user dicts
+                uid = users[0]["userID"] if isinstance(users[0], dict) else users[0].get("userID")
+                cid = uid or random.choice(users)["userID"]
                 post = make_post(cid, categories=cats, country=None)
                 save_post(post, posts_dir)
                 created.append(post.get("postID"))
             _notify(self.log, f"Generated posts: {', '.join(created)}")
         except Exception as e:
             _notify(self.log, f"Error: {e}")
+
+    def on_build_labels(self) -> None:
+        """Rebuild Mesh/mastercategories.txt using the builder tool."""
+        def worker() -> None:
+            try:
+                from Mesh.tools.build_mastercategories import build_and_write  # type: ignore
+                try:
+                    n = int(self.gen_labels_n.get().strip() or "1000")
+                except Exception:
+                    n = 1000
+                stats = build_and_write(target_count=max(1, n))
+                # Optionally validate
+                try:
+                    from Mesh.tools.validate_categories import validate  # type: ignore
+                    validate(os.path.join("Mesh", "mastercategories.txt"), expect_min=10)
+                except Exception:
+                    pass
+                self.log.after(0, lambda: _notify(self.log, f"Rebuilt mastercategories.txt: final={stats.get('final')} unique={stats.get('unique')} candidates={stats.get('candidates')}"))
+            except Exception as e:
+                self.log.after(0, lambda: _notify(self.log, f"Error rebuilding categories: {e}"))
+        threading.Thread(target=worker, daemon=True).start()
 
     def on_interact(self, action: str) -> None:
         try:
@@ -308,16 +345,22 @@ class App:
                         p = os.path.join(core.POSTS_DIR, f"{pid}.json")
                         data = json.load(open(p, 'r', encoding='utf-8'))
                         cat = data.get('Category') or {}
-                        macro = cat.get('macro') or ''
-                        meso = cat.get('meso') or ''
+                        raw_macro = cat.get('macro') or []
+                        raw_meso = cat.get('meso') or []
+                        macro_list = raw_macro if isinstance(raw_macro, list) else [raw_macro]
+                        meso_list = raw_meso if isinstance(raw_meso, list) else [raw_meso]
+                        macro = ", ".join([m for m in macro_list if isinstance(m, str)])
+                        meso = ", ".join([m for m in meso_list if isinstance(m, str)])
                         micro = (cat.get('micro') if isinstance(cat, dict) else []) or []
                     except Exception:
                         pass
                     # Apply filter if requested
-                    if level == 'macro' and val and macro.lower() != val:
-                        continue
-                    if level == 'meso' and val and meso.lower() != val:
-                        continue
+                    if level == 'macro' and val:
+                        if not any((m or '').lower() == val for m in macro_list if isinstance(m, str)):
+                            continue
+                    if level == 'meso' and val:
+                        if not any((m or '').lower() == val for m in meso_list if isinstance(m, str)):
+                            continue
                     _notify(self.log, f"  {pid} | score={sc} | {macro} | {meso} | {micro}")
                     shown += 1
                     if shown >= 20:
@@ -350,15 +393,21 @@ class App:
                         p = os.path.join(core.POSTS_DIR, f"{pid}.json")
                         data = json.load(open(p, 'r', encoding='utf-8'))
                         cat = data.get('Category') or {}
-                        macro = cat.get('macro') or ''
-                        meso = cat.get('meso') or ''
+                        raw_macro = cat.get('macro') or []
+                        raw_meso = cat.get('meso') or []
+                        macro_list = raw_macro if isinstance(raw_macro, list) else [raw_macro]
+                        meso_list = raw_meso if isinstance(raw_meso, list) else [raw_meso]
+                        macro = ", ".join([m for m in macro_list if isinstance(m, str)])
+                        meso = ", ".join([m for m in meso_list if isinstance(m, str)])
                         micro = (cat.get('micro') if isinstance(cat, dict) else []) or []
                     except Exception:
                         pass
-                    if level == 'macro' and val and macro.lower() != val:
-                        continue
-                    if level == 'meso' and val and meso.lower() != val:
-                        continue
+                    if level == 'macro' and val:
+                        if not any((m or '').lower() == val for m in macro_list if isinstance(m, str)):
+                            continue
+                    if level == 'meso' and val:
+                        if not any((m or '').lower() == val for m in meso_list if isinstance(m, str)):
+                            continue
                     _notify(self.log, f"  {pid} | score={sc:.3f} | {macro} | {meso} | {micro}")
             except Exception as e:
                 _notify(self.log, f"Search failed: {e}")
