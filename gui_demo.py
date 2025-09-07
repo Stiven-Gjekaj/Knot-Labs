@@ -93,35 +93,23 @@ class App:
         self.analyze_prog = ttk.Progressbar(f_post, mode="indeterminate", length=200)
         self.analyze_prog.grid(row=3, column=1, padx=5, pady=5, sticky="w")
 
-        # Generators
+        # Generators (randomized; only count inputs)
         f_gen = ttk.LabelFrame(main, text="Generators")
         f_gen.grid(row=3, column=0, sticky="ew", pady=4)
-        for c in range(8):
+        for c in range(4):
             f_gen.columnconfigure(c, weight=0)
-        # Users generator
+        # Users generator (random gender)
         ttk.Label(f_gen, text="Users N").grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self.gen_users_n = ttk.Entry(f_gen, width=6)
         self.gen_users_n.insert(0, "1")
         self.gen_users_n.grid(row=0, column=1, padx=5, pady=5, sticky="w")
-        ttk.Label(f_gen, text="Gender").grid(row=0, column=2, padx=5, pady=5, sticky="e")
-        self.gen_users_gender = ttk.Combobox(f_gen, values=USER_GENDERS, state="readonly", width=10)
-        self.gen_users_gender.grid(row=0, column=3, padx=5, pady=5, sticky="w")
-        self.gen_users_gender.set( USER_GENDERS[0] )
-        ttk.Button(f_gen, text="Generate Users", command=self.on_gen_users).grid(row=0, column=4, padx=5, pady=5)
-        # Posts generator
+        ttk.Button(f_gen, text="Generate Users", command=self.on_gen_users).grid(row=0, column=2, padx=5, pady=5)
+        # Posts generator (random creator + country)
         ttk.Label(f_gen, text="Posts N").grid(row=1, column=0, padx=5, pady=5, sticky="e")
         self.gen_posts_n = ttk.Entry(f_gen, width=6)
         self.gen_posts_n.insert(0, "1")
         self.gen_posts_n.grid(row=1, column=1, padx=5, pady=5, sticky="w")
-        ttk.Label(f_gen, text="Creator").grid(row=1, column=2, padx=5, pady=5, sticky="e")
-        self.gen_posts_creator = ttk.Entry(f_gen, width=20)
-        self.gen_posts_creator.grid(row=1, column=3, padx=5, pady=5, sticky="w")
-        ttk.Label(f_gen, text="Country").grid(row=1, column=4, padx=5, pady=5, sticky="e")
-        self.gen_posts_country = ttk.Combobox(f_gen, values=POST_COUNTRIES, state="readonly", width=10)
-        self.gen_posts_country.grid(row=1, column=5, padx=5, pady=5, sticky="w")
-        if POST_COUNTRIES:
-            self.gen_posts_country.set(POST_COUNTRIES[0])
-        ttk.Button(f_gen, text="Generate Posts", command=self.on_gen_posts).grid(row=1, column=6, padx=5, pady=5)
+        ttk.Button(f_gen, text="Generate Posts", command=self.on_gen_posts).grid(row=1, column=2, padx=5, pady=5)
 
         # Interact
         f_inter = ttk.LabelFrame(main, text="Interact")
@@ -249,10 +237,9 @@ class App:
         try:
             from Mesh.tools.gen_user import make_user, save_user  # type: ignore
             n = int(self.gen_users_n.get().strip() or "1")
-            gender = self.gen_users_gender.get().strip() or None
             created = []
             for _ in range(max(1, n)):
-                u = make_user(gender=gender)
+                u = make_user(gender=None)
                 p = save_user(u, os.path.join("Mesh", "Users"))
                 created.append(u.get("userID"))
             _notify(self.log, f"Generated users: {', '.join(created)}")
@@ -263,10 +250,8 @@ class App:
         try:
             from Mesh.tools.gen_videos import make_post, save_post, load_master_categories, load_users  # type: ignore
             n = int(self.gen_posts_n.get().strip() or "1")
-            creator = self.gen_posts_creator.get().strip() or None
-            country = self.gen_posts_country.get().strip() or None
             users = load_users(os.path.join("Mesh", "Users"))
-            if not users and not creator:
+            if not users:
                 _notify(self.log, "No users found and no creator specified")
                 return
             cats = load_master_categories(os.path.join("Mesh", "mastercategories.txt"))
@@ -274,8 +259,8 @@ class App:
             created = []
             import random
             for _ in range(max(1, n)):
-                cid = creator or random.choice(users)["userID"]
-                post = make_post(cid, categories=cats, country=country)
+                cid = random.choice(users)["userID"]
+                post = make_post(cid, categories=cats, country=None)
                 save_post(post, posts_dir)
                 created.append(post.get("postID"))
             _notify(self.log, f"Generated posts: {', '.join(created)}")
