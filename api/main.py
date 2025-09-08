@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Request, Response, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 import time as _time
 try:
@@ -56,6 +57,19 @@ try:
         app.mount('/ui', StaticFiles(directory=static_dir, html=True), name='ui')
 except Exception:
     pass
+
+# Optional CORS (for GitHub Pages or other hosts)
+_cors = os.environ.get('KNOT_CORS_ORIGINS', '').strip()
+if _cors:
+    origins = [o.strip() for o in _cors.split(',') if o.strip()]
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=['*'],
+            allow_headers=['*'],
+        )
 
 @app.get('/metrics')
 def _metrics():  # type: ignore

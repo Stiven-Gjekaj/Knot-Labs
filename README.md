@@ -151,6 +151,7 @@ Setup
 - `KNOT_CACHE_TTL`: TTL seconds for cached entries (default `60`).
 - `KNOT_CACHE_PREFIX`: Redis/memory cache key prefix (default `knot:cache`).
 - `KNOT_SERVE_UPLOADS`: `1` to enable `GET /uploads/{filename}`; disabled by default.
+- `KNOT_CORS_ORIGINS`: comma-separated list of allowed origins for CORS (e.g., `https://<user>.github.io, http://localhost:5173`). If set, enables CORS for cross-origin requests (required when using the UI from GitHub Pages to call your API).
 
 ## Notes
 

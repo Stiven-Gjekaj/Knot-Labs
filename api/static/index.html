@@ -37,6 +37,15 @@
       if (apiBase.endsWith('/')) apiBase = apiBase.slice(0,-1);
       log('info', apiBase ? ('API base set to ' + apiBase) : 'API base cleared (using same origin)');
     }
+    async function testApi() {
+      try {
+        const r = await api('/health/redis', { headers: headers(false) });
+        const body = (typeof r.data === 'string') ? r.data : JSON.stringify(r.data);
+        log(r.status === 200 ? 'ok' : 'error', 'API test (' + r.status + '): ' + body);
+      } catch (e) {
+        log('error', 'API test error: ' + e);
+      }
+    }
     function log(level, msg) {
       const out = document.getElementById('log');
       const t = new Date().toISOString().replace('T',' ').replace('Z','');
@@ -110,7 +119,8 @@
       const fd = new FormData();
       fd.append('file', inp.files[0]);
       try {
-        const resp = await fetch('/upload', { method: 'POST', headers: headers(false), body: fd });
+        const base = apiBase || '';
+        const resp = await fetch(base + '/upload', { method: 'POST', headers: headers(false), body: fd });
         const txt = await resp.text();
         let data = null;
         try { data = JSON.parse(txt); } catch (e) { data = { raw: txt }; }
@@ -118,7 +128,8 @@
           document.getElementById('mediaPath').value = data.path;
           log('ok', 'Uploaded ' + (data.filename || '') + ' -> ' + data.path + ' (' + (data.size || 0) + ' bytes)');
           if (data.filename) {
-            const url = '/uploads/' + encodeURIComponent(data.filename);
+            const base = apiBase || '';
+            const url = base + '/uploads/' + encodeURIComponent(data.filename);
             logLink('ok', 'Preview:', url, 'Open');
             setPreview(data.filename, data.mime || '');
           }
@@ -135,7 +146,8 @@
       return i >= 0 ? name.substring(i+1).toLowerCase() : '';
     }
     function setPreview(filename, mime) {
-      const url = '/uploads/' + encodeURIComponent(filename);
+      const base = apiBase || '';
+      const url = base + '/uploads/' + encodeURIComponent(filename);
       const ext = fileExt(filename);
       const v = document.getElementById('previewVideo');
       const a = document.getElementById('previewAudio');
@@ -216,6 +228,7 @@
         <input type="text" id="apiBase" placeholder="e.g., http://localhost:8000" />
         <button onclick="setApiBase()">Set</button>
       </div>
+      <div class="row"><button onclick="testApi()">Test API</button></div>
     </fieldset>
 
     <fieldset>
