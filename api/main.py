@@ -122,14 +122,24 @@ def _init_redis() -> Optional["redis.Redis"]:  # type: ignore[name-defined]
     if not REDIS_URL or not redis:
         return None
     try:
-        r = redis.from_url(  # type: ignore[attr-defined]
-            REDIS_URL,
-            decode_responses=True,
-            socket_connect_timeout=3,
-            socket_timeout=3,
-            retry_on_timeout=True,
-            health_check_interval=30,
-        )
+        import ssl as _ssl  # type: ignore
+        _cert_map = {
+            'none': getattr(_ssl, 'CERT_NONE', 0),
+            'optional': getattr(_ssl, 'CERT_OPTIONAL', 1),
+            'required': getattr(_ssl, 'CERT_REQUIRED', 2),
+        }
+        _ssl_cert_reqs_env = os.environ.get('REDIS_SSL_CERT_REQS', '').strip().lower()
+        _ssl_cert_reqs = _cert_map.get(_ssl_cert_reqs_env) if _ssl_cert_reqs_env else None
+        kwargs: Dict[str, Any] = {
+            'decode_responses': True,
+            'socket_connect_timeout': 3,
+            'socket_timeout': 3,
+            'retry_on_timeout': True,
+            'health_check_interval': 30,
+        }
+        if _ssl_cert_reqs is not None:
+            kwargs['ssl_cert_reqs'] = _ssl_cert_reqs
+        r = redis.from_url(REDIS_URL, **kwargs)  # type: ignore[attr-defined]
         return r
     except Exception as e:  # pragma: no cover
         logging.warning({'event': 'redis_init_failed', 'error': str(e)})
