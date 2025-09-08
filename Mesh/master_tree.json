@@ -1,0 +1,47 @@
+{
+  "Gaming": {
+    "pc gaming": [],
+    "console gaming": [],
+    "mobile gaming": []
+  },
+  "Music": {
+    "pop music": [],
+    "hip hop": [],
+    "classical music": []
+  },
+  "Sports": {
+    "ball sports": [],
+    "combat sports": []
+  },
+  "Movies & TV": {
+    "movie reviews": [],
+    "tv series": []
+  },
+  "Anime & Comics": {
+    "shonen": [],
+    "seinen": []
+  },
+  "Technology & Gadgets": {
+    "smartphones": [],
+    "pc hardware": []
+  },
+  "Science & Education": {},
+  "Art & Design": {},
+  "Fashion & Beauty": {},
+  "Food & Cooking": {},
+  "Travel & Places": {},
+  "Cars & Vehicles": {},
+  "Health & Fitness": {},
+  "Lifestyle & Routines": {},
+  "History & Culture": {},
+  "Politics & News": {},
+  "Finance & Business": {},
+  "Nature & Animals": {},
+  "DIY & How-To": {},
+  "Comedy & Memes": {},
+  "Motivation & Self-Help": {},
+  "Mystery & Horror": {},
+  "Podcasts & Talk": {},
+  "Relationships & Community": {},
+  "Spirituality & Philosophy": {}
+}

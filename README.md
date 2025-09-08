@@ -17,6 +17,7 @@ Everything is Python. One requirements file: `requirements.txt`.
 - Build labels (writes `Mesh/mastercategories.txt`)
   - Flat builder: `python Mesh/tools/build_mastercategories.py --count 1000`
   - Tree builder (macros -> mesos -> micros): `python Mesh/tools/build_mastercategories_tree.py --mesos 3 --micros 3`
+    - Integrated alternative: `python Mesh/tools/build_mastercategories.py --use-tree --mesos 3 --micros 3`
     - Uses a fixed macro list (Gaming, Music, Sports, ... 25 total)
     - Pulls mesos/micros from the web when online (Wikipedia); falls back to offline seeds
     - Also writes `Mesh/master_tree.json` with the full hierarchy
@@ -182,6 +183,7 @@ The feed is scored and ordered by `Drift/drift_ranker.py`.
 - Reset UI: quick button to clear UI preferences (compact, API base/key inputs).
 - Classify (ANN) panel: includes aggregation, audio fusion toggle, and weights.
 - Category Browser: loads `Mesh/master_tree.json` via `/categories/tree` and displays macros → mesos → micros.
+  - Web UI includes a "Load Categories" button to fetch/render the tree. If the tree file is missing, the API builds it on-demand.
 - The UI is static and expects an API base URL:
   - Use the “API Base URL” field at the top of the page, e.g. `http://localhost:8000` or your deployed API host.
   - If left blank, it calls the same origin (works when served by the API at `/ui`).

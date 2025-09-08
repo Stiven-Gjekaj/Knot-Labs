@@ -5,6 +5,11 @@ Backlog (next)
 - Macro/meso browser polish: search/filter; expand/collapse all.
 - CLAP bootstrap enhancements: optionally provide a default checkpoint URL for quick start and more explicit errors.
 
+Recently Completed
+
+- Integrated hierarchical category builder into `Mesh/tools/build_mastercategories.py` (tree mode available via `--use-tree`).
+- Added Categories Tree browser to the Web UI (loads `/categories/tree` and renders macros → mesos → micros).
+
 Next Updates:
 
 1. CI wiring for lint/type

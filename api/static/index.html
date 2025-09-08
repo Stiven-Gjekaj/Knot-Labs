@@ -111,6 +111,61 @@ function applyTheme(t) {
 }
 function onThemeToggle(el) { applyTheme((el && el.checked) ? 'dark' : 'light'); }
 function onAutoTreeToggle(el){ try { localStorage.setItem('knot_auto_tree', (el && el.checked) ? '1' : '0'); } catch {} }
+    function onAccordionToggle(el){ try { localStorage.setItem('knot_accordion', (el && el.checked) ? '1' : '0'); } catch {} }
+
+    // Categories Tree: fetch and render macros -> mesos -> micros
+    async function loadCategoriesTree() {
+      try {
+        const r = await api('/categories/tree');
+        if (!r.ok) {
+          log('error', 'Failed to load categories tree: ' + (r.error || r.status));
+          return;
+        }
+        const data = r.data || {};
+        const cont = document.getElementById('catTree');
+        cont.innerHTML = '';
+        // Build as nested lists for readability
+        const ul = document.createElement('ul');
+        ul.style.listStyle = 'none';
+        ul.style.paddingLeft = '0';
+        function addItem(parent, text) {
+          const li = document.createElement('li');
+          li.textContent = text;
+          parent.appendChild(li);
+          return li;
+        }
+        Object.keys(data).forEach((macro) => {
+          const macroLi = addItem(ul, macro);
+          const mesos = data[macro] || {};
+          const mesoUl = document.createElement('ul');
+          mesoUl.style.listStyle = 'disc';
+          mesoUl.style.paddingLeft = '18px';
+          macroLi.appendChild(mesoUl);
+          Object.keys(mesos).forEach((meso) => {
+            const mesoLi = addItem(mesoUl, meso);
+            const micros = Array.isArray(mesos[meso]) ? mesos[meso] : [];
+            const microUl = document.createElement('ul');
+            microUl.style.listStyle = 'circle';
+            microUl.style.paddingLeft = '18px';
+            mesoLi.appendChild(microUl);
+            micros.forEach((mi) => addItem(microUl, mi));
+          });
+        });
+        cont.appendChild(ul);
+        log('ok', 'Loaded categories tree');
+      } catch (e) {
+        log('error', 'Load categories error: ' + e);
+      }
+    }
+
+function slugifyTitle(s){ try { return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); } catch { return ''; } }
+function allFieldsets(){ return Array.from(document.querySelectorAll('fieldset')); }
+function ensurePanelIds(){ allFieldsets().forEach((fs,idx)=>{ if(!fs.id){ const lg=fs.querySelector('legend'); const t = lg?lg.textContent:('panel-'+(idx+1)); fs.id = 'panel-'+slugifyTitle(t)+'-'+idx; } }); }
+function savePanelState(){ try { const collapsed = allFieldsets().filter(fs=>fs.classList.contains('collapsed')).map(fs=>fs.id); localStorage.setItem('knot_panels', JSON.stringify(collapsed)); } catch{} }
+function loadPanelState(){ try { const raw = localStorage.getItem('knot_panels'); if(!raw) return; const arr = JSON.parse(raw)||[]; allFieldsets().forEach(fs=>{ if(arr.includes(fs.id)){ fs.classList.add('collapsed'); } else { fs.classList.remove('collapsed'); } }); } catch{} }
+function attachCollapsers(){ allFieldsets().forEach(fs=>{ fs.classList.add('collapsible'); const lg = fs.querySelector('legend'); if(lg && !lg.dataset.bound){ lg.dataset.bound = '1'; lg.addEventListener('click',()=>{ fs.classList.toggle('collapsed'); const acc = (localStorage.getItem('knot_accordion')==='1'); if(acc && !fs.classList.contains('collapsed')){ allFieldsets().forEach(other=>{ if(other!==fs){ other.classList.add('collapsed'); } }); } savePanelState(); }); } }); }
+function collapseAll(){ allFieldsets().forEach(fs=>fs.classList.add('collapsed')); savePanelState(); }
+function expandAll(){ allFieldsets().forEach(fs=>fs.classList.remove('collapsed')); savePanelState(); }
 function resetUI() {
   try { localStorage.removeItem('knot_compact'); } catch {}
   const chk = document.getElementById('compactToggle');
@@ -431,6 +486,9 @@ function showToast(level, msg, timeoutMs = 3500) {
     // Initialize preferences
   window.addEventListener('load', () => {
     try {
+      ensurePanelIds();
+      attachCollapsers();
+      loadPanelState();
       const c = (localStorage.getItem('knot_compact') === '1');
       applyCompact(c);
       const chk = document.getElementById('compactToggle');
@@ -443,6 +501,9 @@ function showToast(level, msg, timeoutMs = 3500) {
       const atEl = document.getElementById('autoTree');
       if (atEl) atEl.checked = at;
       if (at) { try { loadTree(); } catch {} }
+      const acc = (localStorage.getItem('knot_accordion')==='1');
+      const accEl = document.getElementById('accordionToggle');
+      if(accEl) accEl.checked = acc;
     } catch {}
   });
   </script>
@@ -504,6 +565,15 @@ function showToast(level, msg, timeoutMs = 3500) {
         <button onclick="classifyAnn()">Classify</button><button onclick="copyCurlClassify()">Copy curl</button>
       </div>
       <div id="clsResults" class="row"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Categories Tree</legend>
+      <div class="row">
+        <button onclick="loadCategoriesTree()">Load Categories</button>
+      </div>
+      <div id="catTree" class="row" style="max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--surface);"></div>
+      <div class="muted">Fetches <code>/categories/tree</code> and renders macros → mesos → micros. If the tree is missing, the API builds it on-demand.</div>
     </fieldset>
     <fieldset>
       <legend>Redis KV (demo)</legend>
