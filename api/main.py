@@ -639,7 +639,12 @@ def api_categories_tree(request: Request):
     _check_rate(request)
     tree_path = os.path.join(MESH_DIR, 'master_tree.json')
     if not os.path.isfile(tree_path):
-        raise HTTPException(404, 'Category tree not found. Generate it with build_mastercategories_tree.py')
+        # Try to build on-demand using integrated builder
+        try:
+            from Mesh.tools.build_mastercategories import build_tree_and_write  # type: ignore
+            build_tree_and_write(out_path=MASTER_PATH, tree_out=tree_path, mesos=3, micros=3)
+        except Exception as e:
+            raise HTTPException(404, f'Category tree not found and build failed: {e}')
     try:
         import json
         data = json.load(open(tree_path, 'r', encoding='utf-8'))

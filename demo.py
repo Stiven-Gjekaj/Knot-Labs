@@ -127,14 +127,24 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 26) -> List[str]:
     except Exception:
         timeout_s = 180
     try:
-        res = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=True,
-            env=env,
-            timeout=timeout_s,
-        )
+        try:
+            res = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                env=env,
+                timeout=timeout_s,
+            )
+        except TypeError:
+            # Some test doubles may not accept 'timeout' kwarg; retry without it
+            res = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                env=env,
+            )
         out = (res.stdout or "") + "\n" + (res.stderr or "")
     except subprocess.TimeoutExpired:
         out = ""

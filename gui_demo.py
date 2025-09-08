@@ -394,8 +394,15 @@ class App:
         try:
             tree_path = os.path.join("Mesh", "master_tree.json")
             if not os.path.isfile(tree_path):
-                _notify(self.log, "Tree not found. Run build_mastercategories_tree.py first.")
-                return
+                # Attempt to build the tree via integrated builder
+                try:
+                    from Mesh.tools.build_mastercategories import build_tree_and_write  # type: ignore
+                    _notify(self.log, "Tree not found. Building categories tree...")
+                    build_tree_and_write(out_path=os.path.join("Mesh", "mastercategories.txt"), tree_out=tree_path, mesos=3, micros=3)
+                    _notify(self.log, "Built categories tree.")
+                except Exception as _e:
+                    _notify(self.log, f"Tree not found and build failed: {_e}")
+                    return
             import json
             with open(tree_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)

@@ -12,9 +12,9 @@ try:
 except Exception:
     ensure_index = embed_video = ann_search = rerank_with_frames = None  # type: ignore
 try:
-    from Mesh.tools import build_mastercategories_tree as tree
+    from Mesh.tools.build_mastercategories import build_tree_and_write  # type: ignore
 except Exception:
-    tree = None  # type: ignore
+    build_tree_and_write = None  # type: ignore
 
 
 def main() -> None:
@@ -118,14 +118,11 @@ def main() -> None:
             out = []
         print(json.dumps({"results": out}, indent=2))
     elif args.cmd == "build-tree":
-        if tree is None:
+        if build_tree_and_write is None:
             print("build-tree unavailable: import failed", file=sys.stderr)
             sys.exit(2)
-        t = tree.build_tree(per_macro_mesos=args.mesos, per_meso_micros=args.micros)
-        n = tree.write_master_from_tree(t, args.out)
-        with open(args.tree_out, 'w', encoding='utf-8') as f:
-            json.dump(t, f, indent=2, ensure_ascii=False)
-        print(json.dumps({"written": n, "out": args.out, "tree": args.tree_out}, indent=2))
+        stats = build_tree_and_write(out_path=args.out, tree_out=args.tree_out, mesos=args.mesos, micros=args.micros)
+        print(json.dumps({"written": stats.get("final"), "out": args.out, "tree": args.tree_out}, indent=2))
     else:
         p.error("Unknown command")
 

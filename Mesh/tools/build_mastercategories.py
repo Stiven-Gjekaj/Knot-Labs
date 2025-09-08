@@ -25,10 +25,12 @@ falls back to a simple token-set similarity that approximates token_set_ratio.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import random
-from typing import Dict, List, Tuple, Iterable, Set
+import time
+from typing import Dict, List, Tuple, Iterable, Set, Optional
 
 try:
     from rapidfuzz.fuzz import token_set_ratio  # type: ignore
@@ -78,6 +80,175 @@ def unique_dedup(cands: Iterable[Tuple[str, str]], threshold: float = 93.0) -> L
             keep.append((dom, cat))
             seen_norm.append(cat)
     return keep
+
+# ------------------------------
+# Hierarchical tree builder (infused)
+# ------------------------------
+
+# Fixed macro list for hierarchical builder
+MACROS: List[str] = [
+    "Gaming","Music","Sports","Movies & TV","Anime & Comics","Technology & Gadgets",
+    "Science & Education","Art & Design","Fashion & Beauty","Food & Cooking","Travel & Places",
+    "Cars & Vehicles","Health & Fitness","Lifestyle & Routines","History & Culture",
+    "Politics & News","Finance & Business","Nature & Animals","DIY & How-To","Comedy & Memes",
+    "Motivation & Self-Help","Mystery & Horror","Podcasts & Talk","Relationships & Community",
+    "Spirituality & Philosophy",
+]
+
+
+def _dedup_keep_order(items: Iterable[str]) -> List[str]:
+    out: List[str] = []
+    seen = set()
+    for it in items:
+        k = normalize(it)
+        if not k or k in seen:
+            continue
+        out.append(k)
+        seen.add(k)
+    return out
+
+
+def _fetch_wikipedia_subcats(topic: str, max_items: int = 10) -> List[str]:
+    # Best-effort extraction; ignores failures gracefully
+    try:
+        import urllib.parse as up
+        import urllib.request as ur
+        title = f"Category:{topic.replace(' ', '_')}"
+        url = (
+            "https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle="
+            + up.quote(title)
+            + "&cmtype=subcat&cmlimit=50&format=json"
+        )
+        with ur.urlopen(url, timeout=6) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        items = [m.get('title','') for m in (data.get('query',{}).get('categorymembers') or [])]
+        cleaned = []
+        for it in items:
+            it = re.sub(r"^Category:\s*", "", it)
+            cleaned.append(it)
+        return _dedup_keep_order(cleaned)[:max_items]
+    except Exception:
+        return []
+
+
+FALLBACK_MESO: Dict[str, List[str]] = {
+    "Gaming": ["PC gaming", "Console gaming", "Mobile gaming"],
+    "Music": ["Pop music", "Hip hop", "Classical music"],
+    "Sports": ["Ball sports", "Combat sports"],
+    "Movies & TV": ["Movie reviews", "TV series"],
+    "Anime & Comics": ["Shonen", "Seinen"],
+    "Technology & Gadgets": ["Smartphones", "PC hardware"],
+}
+
+FALLBACK_MICRO: Dict[str, List[str]] = {
+    "PC gaming": ["strategy games", "simulation games", "indie games"],
+    "Console gaming": ["action-adventure", "platformers"],
+    "Mobile gaming": ["casual games", "gacha games"],
+    "Pop music": ["dance pop", "synth pop"],
+    "Hip hop": ["trap", "boom bap"],
+    "Classical music": ["baroque", "romantic era"],
+    "Ball sports": ["football (soccer)", "basketball"],
+    "Combat sports": ["boxing", "mma"],
+    "Movie reviews": ["film analysis", "movie trailers"],
+    "TV series": ["sitcoms", "dramas"],
+    "Shonen": ["action shonen", "sports shonen"],
+    "Seinen": ["psychological seinen", "slice of life"],
+    "Smartphones": ["android phones", "iphone"],
+    "PC hardware": ["graphics cards", "cpus"],
+}
+
+# Build a normalized-key view for robust lookups
+_FALLBACK_MICRO_N: Dict[str, List[str]] = {normalize(k): v for k, v in FALLBACK_MICRO.items()}
+
+
+def build_tree(per_macro_mesos: int = 3, per_meso_micros: int = 3) -> Dict[str, Dict[str, List[str]]]:
+    """Build a hierarchical category tree using Wikipedia subcategories with offline fallbacks.
+
+    Returns a dict: {macro: {meso: [micro, ...], ...}, ...}
+    """
+    tree: Dict[str, Dict[str, List[str]]] = {}
+    taken: set[str] = set()
+    for macro in MACROS:
+        mesos = _fetch_wikipedia_subcats(macro, max_items=10)
+        if not mesos:
+            mesos = FALLBACK_MESO.get(macro, [])
+        mesos = [m for m in mesos if m]
+        mesos = _dedup_keep_order(mesos)[: max(1, per_macro_mesos)]
+        tree[macro] = {}
+        for meso in mesos:
+            micros = _fetch_wikipedia_subcats(meso, max_items=12)
+            if not micros:
+                # robust fallback lookup using normalized keys
+                micros = _FALLBACK_MICRO_N.get(normalize(meso), [])
+            micros = [mi for mi in micros if mi]
+            micros = [
+                mi for mi in micros
+                if normalize(mi) not in taken and normalize(mi) != normalize(meso) and normalize(mi) != normalize(macro)
+            ]
+            micros = _dedup_keep_order(micros)[: max(1, per_meso_micros)]
+            for mi in micros:
+                taken.add(normalize(mi))
+            tree[macro][meso] = micros
+        # Avoid empty macros by seeding from fallbacks
+        if not tree[macro]:
+            fm = FALLBACK_MESO.get(macro, [])[: max(1, per_macro_mesos)]
+            for meso in fm:
+                mi = FALLBACK_MICRO.get(meso, [])[: max(1, per_meso_micros)]
+                tree[macro][meso] = mi
+    return tree
+
+
+def write_master_from_tree(tree: Dict[str, Dict[str, List[str]]], out_path: str) -> int:
+    """Write mastercategories.txt lines from a tree. Returns number of lines written."""
+    lines: List[str] = []
+    for macro, mesos in tree.items():
+        for meso, micros in mesos.items():
+            for mi in micros:
+                lab = normalize(mi)
+                if not lab:
+                    continue
+                lines.append(f"a video about {lab} | a photo of {lab}")
+    # de-duplicate across full list, preserving order
+    final: List[str] = []
+    seen = set()
+    for ln in lines:
+        base = normalize(ln)
+        if base in seen:
+            continue
+        final.append(ln)
+        seen.add(base)
+    with open(out_path, 'w', encoding='utf-8') as f:
+        f.write("\n".join(final) + "\n")
+    return len(final)
+
+
+def build_tree_and_write(
+    out_path: Optional[str] = None,
+    tree_out: Optional[str] = None,
+    mesos: int = 3,
+    micros: int = 3,
+) -> Dict[str, int]:
+    """Programmatic entry to build the hierarchical tree and write outputs.
+
+    - Writes mastercategories.txt (micro prompts) and master_tree.json (hierarchy)
+    - Returns stats dict
+    """
+    # Default resolve under Mesh/ if not provided
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    if not out_path:
+        os.makedirs(root_dir, exist_ok=True)
+        out_path = os.path.join(root_dir, "mastercategories.txt")
+    if not tree_out:
+        os.makedirs(root_dir, exist_ok=True)
+        tree_out = os.path.join(root_dir, "master_tree.json")
+
+    t0 = time.time()
+    tree = build_tree(per_macro_mesos=int(mesos), per_meso_micros=int(micros))
+    n = write_master_from_tree(tree, out_path)
+    with open(tree_out, 'w', encoding='utf-8') as f:
+        json.dump(tree, f, indent=2, ensure_ascii=False)
+    dt = time.time() - t0
+    return {"final": int(n), "macros": len(tree), "elapsed_s": int(dt)}
 
 
 def build_candidates() -> Dict[str, List[str]]:
@@ -515,18 +686,31 @@ def build_and_write(out_path: str | None = None, target_count: int = TARGET_COUN
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Build Mesh/mastercategories.txt (1000 micro labels)")
-    p.add_argument("--output", default=None, help="Output path (default Mesh/mastercategories.txt)")
-    p.add_argument("--count", type=int, default=TARGET_COUNT, help="Target count (default 1000)")
+    p = argparse.ArgumentParser(description="Build Mesh/mastercategories.txt (1000 micro labels) or hierarchical tree")
+    p.add_argument("--output", default=None, help="Output path for mastercategories.txt (default Mesh/mastercategories.txt)")
+    p.add_argument("--count", type=int, default=TARGET_COUNT, help="Target count (flat mode; default 1000)")
+    # Hierarchical options
+    p.add_argument("--use-tree", action="store_true", help="Build using hierarchical macro/meso/micro tree and also write master_tree.json")
+    p.add_argument("--tree-out", default=None, help="Path for master_tree.json (default Mesh/master_tree.json)")
+    p.add_argument("--mesos", type=int, default=3, help="meso per macro (tree mode)")
+    p.add_argument("--micros", type=int, default=3, help="micro per meso (tree mode)")
     args = p.parse_args()
 
-    stats = build_and_write(out_path=args.output, target_count=args.count)
-    # Resolve path for print
-    out_path = args.output or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "mastercategories.txt")
-    print(f"Candidates: {stats['candidates']}")
-    print(f"Unique (post-normalize+dedup): {stats['unique']}")
-    print(f"Final: {stats['final']} (expected {args.count})")
-    print(f"Wrote: {os.path.abspath(out_path)}")
+    if args.use_tree:
+        stats = build_tree_and_write(out_path=args.output, tree_out=args.tree_out, mesos=args.mesos, micros=args.micros)
+        out_path = args.output or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "mastercategories.txt")
+        tree_out = args.tree_out or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "master_tree.json")
+        print(f"Final (tree micros): {stats['final']}")
+        print(f"Wrote: {os.path.abspath(out_path)}")
+        print(f"Tree: {os.path.abspath(tree_out)}")
+    else:
+        stats = build_and_write(out_path=args.output, target_count=args.count)
+        # Resolve path for print
+        out_path = args.output or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "mastercategories.txt")
+        print(f"Candidates: {stats['candidates']}")
+        print(f"Unique (post-normalize+dedup): {stats['unique']}")
+        print(f"Final: {stats['final']} (expected {args.count})")
+        print(f"Wrote: {os.path.abspath(out_path)}")
 
 
 if __name__ == "__main__":
