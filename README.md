@@ -1,27 +1,125 @@
 # Knot-Labs
 
-Knot-Labs brings together four experimental programs designed to regulate key parts of a social media platform: posting, engagement, feed, and search.
+Knot-Labs is a compact, multi-component sandbox for prototyping a social media stack. It includes:
 
-## Projects
+- Veil: zero-shot media classifier (video + audio) using prompt-style labels.
+- Mesh: local JSON store for users and posts (+simple analytics).
+- Drift: transparent, explainable feed ranking over candidate posts.
+- Scribe: lightweight full-text search over posts.
 
-| Directory | Purpose |
-|-----------|---------|
-| [Knot-Veil](Knot-Veil) | Zero-shot audio+video classifier that analyzes uploads to categorize content without task-specific training, helping moderate what gets posted. |
-| [Knot-Mesh](Knot-Mesh) | Lightweight local database that stores users and posts as JSON and updates engagement scores based on platform activity. |
-| [Knot-Drift](Knot-Drift) | Ranks candidate videos for a user using simple scores to assemble a personalized feed. |
-| [Knot-Scribe](Knot-Scribe) | Environment for category experimentation with an interactive demo that generates categories, creates random videos, and searches them semantically. |
+Everything is Python. One requirements file: `requirements.txt`.
 
-Each project includes its own README with setup instructions and demos.
+## Quick Start
 
-## Getting started
+- Install (Python 3.10+)
+  - `pip install -r requirements.txt`
 
-Clone the repository and explore each module individually. Example:
+- Build labels (writes `Mesh/mastercategories.txt`)
+  - CLI: `python Mesh/tools/build_mastercategories.py --count 1000`
+  - GUI: `python gui_demo.py` → Generators → set “Labels N” → “Rebuild Categories”
 
-```bash
-cd Knot-Mesh
-python demo.py  # run the engagement database demo
+- Generate data
+  - Users: `python Mesh/tools/gen_user.py 3 --users-dir Mesh/Users`
+  - Posts: `python Mesh/tools/gen_videos.py 10 --posts-dir Mesh/Posts`
+    - GUI has “Generate Users/Posts” buttons. If no users exist, Generate Posts will auto-create one.
+
+- Run demo (CLI)
+  - `python demo.py`
+
+- Run GUI (Tkinter)
+  - `python gui_demo.py`
+  - Ships with Python on most platforms. If missing: install your OS tk package (e.g., `sudo apt-get install python3-tk`).
+
+- Start API (FastAPI)
+  - `uvicorn api.main:app --reload`
+  - Endpoints:
+    - `POST /users`
+    - `POST /posts` (optionally classifies with Veil when `media_path` provided)
+    - `POST /interactions/{like|comment|share|gift}`
+    - `GET /rank?user=<id-or-username>&k=20`
+    - `GET /search?q=...&k=10&backend=bow|st`
+    - `GET /analytics/categories`
+    - `GET /metrics` (Prometheus)
+    - `GET /health/redis` (Redis ping)
+    - `POST /cache/flush` (admin; clears memory cache and Redis by prefix)
+    - `POST /upload` (save media under `Mesh/Uploads`)
+    - `GET /uploads/{filename}` (optional; serve uploaded file when enabled)
+    - `GET /ui` (simple web UI)
+  - Optional auth: set `KNOT_API_KEY` to require `X-API-Key` on write endpoints. All endpoints have basic in-memory rate limiting.
+
+  - Optional Redis + cache:
+    - Set `REDIS_URL` (e.g. `redis://localhost:6379/0`) to enable Redis client.
+    - Rate limiting backend: `KNOT_RATE_BACKEND=redis` (defaults to in-memory).
+    - Caching: `KNOT_CACHE_ENABLED=1` (default), `KNOT_CACHE_TTL=60`, `KNOT_CACHE_PREFIX=knot:cache`.
+    - Admin cache flush: `POST /cache/flush` (requires `X-API-Key` when `KNOT_API_KEY` is set). Query/body `prefix` is supported.
+  - Uploads + preview:
+    - Upload media via `POST /upload` (multipart field `file`). Response includes `filename`, server `path`, size, and `mime`.
+    - Optional serving: set `KNOT_SERVE_UPLOADS=1` to enable `GET /uploads/{filename}` for browser preview.
+    - The web UI at `/ui` supports uploads and shows inline preview (video/audio/image) and a link fallback.
+
+- Tests
+  - `pytest -q`
+
+## Category System
+
+Posts carry a structured Category object (multi-level, multi-valued):
+
+- macro: top-level labels (list[str], up to 3)
+- meso: mid-level labels (list[str], up to 8)
+- micro: fine-grained labels (list[str], up to 15)
+
+Example:
+
 ```
+{
+  "postID": "p1",
+  "Category": {"macro": ["animals","wildlife","nature"], "meso": ["pets","mammals"], "micro": ["cats","kittens", "tabby"]}
+}
+```
+
+- Backward compatible: legacy `Categories: ["cats", ...]` auto-converts (first→macro, second→meso).
+- Search indexes description plus category tokens (macro, meso, micro). Analytics aggregate on macro.
+
+## Labels: mastercategories.txt
+
+- Canonical file: `Mesh/mastercategories.txt`.
+- Format per line (Veil-compatible prompts):
+  - `a video about <category> | a photo of <category>`
+- Builder: `Mesh/tools/build_mastercategories.py`
+  - Deterministic (seed=42) curate/dedup from multiple domains.
+  - `--count N` builds up to N unique categories (≤ available unique after dedup).
+  - Programmatic API for GUI: `build_and_write(out_path=None, target_count=N)`.
+
+## Components
+
+- Veil: loads labels from the master file; classifies media and returns label scores. See `Veil/src/veil`.
+- Mesh: JSON-backed Users/Posts (see `Mesh/tools/*`, `Mesh/category.py`, `Mesh/analytics.py`).
+- Drift: ranks candidates; mapping via `Mesh/drift_adapter.py`.
+- Scribe: builds an index from post descriptions + category tokens; backends: BoW TF-IDF (default) or Sentence-Transformers.
+
+## Quality-of-Life
+
+- GUI adds a “Rebuild Categories” action and a Labels count input.
+- Posts generator auto-creates one user if none exist.
+- Make/PS shortcuts:
+  - `make install|test|demo|gui|labels|cli`
+  - `scripts/tasks.ps1 -Task Install|Test|Demo|GUI|Labels|CLI`
+
+## Environment Variables
+
+- `KNOT_API_KEY`: if set, API requires `X-API-Key` on protected routes (e.g., `POST /users`, `POST /posts`, `POST /upload`, `POST /cache/flush`).
+- `REDIS_URL`: enable Redis client; example `redis://localhost:6379/0` or `redis://:password@host:6379/0`.
+- `KNOT_RATE_BACKEND`: `memory` (default) or `redis` to use Redis-backed fixed-window rate limiting.
+- `KNOT_CACHE_ENABLED`: `1` (default) to enable cache helper (search results); `0` to disable.
+- `KNOT_CACHE_TTL`: TTL seconds for cached entries (default `60`).
+- `KNOT_CACHE_PREFIX`: Redis/memory cache key prefix (default `knot:cache`).
+- `KNOT_SERVE_UPLOADS`: `1` to enable `GET /uploads/{filename}`; disabled by default.
+
+## Notes
+
+- No special “t1” user is required. Create users via GUI, demo, or API as needed.
+- Old “video” naming is preserved as aliases (e.g., `make_video` → `make_post`).
 
 ## License
 
-This repository is released under the [MIT License](LICENSE).
+MIT — see `LICENSE`.

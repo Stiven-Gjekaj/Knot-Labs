@@ -1,8 +1,0 @@
-__pycache__/
-.venv/
-dist/
-build/
-*.egg-info/
-.DS_Store
-*.log
-/.env
