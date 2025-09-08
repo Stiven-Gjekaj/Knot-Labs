@@ -4,7 +4,7 @@ import os
 import uuid
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Request, Response, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -57,6 +57,12 @@ try:
         app.mount('/ui', StaticFiles(directory=static_dir, html=True), name='ui')
 except Exception:
     pass
+
+
+@app.get('/')
+def _root_redirect():
+    # Convenience: redirect root to UI if available
+    return RedirectResponse(url='/ui')
 
 # Optional CORS (for GitHub Pages or other hosts)
 _cors = os.environ.get('KNOT_CORS_ORIGINS', '').strip()
@@ -358,6 +364,11 @@ def health_redis():
         return {"ok": True, "configured": True}
     except Exception as e:
         raise HTTPException(503, f"Redis unhealthy: {e}")
+
+
+@app.get('/ping')
+def ping():
+    return {"ok": True, "time": int(_time.time())}
 
 
 @app.post('/upload')

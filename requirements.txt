@@ -26,3 +26,4 @@ tensorflow_hub>=0.16.1
 rapidfuzz>=3.0.0
 keras>=3.11.0
 tf-keras>=2.20.0
+python-multipart

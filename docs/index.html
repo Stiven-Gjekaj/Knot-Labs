@@ -39,7 +39,7 @@
     }
     async function testApi() {
       try {
-        const r = await api('/health/redis', { headers: headers(false) });
+        const r = await api('/ping', { headers: headers(false) });
         const body = (typeof r.data === 'string') ? r.data : JSON.stringify(r.data);
         log(r.status === 200 ? 'ok' : 'error', 'API test (' + r.status + '): ' + body);
       } catch (e) {
