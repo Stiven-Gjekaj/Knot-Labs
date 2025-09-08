@@ -130,13 +130,6 @@ The feed is scored and ordered by `Drift/drift_ranker.py`.
 
 - This repo includes a simple static UI that can be hosted via GitHub Pages.
 - We publish `docs/index.html` for Pages; the same UI is also served by the API at `/ui`.
-
-Setup
-
-- In GitHub → Settings → Pages:
-  - Set Source: Deploy from a branch
-  - Branch: `main` (or your default), Folder: `/docs`
-  - Save; it will serve `https://<user>.github.io/<repo>/` → loads `docs/index.html`.
 - The UI is static and expects an API base URL:
   - Use the “API Base URL” field at the top of the page, e.g. `http://localhost:8000` or your deployed API host.
   - If left blank, it calls the same origin (works when served by the API at `/ui`).
