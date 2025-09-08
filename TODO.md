@@ -2,9 +2,8 @@
 
 Backlog (next)
 
-- Add audio fusion controls to the UI (use_audio, w_video/w_audio sliders) and persist choices.
 - Macro/meso browser polish: search/filter; expand/collapse all.
-- Optional CLAP checkpoint bootstrap script and env docs.
+- CLAP bootstrap enhancements: optionally provide a default checkpoint URL for quick start and more explicit errors.
 
 Next Updates:
 
@@ -26,7 +25,7 @@ Next Updates:
 
 5. Category browser/admin
 
-- GUI panel to browse categories, rebuild labels to N, and validate/resolve duplicates.
+- Admin tools: validate/resolve duplicates; rebuild labels target N; moderation panel.
 
 Newly Added Next Updates:
 
@@ -52,11 +51,8 @@ Newly Added Next Updates:
 
 11. Expand Web UI
 
-- Add file upload flow for media (server-side storage) and admin actions (rebuild categories, simulators). Add nicer styling.
+- Admin actions (rebuild categories, simulators); continue visual polish.
 
 12. UI polish passes
 
-- Added responsive two-column layout for main panels on wide screens.
-- Added a Compact Mode toggle (saved in localStorage) to tighten spacing.
-- Added lightweight toast notifications for success/error actions and a Reset UI button to clear preferences.
-- Added Dark Mode toggle (with light theme option) and one-click "Copy curl" buttons for major actions.
+- Completed: responsive two-column layout; Compact Mode; toast notifications + Reset UI; Dark/Light theme toggle; Copy curl buttons.

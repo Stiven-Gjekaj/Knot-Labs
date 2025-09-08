@@ -14,14 +14,14 @@ Everything is Python. One requirements file: `requirements.txt`.
 - Install (Python 3.10+)
   - `pip install -r requirements.txt`
 
-- Build labels (writes  `Mesh/mastercategories.txt`) 
-  - Flat builder:  `python Mesh/tools/build_mastercategories.py --count 1000` 
-  - Tree builder (macros → mesos → micros):  `python Mesh/tools/build_mastercategories_tree.py --mesos 3 --micros 3` 
-    - Uses a fixed macro list (Gaming, Music, Sports, … 25 total)
+- Build labels (writes `Mesh/mastercategories.txt`)
+  - Flat builder: `python Mesh/tools/build_mastercategories.py --count 1000`
+  - Tree builder (macros -> mesos -> micros): `python Mesh/tools/build_mastercategories_tree.py --mesos 3 --micros 3`
+    - Uses a fixed macro list (Gaming, Music, Sports, ... 25 total)
     - Pulls mesos/micros from the web when online (Wikipedia); falls back to offline seeds
-    - Also writes  `Mesh/master_tree.json` with the full hierarchy 
-  - GUI:  `python gui_demo.py` 
-    - GUI has “Generate Users/Posts” buttons. If no users exist, Generate Posts will auto-create one.
+    - Also writes `Mesh/master_tree.json` with the full hierarchy
+  - GUI: `python gui_demo.py`
+    - GUI has Generate Users/Posts buttons. If no users exist, Generate Posts will auto-create one.
 
 - Run demo (CLI)
   - `python demo.py`
@@ -187,6 +187,14 @@ The feed is scored and ordered by `Drift/drift_ranker.py`.
   - If left blank, it calls the same origin (works when served by the API at `/ui`).
 - Optional: set `KNOT_SERVE_UPLOADS=1` on your API to preview uploaded files within the UI.
 
+## GUI (Tkinter)
+
+- Appearance: Dark/Light palettes with light red accents; applies across frames, buttons, inputs.
+- Create User / Create Post + Analyze: same core actions as the web UI.
+- Classify (ANN): K, Frames, Model dropdown, Aggregation (mean/max/softmax), optional audio fusion with video/audio weights; results logged.
+- Category Browser: loads `Mesh/master_tree.json` and displays macros -> mesos -> micros in a tree view.
+- Generators: Users/Posts helpers; auto-creates one user if none exist for post generation.
+
 ## Environment Variables
 
 - `KNOT_API_KEY`: if set, API requires `X-API-Key` on protected routes (e.g., `POST /users`, `POST /posts`, `POST /upload`, `POST /cache/flush`).
@@ -212,3 +220,4 @@ Tip: an example `.env` is included at the repo root. Start the API with:
 ## License
 
 MIT — see `LICENSE`.
+
