@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Knot-Labs Web UI</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; }
+    h1 { font-size: 20px; }
+    fieldset { margin-bottom: 16px; padding: 12px; }
+    label { display: inline-block; min-width: 160px; }
+    input[type="text"], input[type="number"] { width: 280px; }
+    button { margin-right: 8px; }
+    pre { background: #f7f7f7; border: 1px solid #ddd; padding: 10px; overflow: auto; }
+    .row { margin: 6px 0; }
+    .ok { color: #0a0; }
+    .err { color: #a00; }
+    .muted { color: #666; }
+    #previewPane { margin-top: 6px; }
+    #previewPane video, #previewPane audio, #previewPane img { max-width: 100%; max-height: 360px; display: block; }
+  </style>
+  <script>
+    let apiKey = '';
+    function headers(json=true) {
+      const h = {};
+      if (apiKey) h['x-api-key'] = apiKey;
+      if (json) h['content-type'] = 'application/json';
+      return h;
+    }
+    function setKey() {
+      apiKey = document.getElementById('apiKey').value.trim();
+      log('info', apiKey ? 'API key set' : 'API key cleared');
+    }
+    function log(level, msg) {
+      const out = document.getElementById('log');
+      const t = new Date().toISOString().replace('T',' ').replace('Z','');
+      const span = document.createElement('div');
+      span.className = level === 'error' ? 'err' : (level === 'ok' ? 'ok' : 'muted');
+      span.textContent = '['+t+'] ' + msg;
+      out.prepend(span);
+    }
+    function logLink(level, prefix, href, text) {
+      const out = document.getElementById('log');
+      const t = new Date().toISOString().replace('T',' ').replace('Z','');
+      const div = document.createElement('div');
+      div.className = level === 'error' ? 'err' : (level === 'ok' ? 'ok' : 'muted');
+      div.append(document.createTextNode('['+t+'] ' + (prefix || '')));
+      const a = document.createElement('a');
+      a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = text || href;
+      div.append(document.createTextNode(' '));
+      div.append(a);
+      out.prepend(div);
+    }
+    async function api(path, opts={}) {
+      const url = path.startsWith('/') ? path : ('/'+path);
+      const resp = await fetch(url, opts);
+      const text = await resp.text();
+      try { return { status: resp.status, data: JSON.parse(text) }; }
+      catch { return { status: resp.status, data: text }; }
+    }
+
+    // Users
+    async function createUser() {
+      const username = document.getElementById('userName').value.trim();
+      const body = JSON.stringify({ username: username || null });
+      const r = await api('/users', { method: 'POST', headers: headers(true), body });
+      log(r.status === 200 ? 'ok' : 'error', 'Create user: ' + JSON.stringify(r.data));
+      if (r.status === 200 && r.data && r.data.userID) {
+        document.getElementById('creator').value = r.data.userID;
+        document.getElementById('viewer').value = r.data.userID;
+        document.getElementById('activeUser').value = r.data.userID;
+      }
+    }
+
+    // Posts + Analyze
+    let pollTimer = null;
+    async function createPostAnalyze() {
+      const creator = document.getElementById('creator').value.trim();
+      const media = document.getElementById('mediaPath').value.trim();
+      const desc = document.getElementById('description').value.trim();
+      const body = JSON.stringify({ creator, media_path: media || null, description: desc || null });
+      const r = await api('/posts', { method: 'POST', headers: headers(true), body });
+      log(r.status === 200 ? 'ok' : 'error', 'Create post: ' + JSON.stringify(r.data));
+      if (r.status === 200 && r.data && r.data.job_id) {
+        const job = r.data.job_id;
+        log('info', 'Polling job ' + job);
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        pollTimer = setInterval(async () => {
+          const s = await api('/jobs/' + encodeURIComponent(job), { headers: headers(false) });
+          log('info', 'Job ' + job + ': ' + JSON.stringify(s.data));
+          if (s.data && (s.data.status === 'done' || s.data.status === 'error')) {
+            clearInterval(pollTimer); pollTimer = null;
+          }
+        }, 1200);
+      }
+    }
+
+    async function uploadMedia() {
+      const inp = document.getElementById('mediaFile');
+      if (!inp || !inp.files || inp.files.length === 0) {
+        log('error', 'Select a file to upload');
+        return;
+      }
+      const fd = new FormData();
+      fd.append('file', inp.files[0]);
+      try {
+        const resp = await fetch('/upload', { method: 'POST', headers: headers(false), body: fd });
+        const txt = await resp.text();
+        let data = null;
+        try { data = JSON.parse(txt); } catch (e) { data = { raw: txt }; }
+        if (resp.ok && data && data.path) {
+          document.getElementById('mediaPath').value = data.path;
+          log('ok', 'Uploaded ' + (data.filename || '') + ' -> ' + data.path + ' (' + (data.size || 0) + ' bytes)');
+          if (data.filename) {
+            const url = '/uploads/' + encodeURIComponent(data.filename);
+            logLink('ok', 'Preview:', url, 'Open');
+            setPreview(data.filename, data.mime || '');
+          }
+        } else {
+          log('error', 'Upload failed: ' + txt);
+        }
+      } catch (e) {
+        log('error', 'Upload error: ' + e);
+      }
+    }
+
+    function fileExt(name) {
+      const i = name.lastIndexOf('.');
+      return i >= 0 ? name.substring(i+1).toLowerCase() : '';
+    }
+    function setPreview(filename, mime) {
+      const url = '/uploads/' + encodeURIComponent(filename);
+      const ext = fileExt(filename);
+      const v = document.getElementById('previewVideo');
+      const a = document.getElementById('previewAudio');
+      const img = document.getElementById('previewImage');
+      const link = document.getElementById('previewLink');
+      // Hide all first
+      v.style.display = 'none'; v.removeAttribute('src'); v.load && v.load();
+      a.style.display = 'none'; a.removeAttribute('src'); a.load && a.load();
+      img.style.display = 'none'; img.removeAttribute('src');
+      link.style.display = 'none'; link.removeAttribute('href');
+      // Decide element to use
+      const videoExts = ['mp4','webm','ogg','ogv','mkv','mov'];
+      const audioExts = ['mp3','wav','ogg','oga','m4a','aac'];
+      const imageExts = ['jpg','jpeg','png','gif','webp'];
+      // Prefer server-reported MIME if available
+      if ((mime || '').startsWith('video/')) {
+        v.src = url; v.style.display = 'block';
+      } else if ((mime || '').startsWith('audio/')) {
+        a.src = url; a.style.display = 'block';
+      } else if ((mime || '').startsWith('image/')) {
+        img.src = url; img.style.display = 'block';
+      } else if (videoExts.includes(ext)) {
+        v.src = url; v.style.display = 'block';
+      } else if (audioExts.includes(ext)) {
+        a.src = url; a.style.display = 'block';
+      } else if (imageExts.includes(ext)) {
+        img.src = url; img.style.display = 'block';
+      }
+      // Always provide a link fallback
+      link.href = url; link.textContent = 'Open in new tab'; link.style.display = 'inline';
+    }
+
+    // Interactions
+    async function interact(action) {
+      const viewer = document.getElementById('viewer').value.trim();
+      const author = document.getElementById('author').value.trim();
+      const post = document.getElementById('postId').value.trim();
+      const amount = parseFloat(document.getElementById('giftAmt').value || '0');
+      const body = JSON.stringify({ viewer, creator: author, post, amount });
+      const r = await api('/interactions/' + encodeURIComponent(action), { method: 'POST', headers: headers(true), body });
+      log(r.status === 200 ? 'ok' : 'error', 'Interaction ' + action + ': ' + JSON.stringify(r.data));
+    }
+
+    // Rank
+    async function rankUser() {
+      const user = document.getElementById('activeUser').value.trim();
+      const k = parseInt(document.getElementById('rankK').value || '20', 10);
+      const r = await api('/rank?user=' + encodeURIComponent(user) + '&k=' + k, { headers: headers(false) });
+      log(r.status === 200 ? 'ok' : 'error', 'Rank results: ' + JSON.stringify(r.data));
+    }
+
+    // Search
+    async function doSearch() {
+      const q = document.getElementById('searchQ').value.trim();
+      const k = parseInt(document.getElementById('searchK').value || '10', 10);
+      const r = await api('/search?q=' + encodeURIComponent(q) + '&k=' + k, { headers: headers(false) });
+      log(r.status === 200 ? 'ok' : 'error', 'Search results: ' + JSON.stringify(r.data));
+    }
+
+    // Cache flush
+    async function flushCache() {
+      const pf = document.getElementById('cachePrefix').value.trim();
+      const qs = pf ? ('?prefix=' + encodeURIComponent(pf)) : '';
+      const r = await api('/cache/flush' + qs, { method: 'POST', headers: headers(true) });
+      log(r.status === 200 ? 'ok' : 'error', 'Cache flush: ' + JSON.stringify(r.data));
+    }
+  </script>
+  </head>
+  <body>
+    <h1>Knot-Labs Web UI</h1>
+    <fieldset>
+      <legend>Auth</legend>
+      <div class="row"><label>API Key</label>
+        <input type="text" id="apiKey" placeholder="optional if server auth disabled" />
+        <button onclick="setKey()">Set</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Create User</legend>
+      <div class="row"><label>Username</label><input type="text" id="userName" placeholder="optional" /></div>
+      <div class="row"><button onclick="createUser()">Create User</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Create Post + Analyze</legend>
+      <div class="row"><label>Creator (userID or username)</label><input type="text" id="creator" /></div>
+      <div class="row"><label>Description</label><input type="text" id="description" placeholder="optional" /></div>
+      <div class="row"><label>Media Path (server path)</label><input type="text" id="mediaPath" placeholder="/path/to/video" /></div>
+      <div class="row"><label>Upload Media</label><input type="file" id="mediaFile" /> <button onclick="uploadMedia()">Upload</button></div>
+      <div class="row"><button onclick="createPostAnalyze()">Post & Analyze</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Preview</legend>
+      <div class="row"><a id="previewLink" href="#" target="_blank" class="muted" style="display:none">Open in new tab</a></div>
+      <div id="previewPane">
+        <video id="previewVideo" style="display:none" controls></video>
+        <audio id="previewAudio" style="display:none" controls></audio>
+        <img id="previewImage" style="display:none" alt="preview" />
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Interactions</legend>
+      <div class="row"><label>Viewer ID</label><input type="text" id="viewer" /></div>
+      <div class="row"><label>Author ID</label><input type="text" id="author" /></div>
+      <div class="row"><label>Post ID</label><input type="text" id="postId" /></div>
+      <div class="row"><label>Gift Amount</label><input type="number" id="giftAmt" value="1" min="1" /></div>
+      <div class="row">
+        <button onclick="interact('like')">Like</button>
+        <button onclick="interact('comment')">Comment</button>
+        <button onclick="interact('share')">Share</button>
+        <button onclick="interact('gift')">Gift</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Rank</legend>
+      <div class="row"><label>User</label><input type="text" id="activeUser" /></div>
+      <div class="row"><label>Top K</label><input type="number" id="rankK" value="20" min="1" /></div>
+      <div class="row"><button onclick="rankUser()">Rank</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Search</legend>
+      <div class="row"><label>Query</label><input type="text" id="searchQ" /></div>
+      <div class="row"><label>Top K</label><input type="number" id="searchK" value="10" min="1" /></div>
+      <div class="row"><button onclick="doSearch()">Search</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Cache</legend>
+      <div class="row"><label>Prefix</label><input type="text" id="cachePrefix" placeholder="knot:cache (default)" /></div>
+      <div class="row"><button onclick="flushCache()">Flush Cache</button></div>
+    </fieldset>
+
+    <h2>Log</h2>
+    <div id="log"></div>
+  </body>
+  </html>

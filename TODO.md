@@ -8,6 +8,19 @@ Completed in this iteration
 - Auth & API keys: FastAPI now checks `X-API-Key` when `KNOT_API_KEY` is set.
 - Rate limiting & quotas: simple in-memory per-identity, per-endpoint limiter over a 60s window.
 
+- Redis integration (optional): `REDIS_URL` support, Redis-backed rate limiting (`KNOT_RATE_BACKEND=redis`), request-safe initialization and clean shutdown.
+- Caching: lightweight cache with Redis or in-memory fallback; `/search` results cached with TTL (`KNOT_CACHE_TTL`, default 60s).
+- Health and admin: `/health/redis` ping endpoint; `/cache/flush` admin endpoint (API-key guarded) to clear memory cache and Redis by prefix.
+- Web UI: simple static page served at `/ui` providing core GUI functions (create user, create post + analyze, interactions, rank, search, cache flush).
+- Uploads: `/upload` endpoint to save media to `Mesh/Uploads`; `/ui` now supports browser file upload and auto-fills the media path for analysis.
+- Preview uploads: optional `GET /uploads/{filename}` (enable with `KNOT_SERVE_UPLOADS=1`); UI shows a clickable preview link after upload.
+- Inline previews in Web UI: dedicated Preview section renders video/audio/image inline (with link fallback) after upload.
+ - MIME detection: `/upload` returns a `mime` field (basic guess via extension); UI prefers MIME to select the preview element.
+
+Tests added:
+
+- `tests/test_admin_and_uploads.py` covering `/health/redis`, static `/ui`, `/upload` + `/uploads/{filename}` preview, and `/cache/flush`.
+
 - Observability & metrics: structured logging; Prometheus counters/histograms with `/metrics`; basic request timing middleware; job metrics.
 - Lint/format/type config: added `pyproject.toml` with ruff/black/mypy defaults (CI wiring pending).
 - Multi-modal Scribe: added `backend="hybrid"` combining BoW and Sentence-Transformers with a tunable weight.
@@ -57,3 +70,7 @@ Newly Added Next Updates:
 10. Tests for GUI generators and limits
 
 - Add unit tests covering GUI generator actions and API key + rate limiting behaviors.
+
+11. Expand Web UI
+
+- Add file upload flow for media (server-side storage) and admin actions (rebuild categories, simulators). Add nicer styling.

@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 import uuid
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, UploadFile, File
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import logging
 import time as _time
 try:
@@ -14,6 +16,10 @@ except Exception:  # pragma: no cover
         return b""
     CONTENT_TYPE_LATEST = "text/plain"
 from pydantic import BaseModel
+try:
+    import redis  # type: ignore
+except Exception:  # pragma: no cover
+    redis = None  # type: ignore
 
 from api.jobs import job_queue
 from Mesh.category import make_category_from_micro
@@ -31,6 +37,7 @@ MESH_DIR = os.path.join(ROOT, 'Mesh')
 USERS_DIR = os.path.join(MESH_DIR, 'Users')
 POSTS_DIR = os.path.join(MESH_DIR, 'Posts')
 MASTER_PATH = os.path.join(MESH_DIR, 'mastercategories.txt')
+UPLOADS_DIR = os.path.join(MESH_DIR, 'Uploads')
 
 app = FastAPI(title="Knot-Labs API")
 
@@ -41,6 +48,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 REQ_COUNT = Counter('knot_requests_total', 'Total API requests', ['path', 'method']) if Counter else None
 REQ_LAT = Histogram('knot_request_latency_seconds', 'Request latency', ['path', 'method']) if Histogram else None
 JOBS_COUNT = Counter('knot_jobs_total', 'Jobs processed', ['type', 'status']) if Counter else None
+
+# Static UI mount (simple web UI under /ui)
+try:
+    static_dir = os.path.join(ROOT, 'api', 'static')
+    if os.path.isdir(static_dir):
+        app.mount('/ui', StaticFiles(directory=static_dir, html=True), name='ui')
+except Exception:
+    pass
 
 @app.get('/metrics')
 def _metrics():  # type: ignore
@@ -68,6 +83,38 @@ RATE_WINDOW_SECS = 60
 DEFAULT_LIMIT = 60  # requests per window
 _rate_store: dict[tuple[str, str], list[float]] = {}
 
+# Lightweight cache (Redis if available, else in-memory)
+KNOT_CACHE_ENABLED = (os.environ.get("KNOT_CACHE_ENABLED", "1")).lower() in {"1", "true", "yes", "on"}
+KNOT_CACHE_TTL = int(os.environ.get("KNOT_CACHE_TTL", "60"))
+KNOT_CACHE_PREFIX = os.environ.get("KNOT_CACHE_PREFIX", "knot:cache")
+_cache_store: dict[str, tuple[float, str]] = {}
+
+# Serving uploads (disabled by default)
+SERVE_UPLOADS = (os.environ.get("KNOT_SERVE_UPLOADS", "0").lower() in {"1", "true", "yes", "on"})
+
+# Optional Redis wiring (config via env)
+REDIS_URL = os.environ.get("REDIS_URL", "")
+RATE_BACKEND = os.environ.get("KNOT_RATE_BACKEND", "memory").lower()
+redis_client: Optional["redis.Redis"] = None  # type: ignore[name-defined]
+
+
+def _init_redis() -> Optional["redis.Redis"]:  # type: ignore[name-defined]
+    if not REDIS_URL or not redis:
+        return None
+    try:
+        r = redis.from_url(  # type: ignore[attr-defined]
+            REDIS_URL,
+            decode_responses=True,
+            socket_connect_timeout=3,
+            socket_timeout=3,
+            retry_on_timeout=True,
+            health_check_interval=30,
+        )
+        return r
+    except Exception as e:  # pragma: no cover
+        logging.warning({'event': 'redis_init_failed', 'error': str(e)})
+        return None
+
 
 def _client_id(req: Request) -> str:
     # Use API key if provided; else fall back to client host
@@ -91,14 +138,72 @@ def _check_rate(req: Request, limit: int = DEFAULT_LIMIT) -> None:
     now = time.time()
     ident = _client_id(req)
     scope = req.url.path
+    # Optional Redis-backed fixed window limiting
+    if RATE_BACKEND == 'redis' and redis_client is not None:
+        try:
+            window = int(now // RATE_WINDOW_SECS)
+            key = f"knot:ratelimit:{ident}:{scope}:{window}"
+            p = redis_client.pipeline()  # type: ignore[attr-defined]
+            p.incr(key, amount=1)
+            p.expire(key, RATE_WINDOW_SECS + 1)
+            count, _ = p.execute()
+            if int(count or 0) > limit:
+                raise HTTPException(429, "Too Many Requests")
+            return
+        except HTTPException:
+            raise
+        except Exception:
+            # Fallback to in-memory on Redis errors
+            pass
+    # In-memory sliding window (default)
     k = (ident, scope)
     arr = _rate_store.get(k) or []
-    # prune old
     arr = [t for t in arr if now - t <= RATE_WINDOW_SECS]
     if len(arr) >= limit:
         raise HTTPException(429, "Too Many Requests")
     arr.append(now)
     _rate_store[k] = arr
+
+
+def _cache_get(key: str) -> Optional[str]:
+    if not KNOT_CACHE_ENABLED:
+        return None
+    # Prefer Redis if connected
+    if redis_client is not None:
+        try:
+            v = redis_client.get(f"{KNOT_CACHE_PREFIX}:{key}")  # type: ignore[attr-defined]
+            return v if isinstance(v, str) else (v.decode('utf-8') if v else None)  # type: ignore[no-any-return]
+        except Exception:
+            # fall back to memory on errors
+            pass
+    # Memory fallback
+    import time
+    now = time.time()
+    item = _cache_store.get(key)
+    if not item:
+        return None
+    exp, val = item
+    if now >= exp:
+        _cache_store.pop(key, None)
+        return None
+    return val
+
+
+def _cache_set(key: str, val: str, ttl: Optional[int] = None) -> None:
+    if not KNOT_CACHE_ENABLED:
+        return
+    t = int(ttl or KNOT_CACHE_TTL)
+    # Prefer Redis if connected
+    if redis_client is not None:
+        try:
+            redis_client.setex(f"{KNOT_CACHE_PREFIX}:{key}", t, val)  # type: ignore[attr-defined]
+            return
+        except Exception:
+            # fall back to memory on errors
+            pass
+    # Memory fallback
+    import time
+    _cache_store[key] = (time.time() + t, val)
 
 
 class CreateUser(BaseModel):
@@ -122,7 +227,31 @@ class Interaction(BaseModel):
 def _startup():
     os.makedirs(USERS_DIR, exist_ok=True)
     os.makedirs(POSTS_DIR, exist_ok=True)
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
     job_queue.start(_handle_job)
+    # Initialize Redis if configured
+    global redis_client
+    redis_client = _init_redis()
+
+    # Optionally warm cache store (no-op). This keeps variables referenced.
+    if not KNOT_CACHE_ENABLED:
+        logging.info({'event': 'cache_disabled'})
+
+
+@app.on_event("shutdown")
+def _shutdown():
+    # Stop background worker
+    try:
+        job_queue.stop()
+    except Exception:
+        pass
+    # Close Redis connection
+    global redis_client
+    try:
+        if redis_client is not None:
+            redis_client.close()  # type: ignore[call-arg]
+    except Exception:
+        pass
 
 
 def _handle_job(job: Dict[str, Any]) -> Any:
@@ -202,6 +331,103 @@ def api_job_status(job_id: str, request: Request):
     return job_queue.status(job_id)
 
 
+def get_redis() -> Optional["redis.Redis"]:  # type: ignore[name-defined]
+    return redis_client
+
+
+@app.get('/health/redis')
+def health_redis():
+    if not redis_client:
+        return {"ok": False, "configured": False}
+    try:
+        redis_client.ping()  # type: ignore[call-arg]
+        return {"ok": True, "configured": True}
+    except Exception as e:
+        raise HTTPException(503, f"Redis unhealthy: {e}")
+
+
+@app.post('/upload')
+async def upload_file(request: Request, file: UploadFile = File(...)):
+    """Upload a media file to the server and return its saved path.
+    Requires API key when `KNOT_API_KEY` is set.
+    """
+    _check_auth(request)
+    _check_rate(request)
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
+    # Derive safe filename: keep extension, randomize name
+    orig = (file.filename or '').strip()
+    _, ext = os.path.splitext(orig)
+    ext = (ext or '')[:10]
+    name = uuid.uuid4().hex + ext
+    dest = os.path.join(UPLOADS_DIR, name)
+    # Stream to disk
+    size = 0
+    with open(dest, 'wb') as f:
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
+            f.write(chunk)
+            size += len(chunk)
+    # Basic MIME detection from extension
+    import mimetypes
+    mime, _ = mimetypes.guess_type(orig or name)
+    return {"ok": True, "filename": name, "path": dest, "size": size, "mime": mime or "application/octet-stream"}
+
+
+def _resolve_upload_path(filename: str) -> str:
+    # Ensure no path traversal and the file exists under UPLOADS_DIR
+    bn = os.path.basename(filename)
+    if bn != filename or (os.path.sep in filename) or (os.path.altsep and os.path.altsep in filename):
+        raise HTTPException(400, 'Invalid filename')
+    path = os.path.join(UPLOADS_DIR, bn)
+    if not os.path.isfile(path):
+        raise HTTPException(404, 'Not found')
+    return path
+
+
+@app.get('/uploads/{filename}')
+def get_upload(filename: str, request: Request):
+    # Optional: disabled unless KNOT_SERVE_UPLOADS is truthy
+    if not SERVE_UPLOADS:
+        raise HTTPException(404, 'Not found')
+    _check_rate(request)
+    import mimetypes
+    path = _resolve_upload_path(filename)
+    mt, _ = mimetypes.guess_type(path)
+    return FileResponse(path, media_type=mt or 'application/octet-stream')
+
+
+class CacheFlushReq(BaseModel):
+    prefix: Optional[str] = None
+
+
+@app.post('/cache/flush')
+def api_cache_flush(request: Request, body: Optional[CacheFlushReq] = None, prefix: Optional[str] = None):
+    _check_auth(request)
+    _check_rate(request)
+    mem_before = len(_cache_store)
+    _cache_store.clear()
+    deleted = 0
+    used_pattern = None
+    pf = prefix or (body.prefix if body else None) or KNOT_CACHE_PREFIX
+    if redis_client is not None and pf:
+        pat = pf if any(ch in pf for ch in ['*', '?', '[']) else (pf + ':*')
+        used_pattern = pat
+        try:
+            batch: list[str] = []
+            for key in redis_client.scan_iter(match=pat):  # type: ignore[attr-defined]
+                batch.append(key)  # type: ignore[arg-type]
+                if len(batch) >= 200:
+                    deleted += int(redis_client.delete(*batch))  # type: ignore[attr-defined]
+                    batch.clear()
+            if batch:
+                deleted += int(redis_client.delete(*batch))  # type: ignore[attr-defined]
+        except Exception as e:
+            return {"ok": True, "memory_cleared": mem_before, "redis_deleted": deleted, "pattern": used_pattern, "redis_error": str(e)}
+    return {"ok": True, "memory_cleared": mem_before, "redis_deleted": deleted, "pattern": used_pattern}
+
+
 @app.post('/interactions/{action}')
 def api_interaction(action: str, req: Interaction, request: Request):
     _check_auth(request)
@@ -259,9 +485,26 @@ def api_rank(request: Request, user: str, k: int = 20):
 @app.get('/search')
 def api_search(request: Request, q: str, k: int = 10, backend: str = 'bow'):
     _check_rate(request)
+    import hashlib, json
+    # Try cache first (avoid building index if hit)
+    hq = hashlib.sha1((q or '').encode('utf-8')).hexdigest()
+    ckey = f"search:{backend}:{k}:{hq}"
+    cached = _cache_get(ckey)
+    if cached:
+        try:
+            data = json.loads(cached)
+            return {'results': data}
+        except Exception:
+            pass
+    # Cache miss: perform search
     idx = build_index(POSTS_DIR, backend=backend)
     res = idx.search(q, k=k)
-    return {'results': [{'postID': pid, 'score': sc} for pid, sc in res]}
+    out = [{'postID': pid, 'score': sc} for pid, sc in res]
+    try:
+        _cache_set(ckey, json.dumps(out))
+    except Exception:
+        pass
+    return {'results': out}
 
 
 @app.get('/analytics/categories')
