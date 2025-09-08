@@ -32,6 +32,8 @@ Everything is Python. One requirements file: `requirements.txt`.
 
 - Start API (FastAPI)
   - `uvicorn api.main:app --reload`
+  - Or load env vars from the provided `.env` file:
+    - `uvicorn --env-file .env api.main:app --reload`
   - Endpoints:
     - `POST /users`
     - `POST /posts` (optionally classifies with Veil when `media_path` provided)
@@ -44,6 +46,7 @@ Everything is Python. One requirements file: `requirements.txt`.
     - `POST /cache/flush` (admin; clears memory cache and Redis by prefix)
     - `POST /upload` (save media under `Mesh/Uploads`)
     - `GET /uploads/{filename}` (optional; serve uploaded file when enabled)
+    - `GET /ping` (simple connectivity check)
     - `GET /ui` (simple web UI)
   - Optional auth: set `KNOT_API_KEY` to require `X-API-Key` on write endpoints. All endpoints have basic in-memory rate limiting.
 
@@ -56,6 +59,7 @@ Everything is Python. One requirements file: `requirements.txt`.
     - Upload media via `POST /upload` (multipart field `file`). Response includes `filename`, server `path`, size, and `mime`.
     - Optional serving: set `KNOT_SERVE_UPLOADS=1` to enable `GET /uploads/{filename}` for browser preview.
     - The web UI at `/ui` supports uploads and shows inline preview (video/audio/image) and a link fallback.
+    - The UI includes “Test API” and “Test CORS” buttons to validate connectivity/CORS quickly.
 
 - Tests
   - `pytest -q`
@@ -145,6 +149,10 @@ The feed is scored and ordered by `Drift/drift_ranker.py`.
 - `KNOT_CACHE_PREFIX`: Redis/memory cache key prefix (default `knot:cache`).
 - `KNOT_SERVE_UPLOADS`: `1` to enable `GET /uploads/{filename}`; disabled by default.
 - `KNOT_CORS_ORIGINS`: comma-separated list of allowed origins for CORS (e.g., `https://<user>.github.io, http://localhost:5173`). If set, enables CORS for cross-origin requests (required when using the UI from GitHub Pages to call your API).
+
+Tip: an example `.env` is included at the repo root. Start the API with:
+
+`uvicorn --env-file .env api.main:app --reload`
 
 ## Notes
 

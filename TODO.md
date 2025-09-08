@@ -12,10 +12,13 @@ Completed in this iteration
 - Caching: lightweight cache with Redis or in-memory fallback; `/search` results cached with TTL (`KNOT_CACHE_TTL`, default 60s).
 - Health and admin: `/health/redis` ping endpoint; `/cache/flush` admin endpoint (API-key guarded) to clear memory cache and Redis by prefix.
 - Web UI: simple static page served at `/ui` providing core GUI functions (create user, create post + analyze, interactions, rank, search, cache flush).
-- Uploads: `/upload` endpoint to save media to `Mesh/Uploads`; `/ui` now supports browser file upload and auto-fills the media path for analysis.
-- Preview uploads: optional `GET /uploads/{filename}` (enable with `KNOT_SERVE_UPLOADS=1`); UI shows a clickable preview link after upload.
-- Inline previews in Web UI: dedicated Preview section renders video/audio/image inline (with link fallback) after upload.
-- MIME detection: `/upload` returns a `mime` field (basic guess via extension); UI prefers MIME to select the preview element.
+ - Uploads: `/upload` endpoint to save media to `Mesh/Uploads`; `/ui` now supports browser file upload and auto-fills the media path for analysis.
+ - Preview uploads: optional `GET /uploads/{filename}` (enable with `KNOT_SERVE_UPLOADS=1`); UI shows a clickable preview link after upload.
+ - Inline previews in Web UI: dedicated Preview section renders video/audio/image inline (with link fallback) after upload.
+ - MIME detection: `/upload` returns a `mime` field (basic guess via extension); UI prefers MIME to select the preview element.
+ - Root redirect and ping: `/` redirects to `/ui`; added `GET /ping` for connectivity tests.
+ - CORS + Pages: `KNOT_CORS_ORIGINS` enables cross-origin calls (e.g., from GitHub Pages). UI supports configurable API base URL and provides “Test API” and “Test CORS” buttons.
+ - Docs & config: added `.env` with sensible defaults (serve uploads; CORS for localhost + GitHub Pages). README updated with env usage and Pages setup.
 
 Tests added:
 
