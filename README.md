@@ -39,7 +39,23 @@ Everything is Python. One requirements file: `requirements.txt`.
     - `GET /rank?user=<id-or-username>&k=20`
     - `GET /search?q=...&k=10&backend=bow|st`
     - `GET /analytics/categories`
+    - `GET /metrics` (Prometheus)
+    - `GET /health/redis` (Redis ping)
+    - `POST /cache/flush` (admin; clears memory cache and Redis by prefix)
+    - `POST /upload` (save media under `Mesh/Uploads`)
+    - `GET /uploads/{filename}` (optional; serve uploaded file when enabled)
+    - `GET /ui` (simple web UI)
   - Optional auth: set `KNOT_API_KEY` to require `X-API-Key` on write endpoints. All endpoints have basic in-memory rate limiting.
+
+  - Optional Redis + cache:
+    - Set `REDIS_URL` (e.g. `redis://localhost:6379/0`) to enable Redis client.
+    - Rate limiting backend: `KNOT_RATE_BACKEND=redis` (defaults to in-memory).
+    - Caching: `KNOT_CACHE_ENABLED=1` (default), `KNOT_CACHE_TTL=60`, `KNOT_CACHE_PREFIX=knot:cache`.
+    - Admin cache flush: `POST /cache/flush` (requires `X-API-Key` when `KNOT_API_KEY` is set). Query/body `prefix` is supported.
+  - Uploads + preview:
+    - Upload media via `POST /upload` (multipart field `file`). Response includes `filename`, server `path`, size, and `mime`.
+    - Optional serving: set `KNOT_SERVE_UPLOADS=1` to enable `GET /uploads/{filename}` for browser preview.
+    - The web UI at `/ui` supports uploads and shows inline preview (video/audio/image) and a link fallback.
 
 - Tests
   - `pytest -q`
@@ -88,6 +104,16 @@ Example:
 - Make/PS shortcuts:
   - `make install|test|demo|gui|labels|cli`
   - `scripts/tasks.ps1 -Task Install|Test|Demo|GUI|Labels|CLI`
+
+## Environment Variables
+
+- `KNOT_API_KEY`: if set, API requires `X-API-Key` on protected routes (e.g., `POST /users`, `POST /posts`, `POST /upload`, `POST /cache/flush`).
+- `REDIS_URL`: enable Redis client; example `redis://localhost:6379/0` or `redis://:password@host:6379/0`.
+- `KNOT_RATE_BACKEND`: `memory` (default) or `redis` to use Redis-backed fixed-window rate limiting.
+- `KNOT_CACHE_ENABLED`: `1` (default) to enable cache helper (search results); `0` to disable.
+- `KNOT_CACHE_TTL`: TTL seconds for cached entries (default `60`).
+- `KNOT_CACHE_PREFIX`: Redis/memory cache key prefix (default `knot:cache`).
+- `KNOT_SERVE_UPLOADS`: `1` to enable `GET /uploads/{filename}`; disabled by default.
 
 ## Notes
 
