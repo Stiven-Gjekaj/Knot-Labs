@@ -46,6 +46,37 @@
         log('error', 'API test error: ' + e);
       }
     }
+    async function testCors() {
+      const base = apiBase || '';
+      try {
+        const r = await fetch(base + '/ping', {
+          method: 'GET',
+          headers: { 'X-API-Key': 'test', 'Content-Type': 'application/json' },
+          mode: 'cors',
+        });
+        const allowOrigin = r.headers.get('access-control-allow-origin');
+        const allowMethods = r.headers.get('access-control-allow-methods');
+        const allowHeaders = r.headers.get('access-control-allow-headers');
+        let msg = 'CORS test: status=' + r.status;
+        if (allowOrigin || allowMethods || allowHeaders) {
+          msg += ' | ACO=' + (allowOrigin || '-') + ' ACM=' + (allowMethods || '-') + ' ACH=' + (allowHeaders || '-');
+        } else {
+          msg += ' | CORS OK (headers not exposed)';
+        }
+        log((r.ok ? 'ok' : 'error'), msg);
+      } catch (e) {
+        log('error', 'CORS test error: ' + e);
+      }
+    }
+    async function testApi() {
+      try {
+        const r = await api('/ping', { headers: headers(false) });
+        const body = (typeof r.data === 'string') ? r.data : JSON.stringify(r.data);
+        log(r.status === 200 ? 'ok' : 'error', 'API test (' + r.status + '): ' + body);
+      } catch (e) {
+        log('error', 'API test error: ' + e);
+      }
+    }
     function log(level, msg) {
       const out = document.getElementById('log');
       const t = new Date().toISOString().replace('T',' ').replace('Z','');
@@ -228,7 +259,10 @@
         <input type="text" id="apiBase" placeholder="e.g., http://localhost:8000" />
         <button onclick="setApiBase()">Set</button>
       </div>
-      <div class="row"><button onclick="testApi()">Test API</button></div>
+      <div class="row">
+        <button onclick="testApi()">Test API</button>
+        <button onclick="testCors()">Test CORS</button>
+      </div>
     </fieldset>
 
     <fieldset>
