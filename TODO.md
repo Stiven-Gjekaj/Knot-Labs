@@ -15,12 +15,11 @@ Completed in this iteration
 - Uploads: `/upload` endpoint to save media to `Mesh/Uploads`; `/ui` now supports browser file upload and auto-fills the media path for analysis.
 - Preview uploads: optional `GET /uploads/{filename}` (enable with `KNOT_SERVE_UPLOADS=1`); UI shows a clickable preview link after upload.
 - Inline previews in Web UI: dedicated Preview section renders video/audio/image inline (with link fallback) after upload.
- - MIME detection: `/upload` returns a `mime` field (basic guess via extension); UI prefers MIME to select the preview element.
+- MIME detection: `/upload` returns a `mime` field (basic guess via extension); UI prefers MIME to select the preview element.
 
 Tests added:
 
 - `tests/test_admin_and_uploads.py` covering `/health/redis`, static `/ui`, `/upload` + `/uploads/{filename}` preview, and `/cache/flush`.
-
 - Observability & metrics: structured logging; Prometheus counters/histograms with `/metrics`; basic request timing middleware; job metrics.
 - Lint/format/type config: added `pyproject.toml` with ruff/black/mypy defaults (CI wiring pending).
 - Multi-modal Scribe: added `backend="hybrid"` combining BoW and Sentence-Transformers with a tunable weight.

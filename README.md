@@ -97,6 +97,27 @@ Example:
 - Drift: ranks candidates; mapping via `Mesh/drift_adapter.py`.
 - Scribe: builds an index from post descriptions + category tokens; backends: BoW TF-IDF (default) or Sentence-Transformers.
 
+## Feed Ranking (Drift)
+
+The feed is scored and ordered by `Drift/drift_ranker.py`.
+
+- Signals and default weights (see `WEIGHTS`):
+  - likes: 1.0, comments: 1.75, shares: 3.0, gift_count: 4.0, pay-per-view: 0.25, star: 15.0
+  - suggested flag: +4.0, promotion penalty: −15.0, flagged penalty: −1000.0, non-video penalty: −20.0
+  - category affinity: +30.0 if user prefers that category
+  - creator overexposure: −12.0 per repeat in `user.recent_creators`
+  - engagement_weight: +18.0 × sqrt(engagement with creator)
+  - recency: exponential decay with half-life = 2 days, blended with weight = 0.5
+- Run/variety constraints (`_apply_limits`):
+  - per-creator overall cap: 2
+  - max 3 of the same category in a row
+  - max 2 from the same creator in a row
+- Tuning:
+  - Edit `Drift/drift_ranker.py:WEIGHTS` to change signal strengths and recency behavior.
+  - Adjust run-limit parameters in `_apply_limits` if you call it directly; API uses defaults.
+- API:
+  - `GET /rank?user=<id-or-username>&k=20` returns a list of `{ id, creator, category, score }`.
+
 ## Quality-of-Life
 
 - GUI adds a “Rebuild Categories” action and a Labels count input.
