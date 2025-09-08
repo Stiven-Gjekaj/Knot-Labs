@@ -115,11 +115,27 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 26) -> List[str]:
     env = os.environ.copy()
     veil_src = os.path.join(ROOT, "Veil", "src")
     env["PYTHONPATH"] = (veil_src + os.pathsep + env.get("PYTHONPATH", ""))
+    # Run Veil with a timeout to avoid hanging jobs
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)
+        timeout_s = int(os.environ.get("KNOT_VEIL_TIMEOUT_SEC", "180"))
+    except Exception:
+        timeout_s = 180
+    try:
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+            timeout=timeout_s,
+        )
         out = (res.stdout or "") + "\n" + (res.stderr or "")
+    except subprocess.TimeoutExpired:
+        out = ""
+        print(f"Veil classification timed out after {timeout_s}s; using fallback labels.")
     except subprocess.CalledProcessError as e:
         out = (e.stdout or "") + "\n" + (e.stderr or "")
+        print("Veil classification failed; attempting fallback.")
     def _to_category(label: str) -> str:
         l = label.strip()
         lowers = l.lower()

@@ -351,6 +351,21 @@ def api_job_status(job_id: str, request: Request):
     return job_queue.status(job_id)
 
 
+@app.post('/jobs/{job_id}/cancel')
+def api_job_cancel(job_id: str, request: Request):
+    _check_auth(request)
+    _check_rate(request)
+    ok = job_queue.cancel(job_id)
+    return {'ok': bool(ok), 'job_id': job_id, 'status': job_queue.status(job_id)}
+
+
+@app.get('/jobs/debug')
+def api_jobs_debug(request: Request):
+    _check_auth(request)
+    _check_rate(request)
+    return job_queue.debug()
+
+
 def get_redis() -> Optional["redis.Redis"]:  # type: ignore[name-defined]
     return redis_client
 
@@ -369,6 +384,59 @@ def health_redis():
 @app.get('/ping')
 def ping():
     return {"ok": True, "time": int(_time.time())}
+
+
+class RedisSetReq(BaseModel):
+    value: str
+    ttl: Optional[int] = None
+
+
+@app.put('/redis/kv/{key}')
+def redis_kv_put(key: str, body: RedisSetReq, request: Request):
+    _check_auth(request)
+    _check_rate(request)
+    if not redis_client:
+        raise HTTPException(503, 'Redis not configured')
+    try:
+        if body.ttl and int(body.ttl) > 0:
+            redis_client.setex(key, int(body.ttl), body.value)  # type: ignore[attr-defined]
+        else:
+            redis_client.set(key, body.value)  # type: ignore[attr-defined]
+        ttl = int(redis_client.ttl(key))  # type: ignore[attr-defined]
+        return {"ok": True, "key": key, "ttl": ttl}
+    except Exception as e:
+        raise HTTPException(500, f"Redis error: {e}")
+
+
+@app.get('/redis/kv/{key}')
+def redis_kv_get(key: str, request: Request):
+    _check_rate(request)
+    if not redis_client:
+        return {"ok": False, "configured": False}
+    try:
+        v = redis_client.get(key)  # type: ignore[attr-defined]
+        ttl = int(redis_client.ttl(key))  # type: ignore[attr-defined]
+        if v is not None and not isinstance(v, str):
+            try:
+                v = v.decode('utf-8')
+            except Exception:
+                v = str(v)
+        return {"ok": True, "key": key, "value": v, "ttl": ttl}
+    except Exception as e:
+        raise HTTPException(500, f"Redis error: {e}")
+
+
+@app.delete('/redis/kv/{key}')
+def redis_kv_delete(key: str, request: Request):
+    _check_auth(request)
+    _check_rate(request)
+    if not redis_client:
+        raise HTTPException(503, 'Redis not configured')
+    try:
+        n = int(redis_client.delete(key))  # type: ignore[attr-defined]
+        return {"ok": True, "key": key, "deleted": n}
+    except Exception as e:
+        raise HTTPException(500, f"Redis error: {e}")
 
 
 @app.post('/upload')

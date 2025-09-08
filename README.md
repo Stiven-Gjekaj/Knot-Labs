@@ -55,11 +55,13 @@ Everything is Python. One requirements file: `requirements.txt`.
     - Rate limiting backend: `KNOT_RATE_BACKEND=redis` (defaults to in-memory).
     - Caching: `KNOT_CACHE_ENABLED=1` (default), `KNOT_CACHE_TTL=60`, `KNOT_CACHE_PREFIX=knot:cache`.
     - Admin cache flush: `POST /cache/flush` (requires `X-API-Key` when `KNOT_API_KEY` is set). Query/body `prefix` is supported.
+    - Demo KV API: `PUT|GET|DELETE /redis/kv/{key}` for simple key/value checks (requires Redis).
   - Uploads + preview:
     - Upload media via `POST /upload` (multipart field `file`). Response includes `filename`, server `path`, size, and `mime`.
     - Optional serving: set `KNOT_SERVE_UPLOADS=1` to enable `GET /uploads/{filename}` for browser preview.
     - The web UI at `/ui` supports uploads and shows inline preview (video/audio/image) and a link fallback.
     - The UI includes “Test API” and “Test CORS” buttons to validate connectivity/CORS quickly.
+    - The UI also provides a “Redis KV” panel to set/get/delete keys via the demo endpoints.
 
 - Tests
   - `pytest -q`
@@ -134,6 +136,13 @@ The feed is scored and ordered by `Drift/drift_ranker.py`.
 
 - This repo includes a simple static UI that can be hosted via GitHub Pages.
 - We publish `docs/index.html` for Pages; the same UI is also served by the API at `/ui`.
+- The UI has a modern, dark red theme with improved typography, cards, and buttons for a cleaner UX.
+- Responsive layout: panels flow into two columns on wide screens.
+- Compact mode: toggle in the Auth section to reduce spacing (saved in localStorage).
+- Dark mode: default dark red palette with a Dark Mode toggle (switch to light theme); saved in localStorage.
+- Copy curl: one-click "Copy curl" buttons next to key actions to reproduce API calls from the terminal.
+- Toast notifications: success/error toasts appear for key actions alongside the log.
+- Reset UI: quick button to clear UI preferences (compact, API base/key inputs).
 - The UI is static and expects an API base URL:
   - Use the “API Base URL” field at the top of the page, e.g. `http://localhost:8000` or your deployed API host.
   - If left blank, it calls the same origin (works when served by the API at `/ui`).

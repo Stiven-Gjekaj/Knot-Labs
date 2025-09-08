@@ -19,6 +19,7 @@ Completed in this iteration
  - Root redirect and ping: `/` redirects to `/ui`; added `GET /ping` for connectivity tests.
  - CORS + Pages: `KNOT_CORS_ORIGINS` enables cross-origin calls (e.g., from GitHub Pages). UI supports configurable API base URL and provides “Test API” and “Test CORS” buttons.
  - Docs & config: added `.env` with sensible defaults (serve uploads; CORS for localhost + GitHub Pages). README updated with env usage and Pages setup.
+  - Redis KV: added demo KV endpoints (`PUT|GET|DELETE /redis/kv/{key}`) and a Redis KV panel in the UI to set/get/delete keys.
 
 Tests added:
 
@@ -76,3 +77,10 @@ Newly Added Next Updates:
 11. Expand Web UI
 
 - Add file upload flow for media (server-side storage) and admin actions (rebuild categories, simulators). Add nicer styling.
+
+12. UI polish passes
+
+- Added responsive two-column layout for main panels on wide screens.
+- Added a Compact Mode toggle (saved in localStorage) to tighten spacing.
+- Added lightweight toast notifications for success/error actions and a Reset UI button to clear preferences.
+- Added Dark Mode toggle (with light theme option) and one-click "Copy curl" buttons for major actions.

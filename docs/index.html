@@ -5,23 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Knot-Labs Web UI</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; }
-    h1 { font-size: 20px; }
-    fieldset { margin-bottom: 16px; padding: 12px; }
-    label { display: inline-block; min-width: 160px; }
-    input[type="text"], input[type="number"] { width: 280px; }
-    button { margin-right: 8px; }
-    pre { background: #f7f7f7; border: 1px solid #ddd; padding: 10px; overflow: auto; }
-    .row { margin: 6px 0; }
-    .ok { color: #0a0; }
-    .err { color: #a00; }
-    .muted { color: #666; }
-    #previewPane { margin-top: 6px; }
-    #previewPane video, #previewPane audio, #previewPane img { max-width: 100%; max-height: 360px; display: block; }
+    :root {
+      --bg: #100b0c;
+      --surface: #171012;
+      --card: #1d1315;
+      --input: #231518;
+      --border: #2a1a1d;
+      --primary: #c81e2d;
+      --primary-600: #a81824;
+      --primary-700: #8b131d;
+      --accent: #ef4444;
+      --text: #f5f5f5;
+      --muted: #a1a1aa;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0; padding: 0; color: var(--text);
+      background: radial-gradient(1200px 800px at 20% -10%, #220f13 0%, var(--bg) 50%) fixed,
+                  linear-gradient(180deg, #140c0e 0%, #0e0a0b 100%);
+    }
+    .container { max-width: 1024px; margin: 24px auto 48px auto; padding: 0 16px; }
+    h1 { font-size: 24px; letter-spacing: 0.5px; margin: 0 0 16px 0; color: #ffd7dc; }
+    fieldset {
+      margin: 18px 0; padding: 14px 16px 18px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    legend {
+      padding: 0 8px; color: #ffd7dc; font-weight: 600; letter-spacing: 0.3px;
+    }
+    label { display: inline-block; min-width: 220px; color: #e9e9ea; }
+    input[type="text"], input[type="number"], input[type="file"], select {
+      width: 320px; max-width: 100%; color: var(--text);
+      background: var(--input); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 10px; outline: none; transition: all 120ms ease;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(200,30,45,0.25);
+    }
+    button {
+      margin-right: 8px; background: var(--primary-600); color: white; border: 1px solid var(--primary-700);
+      padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;
+      transition: transform 80ms ease, background 120ms ease, box-shadow 120ms ease;
+      box-shadow: 0 4px 10px rgba(200,30,45,0.25);
+    }
+    button:hover { background: var(--primary); }
+    button:active { transform: translateY(1px); }
+    .row { margin: 8px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    a { color: #ff7b88; }
+    .ok { color: var(--success); }
+    .err { color: var(--error); }
+    .muted { color: var(--muted); }
+    #previewPane { margin-top: 10px; border: 1px dashed var(--border); border-radius: 10px; padding: 8px; background: #1a1113; }
+    #previewPane video, #previewPane audio, #previewPane img { max-width: 100%; max-height: 420px; display: block; border-radius: 8px; }
+    #log { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; max-height: 300px; overflow: auto; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 980px) { .grid { grid-template-columns: 1fr 1fr; } }
+    /* Compact mode */
+    body.compact h1 { font-size: 20px; }
+    body.compact fieldset { padding: 10px 12px 12px 12px; border-radius: 10px; }
+    body.compact label { min-width: 180px; }
+    body.compact input[type="text"], body.compact input[type="number"], body.compact input[type="file"], body.compact select { width: 260px; padding: 6px 8px; }
+    body.compact button { padding: 6px 10px; }
+    body.compact .row { margin: 6px 0; gap: 8px; }
+    body.compact #previewPane { padding: 6px; }
+    body.compact #log { max-height: 220px; }
+    /* Light theme overrides */
+    body.theme-light { --bg:#fafafa; --surface:#ffffff; --card:#ffffff; --input:#ffffff; --border:#e5e7eb; --primary:#b91c1c; --primary-600:#991b1b; --primary-700:#7f1d1d; --accent:#dc2626; --text:#1f2937; --muted:#6b7280; --success:#16a34a; --error:#dc2626; }
   </style>
   <script>
     let apiKey = '';
     let apiBase = '';
+    let compact = false;
+    let theme = 'dark';
     function headers(json=true) {
       const h = {};
       if (apiKey) h['x-api-key'] = apiKey;
@@ -37,6 +99,28 @@
       if (apiBase.endsWith('/')) apiBase = apiBase.slice(0,-1);
       log('info', apiBase ? ('API base set to ' + apiBase) : 'API base cleared (using same origin)');
     }
+    function applyTheme(t) {
+      theme = (t === 'light') ? 'light' : 'dark';
+      document.body.classList.toggle('theme-light', theme === 'light');
+      try { localStorage.setItem('knot_theme', theme); } catch {}
+    }
+    function onThemeToggle(el) { applyTheme(el && el.checked ? 'dark' : 'light'); }
+function resetUI() {
+  try { localStorage.removeItem('knot_compact'); } catch {}
+  const chk = document.getElementById('compactToggle');
+  if (chk) { chk.checked = false; }
+  applyCompact(false);
+  try { document.getElementById('apiBase').value = ''; } catch {}
+  try { document.getElementById('apiKey').value = ''; apiKey=''; } catch {}
+  showToast('ok', 'UI settings reset');
+  log('ok', 'UI settings reset');
+}
+    function applyCompact(c) {
+      compact = !!c;
+      document.body.classList.toggle('compact', compact);
+      try { localStorage.setItem('knot_compact', compact ? '1' : '0'); } catch {}
+    }
+    function onCompactToggle(el) { applyCompact(!!el.checked); }
     async function testApi() {
       try {
         const r = await api('/ping', { headers: headers(false) });
@@ -66,6 +150,15 @@
         log((r.ok ? 'ok' : 'error'), msg);
       } catch (e) {
         log('error', 'CORS test error: ' + e);
+      }
+    }
+    async function testRedis() {
+      try {
+        const r = await api('/health/redis', { headers: headers(false) });
+        const body = (typeof r.data === 'string') ? r.data : JSON.stringify(r.data);
+        log(r.status === 200 ? 'ok' : 'error', 'Redis test (' + r.status + '): ' + body);
+      } catch (e) {
+        log('error', 'Redis test error: ' + e);
       }
     }
     async function testApi() {
@@ -245,9 +338,66 @@
       const r = await api('/cache/flush' + qs, { method: 'POST', headers: headers(true) });
       log(r.status === 200 ? 'ok' : 'error', 'Cache flush: ' + JSON.stringify(r.data));
     }
+
+    // Redis KV demo
+    async function redisSet() {
+      const k = document.getElementById('kvKey').value.trim();
+      const v = document.getElementById('kvValue').value;
+      const ttlRaw = document.getElementById('kvTtl').value.trim();
+      if (!k) { log('error', 'KV: key is required'); return; }
+      const ttl = ttlRaw ? parseInt(ttlRaw, 10) : undefined;
+      const body = ttl && ttl > 0 ? { value: v, ttl } : { value: v };
+      const r = await api('/redis/kv/' + encodeURIComponent(k), { method: 'PUT', headers: headers(true), body: JSON.stringify(body) });
+      log(r.status === 200 ? 'ok' : 'error', 'KV set: ' + JSON.stringify(r.data));
+    }
+    async function redisGet() {
+      const k = document.getElementById('kvKey').value.trim();
+      if (!k) { log('error', 'KV: key is required'); return; }
+      const r = await api('/redis/kv/' + encodeURIComponent(k), { headers: headers(false) });
+      log(r.status === 200 ? 'ok' : 'error', 'KV get: ' + JSON.stringify(r.data));
+      if (r.status === 200 && r.data && typeof r.data.value === 'string') {
+        try { document.getElementById('kvValue').value = r.data.value; } catch {}
+      }
+    }
+    async function redisDel() {
+      const k = document.getElementById('kvKey').value.trim();
+      if (!k) { log('error', 'KV: key is required'); return; }
+      const r = await api('/redis/kv/' + encodeURIComponent(k), { method: 'DELETE', headers: headers(true) });
+      log(r.status === 200 ? 'ok' : 'error', 'KV del: ' + JSON.stringify(r.data));
+    }
+    // Initialize preferences
+    window.addEventListener('load', () => {
+      try {
+        const c = (localStorage.getItem('knot_compact') === '1');
+        applyCompact(c);
+        const chk = document.getElementById('compactToggle');
+        if (chk) chk.checked = c;
+        const t = localStorage.getItem('knot_theme') || 'dark';
+        applyTheme(t);
+        const th = document.getElementById('themeToggle');
+        if (th) th.checked = (t !== 'light');
+      } catch {}
+    });
+    // curl helpers
+    function originBase(){ return (apiBase || window.location.origin); }
+    function curlHeaders(json){ const parts=[]; if(apiKey){ parts.push('-H "X-API-Key: ' + apiKey.replace(/"/g,'\\"') + '"'); } if(json){ parts.push('-H "Content-Type: application/json"'); } return parts; }
+    function buildCurl(method, path, body){ const url = originBase() + path; let parts = ['curl -X ' + method + ' "' + url + '"']; parts = parts.concat(curlHeaders(!!body)); if (body){ parts.push('-d ' + '\'' + JSON.stringify(body) + '\''); } return parts.join(' '); }
+    async function copyText(txt){ try{ await navigator.clipboard.writeText(txt); showToast('ok','Copied curl'); }catch(e){ try{ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('ok','Copied curl'); }catch{ showToast('error','Copy failed'); } } }
+    // Copy curl actions
+    function copyCurlCreateUser(){ const username=(document.getElementById('userName').value||'').trim()||null; const cmd=buildCurl('POST','/users',{username}); copyText(cmd); }
+    function copyCurlCreatePost(){ const creator=(document.getElementById('creator').value||'').trim(); const description=(document.getElementById('description').value||'').trim()||null; const media=(document.getElementById('mediaPath').value||'').trim()||null; const body={ creator, description, media_path: media }; const cmd=buildCurl('POST','/posts',body); copyText(cmd); }
+    function copyCurlUpload(){ const url = originBase() + '/upload'; let cmd = 'curl -X POST "' + url + '" ' + (apiKey?('-H "X-API-Key: ' + apiKey.replace(/"/g,'\\"') + '" '):'') + '-F "file=@/path/to/file"'; copyText(cmd); }
+    function copyCurlInteraction(action){ const viewer=(document.getElementById('viewer').value||'').trim(); const creator=(document.getElementById('author').value||'').trim(); const post=(document.getElementById('postId').value||'').trim(); const amount=parseFloat(document.getElementById('giftAmt').value||'0'); const cmd=buildCurl('POST','/interactions/'+encodeURIComponent(action),{viewer, creator, post, amount}); copyText(cmd); }
+    function copyCurlRank(){ const user=(document.getElementById('activeUser').value||'').trim(); const k=parseInt(document.getElementById('rankK').value||'20',10); const url=originBase()+('/rank?user='+encodeURIComponent(user)+'&k='+k); const parts=['curl "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
+    function copyCurlSearch(){ const q=(document.getElementById('searchQ').value||'').trim(); const k=parseInt(document.getElementById('searchK').value||'10',10); const url=originBase()+('/search?q='+encodeURIComponent(q)+'&k='+k); const parts=['curl "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
+    function copyCurlFlush(){ const pf=(document.getElementById('cachePrefix').value||'').trim(); const qs=pf?('?prefix='+encodeURIComponent(pf)) : ''; const url=originBase()+'/cache/flush'+qs; const parts=['curl -X POST "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
+    function copyCurlKvSet(){ const k=(document.getElementById('kvKey').value||'').trim(); const v=document.getElementById('kvValue').value; const ttlRaw=(document.getElementById('kvTtl').value||'').trim(); const ttl=ttlRaw?parseInt(ttlRaw,10):undefined; const body=ttl?{value:v, ttl}:{value:v}; const cmd=buildCurl('PUT','/redis/kv/'+encodeURIComponent(k),body); copyText(cmd); }
+    function copyCurlKvGet(){ const k=(document.getElementById('kvKey').value||'').trim(); const url=originBase()+('/redis/kv/'+encodeURIComponent(k)); const parts=['curl "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
+    function copyCurlKvDel(){ const k=(document.getElementById('kvKey').value||'').trim(); const url=originBase()+('/redis/kv/'+encodeURIComponent(k)); const parts=['curl -X DELETE "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
   </script>
   </head>
   <body>
+    <div class="container">
     <h1>Knot-Labs Web UI</h1>
     <fieldset>
       <legend>Auth</legend>
@@ -259,10 +409,32 @@
         <input type="text" id="apiBase" placeholder="e.g., http://localhost:8000" />
         <button onclick="setApiBase()">Set</button>
       </div>
+      <div class="row"><label>Dark Mode</label>
+        <input type="checkbox" id="themeToggle" onchange="onThemeToggle(this)" />
+      </div>
+      <div class="row"><label>Compact Mode</label>
+        <input type="checkbox" id="compactToggle" onchange="onCompactToggle(this)" />
+      </div>
       <div class="row">
         <button onclick="testApi()">Test API</button>
         <button onclick="testCors()">Test CORS</button>
+        <button onclick="testRedis()">Test Redis</button>
+        <button onclick="resetUI()">Reset UI</button>
       </div>
+    </fieldset>
+
+    <div class="grid">
+    <fieldset>
+      <legend>Redis KV (demo)</legend>
+      <div class="row"><label>Key</label><input type="text" id="kvKey" placeholder="demo:key" /></div>
+      <div class="row"><label>Value</label><input type="text" id="kvValue" placeholder="value" /></div>
+      <div class="row"><label>TTL (seconds)</label><input type="number" id="kvTtl" min="0" placeholder="optional" /></div>
+      <div class="row">
+        <button onclick="redisSet()">Set</button>
+        <button onclick="redisGet()">Get</button>
+        <button onclick="redisDel()">Delete</button>
+      </div>
+      <div class="muted">Note: Set/Delete require API key if server enforces one.</div>
     </fieldset>
 
     <fieldset>
@@ -323,8 +495,11 @@
       <div class="row"><label>Prefix</label><input type="text" id="cachePrefix" placeholder="knot:cache (default)" /></div>
       <div class="row"><button onclick="flushCache()">Flush Cache</button></div>
     </fieldset>
+    </div>
 
-    <h2>Log</h2>
+    <h2 class="muted">Log</h2>
     <div id="log"></div>
+    <div id="toasts" class="toast-container"></div>
+    </div>
   </body>
   </html>
