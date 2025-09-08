@@ -30,6 +30,28 @@ def make_category_from_micro(micro: List[str]) -> Dict:
     return {"macro": macro, "meso": meso, "micro": micro_labels}
 
 
+def make_category_with_limits(micro: List[str], macro_n: int = 3, meso_n: int = 8, micro_n: int = 15) -> Dict:
+    """Build a Category object with specific bucket sizes.
+
+    This does not affect the default behavior of make_category_from_micro used by tests.
+    """
+    uniq: List[str] = []
+    seen = set()
+    for m in micro:
+        s = (m or "").strip()
+        if not s:
+            continue
+        if s not in seen:
+            uniq.append(s)
+            seen.add(s)
+    macro = uniq[:macro_n] if uniq else ["uncategorized"]
+    rest_after_macro = uniq[macro_n:]
+    meso = rest_after_macro[:meso_n] if rest_after_macro else macro
+    rest_after_meso = rest_after_macro[meso_n:]
+    micro_labels = rest_after_meso[:micro_n] if rest_after_meso else []
+    return {"macro": macro, "meso": meso, "micro": micro_labels}
+
+
 def ensure_category(post: Dict) -> Dict:
     # Return a Category object, converting legacy 'Categories' list if needed.
     raw = post.get("Category")

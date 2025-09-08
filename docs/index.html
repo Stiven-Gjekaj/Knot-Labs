@@ -6,17 +6,17 @@
   <title>Knot-Labs Web UI</title>
   <style>
     :root {
-      --bg: #100b0c;
-      --surface: #171012;
-      --card: #1d1315;
-      --input: #231518;
-      --border: #2a1a1d;
-      --primary: #c81e2d;
-      --primary-600: #a81824;
-      --primary-700: #8b131d;
-      --accent: #ef4444;
-      --text: #f5f5f5;
-      --muted: #a1a1aa;
+      --bg: #0b0b0e;
+      --surface: #111113;
+      --card: #141416;
+      --input: #1a1b1f;
+      --border: #23242a;
+      --primary: #f87171;      /* light red accent */
+      --primary-600: #ef4444;
+      --primary-700: #dc2626;
+      --accent: #fca5a5;       /* soft red */
+      --text: #e5e7eb;
+      --muted: #9ca3af;
       --success: #22c55e;
       --error: #ef4444;
     }
@@ -25,8 +25,8 @@
     body {
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
       margin: 0; padding: 0; color: var(--text);
-      background: radial-gradient(1200px 800px at 20% -10%, #220f13 0%, var(--bg) 50%) fixed,
-                  linear-gradient(180deg, #140c0e 0%, #0e0a0b 100%);
+      background: radial-gradient(1200px 800px at 20% -10%, #1a1012 0%, var(--bg) 50%) fixed,
+                  linear-gradient(180deg, #0f1115 0%, #0b0b0e 100%);
     }
     .container { max-width: 1024px; margin: 24px auto 48px auto; padding: 0 16px; }
     h1 { font-size: 24px; letter-spacing: 0.5px; margin: 0 0 16px 0; color: #ffd7dc; }
@@ -105,6 +105,7 @@
       try { localStorage.setItem('knot_theme', theme); } catch {}
     }
     function onThemeToggle(el) { applyTheme(el && el.checked ? 'dark' : 'light'); }
+    function onAutoTreeToggle(el){ try { localStorage.setItem('knot_auto_tree', (el && el.checked) ? '1' : '0'); } catch {} }
 function resetUI() {
   try { localStorage.removeItem('knot_compact'); } catch {}
   const chk = document.getElementById('compactToggle');
@@ -365,6 +366,47 @@ function resetUI() {
       const r = await api('/redis/kv/' + encodeURIComponent(k), { method: 'DELETE', headers: headers(true) });
       log(r.status === 200 ? 'ok' : 'error', 'KV del: ' + JSON.stringify(r.data));
     }
+    async function classifyAnn(){
+      const p = document.getElementById('clsMedia').value.trim() || document.getElementById('mediaPath').value.trim();
+      const k = parseInt(document.getElementById('clsK').value || '10', 10);
+      const f = parseInt(document.getElementById('clsFrames').value || '8', 10);
+      const m = document.getElementById('clsModel').value.trim() || 'ViT-B/32';
+      const s2 = document.getElementById('clsStage2').checked;
+      const agg = document.getElementById('clsAgg').value || 'mean';
+      const useAudio = document.getElementById('clsUseAudio').checked;
+      const wv = parseFloat(document.getElementById('clsWVideo').value || '1');
+      const wa = parseFloat(document.getElementById('clsWAudio').value || '0');
+      try { localStorage.setItem('knot_audio_use', useAudio ? '1':'0'); localStorage.setItem('knot_audio_wv', String(wv)); localStorage.setItem('knot_audio_wa', String(wa)); } catch {}
+      if (!p){ log('error','Classify: set Media Path or Upload'); return; }
+      const url = '/classify/ann?video_path=' + encodeURIComponent(p) + '&k=' + k + '&frames=' + f + '&model=' + encodeURIComponent(m) + '&stage2=' + (s2?'true':'false') + '&agg=' + encodeURIComponent(agg) + '&use_audio=' + (useAudio?'true':'false') + '&w_video=' + encodeURIComponent(wv) + '&w_audio=' + encodeURIComponent(wa);
+      const r = await api(url, { headers: headers(false) });
+      try {
+        const div = document.getElementById('clsResults');
+        if (r.status === 200 && r.data && Array.isArray(r.data.results)) {
+          const rows = r.data.results.map((it, idx) => `<tr><td>${idx+1}</td><td>${(it.label||'')}</td><td>${(it.score||0).toFixed(3)}</td></tr>`).join('');
+          div.innerHTML = `<table style="width:100%; border-collapse:collapse"><thead><tr><th>#</th><th>Label</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table>`;
+          log('ok','Classify: received ' + r.data.results.length + ' results');
+        } else {
+          div.innerHTML = '';
+          log('error','Classify: unexpected response');
+        }
+      } catch (e) { log('error','Classify render error: ' + e); }
+    }
+    function copyCurlClassify(){
+      const p = (document.getElementById('clsMedia').value || document.getElementById('mediaPath').value || '').trim();
+      const k = parseInt(document.getElementById('clsK').value || '10', 10);
+      const f = parseInt(document.getElementById('clsFrames').value || '8', 10);
+      const m = (document.getElementById('clsModel').value || 'ViT-B/32').trim();
+      const s2 = document.getElementById('clsStage2').checked;
+      const agg = document.getElementById('clsAgg').value || 'mean';
+      const useAudio = document.getElementById('clsUseAudio').checked;
+      const wv = parseFloat(document.getElementById('clsWVideo').value || '1');
+      const wa = parseFloat(document.getElementById('clsWAudio').value || '0');
+      const qs = '/classify/ann?video_path=' + encodeURIComponent(p) + '&k=' + k + '&frames=' + f + '&model=' + encodeURIComponent(m) + '&stage2=' + (s2?'true':'false') + '&agg=' + encodeURIComponent(agg) + '&use_audio=' + (useAudio?'true':'false') + '&w_video=' + encodeURIComponent(wv) + '&w_audio=' + encodeURIComponent(wa);
+      const url = originBase() + qs;
+      const parts = ['curl \"' + url + '\"'].concat(curlHeaders(false));
+      copyText(parts.join(' '));
+    }
     // Initialize preferences
     window.addEventListener('load', () => {
       try {
@@ -376,6 +418,10 @@ function resetUI() {
         applyTheme(t);
         const th = document.getElementById('themeToggle');
         if (th) th.checked = (t !== 'light');
+        const at = (localStorage.getItem('knot_auto_tree') === '1');
+        const atEl = document.getElementById('autoTree');
+        if (atEl) atEl.checked = at;
+        if (at) { try { loadTree(); } catch {} }
       } catch {}
     });
     // curl helpers
@@ -415,6 +461,9 @@ function resetUI() {
       <div class="row"><label>Compact Mode</label>
         <input type="checkbox" id="compactToggle" onchange="onCompactToggle(this)" />
       </div>
+      <div class="row"><label>Autoload Categories</label>
+        <input type="checkbox" id="autoTree" onchange="onAutoTreeToggle(this)" />
+      </div>
       <div class="row">
         <button onclick="testApi()">Test API</button>
         <button onclick="testCors()">Test CORS</button>
@@ -424,6 +473,38 @@ function resetUI() {
     </fieldset>
 
     <div class="grid">
+    <fieldset>
+      <legend>Classify (ANN)</legend>
+      <div class="row"><label>Media Path (server path)</label><input type="text" id="clsMedia" placeholder="/path/to/video" /></div>
+      <div class="row"><label>Top K</label><input type="number" id="clsK" value="10" min="1" /></div>
+      <div class="row"><label>Frames</label><input type="number" id="clsFrames" value="8" min="1" /></div>
+      <div class="row"><label>Model</label>
+        <select id="clsModel">
+          <option value="ViT-B/32" selected>ViT-B/32</option>
+          <option value="ViT-B/16">ViT-B/16</option>
+          <option value="ViT-L/14">ViT-L/14</option>
+          <option value="ViT-H/14">ViT-H/14 (OpenCLIP)</option>
+          <option value="ViT-g/14">ViT-g/14 (OpenCLIP)</option>
+        </select>
+      </div>
+      <div class="row"><label>Stage2 re-rank</label><input type="checkbox" id="clsStage2" checked /></div>
+      <div class="row"><label>Aggregation</label>
+        <select id="clsAgg"> 
+          <option value="mean" selected>mean</option>
+          <option value="max">max</option>
+          <option value="softmax">softmax</option>
+        </select>
+      </div>
+      <div class="row"><label>Use Audio (CLAP)</label><input type="checkbox" id="clsUseAudio" /></div>
+      <div class="row"><label>Weights (video / audio)</label>
+        <input type="number" id="clsWVideo" value="1.0" min="0" max="1" step="0.1" />
+        <input type="number" id="clsWAudio" value="0.0" min="0" max="1" step="0.1" />
+      </div>
+      <div class="row"> 
+        <button onclick="classifyAnn()">Classify</button><button onclick="copyCurlClassify()">Copy curl</button>
+      </div>
+      <div id="clsResults" class="row"></div>
+    </fieldset>
     <fieldset>
       <legend>Redis KV (demo)</legend>
       <div class="row"><label>Key</label><input type="text" id="kvKey" placeholder="demo:key" /></div>

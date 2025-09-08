@@ -31,6 +31,13 @@ from Mesh.drift_adapter import mesh_user_to_drift_user, mesh_posts_to_drift_cand
 from Drift.drift_ranker import rank_videos
 from Scribe.search import build_index
 from Mesh.analytics import category_stats
+from api.label_index import ensure_index, embed_video, ann_search, rerank_with_frames, build_label_embeddings_audio, embed_audio_from_video
+try:
+    from Mesh.mongo_store import mongo_health as _mongo_health, save_user as save_user_mongo, save_post as save_post_mongo  # type: ignore
+except Exception:
+    _mongo_health = None  # type: ignore
+    save_user_mongo = None  # type: ignore
+    save_post_mongo = None  # type: ignore
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -311,6 +318,11 @@ def api_create_user(req: CreateUser, request: Request):
         save_user_db(u)
     except Exception:
         pass
+    try:
+        if save_user_mongo is not None:
+            save_user_mongo(u)  # type: ignore
+    except Exception:
+        pass
     return u
 
 
@@ -341,6 +353,11 @@ def api_create_post(req: CreatePost, request: Request):
     try:
         from Mesh.sqlite_store import save_post as save_post_db  # type: ignore
         save_post_db(post)
+    except Exception:
+        pass
+    try:
+        if save_post_mongo is not None:
+            save_post_mongo(post)  # type: ignore
     except Exception:
         pass
     job_id = None
@@ -615,3 +632,69 @@ def api_category_stats(request: Request):
     _check_rate(request)
     stats = category_stats(POSTS_DIR)
     return stats
+
+
+@app.get('/categories/tree')
+def api_categories_tree(request: Request):
+    _check_rate(request)
+    tree_path = os.path.join(MESH_DIR, 'master_tree.json')
+    if not os.path.isfile(tree_path):
+        raise HTTPException(404, 'Category tree not found. Generate it with build_mastercategories_tree.py')
+    try:
+        import json
+        data = json.load(open(tree_path, 'r', encoding='utf-8'))
+        return data
+    except Exception as e:
+        raise HTTPException(500, f'Failed to read category tree: {e}')
+
+
+@app.get('/health/mongo')
+def api_health_mongo():
+    if _mongo_health is None:
+        return {"ok": False, "configured": False}
+    res = _mongo_health()  # type: ignore
+    if not bool(res.get("ok")):
+        raise HTTPException(503, f"Mongo unhealthy: {res}")
+    return res
+
+
+@app.get('/classify/ann')
+def api_classify_ann(request: Request, video_path: str, k: int = 10, frames: int = 8, model: str = 'ViT-B/32', stage2: bool = True, use_audio: bool = False, w_video: float = 1.0, w_audio: float = 0.0, agg: str = 'mean'):
+    _check_rate(request)
+    master = MASTER_PATH
+    idx = ensure_index(master, out_dir=os.path.join(ROOT, 'indexes'), model_name=model, mode='video')
+    E = idx['emb']  # type: ignore[index]
+    labels = idx['labels']  # type: ignore[index]
+    index = idx['index']  # type: ignore[index]
+    frames_emb, pooled = embed_video(video_path, model_name=model, frames=int(frames), device='cpu')
+    # Stage 1 video ANN
+    top = ann_search(E, labels, pooled, k=int(k), index=index)
+    # Optional audio fusion (requires CLAP at runtime)
+    audio_info = None
+    if bool(use_audio) and w_audio > 0:
+        Ea, labels_a = build_label_embeddings_audio(master, mode='video')
+        qa = embed_audio_from_video(video_path)
+        if qa is not None and Ea.size and len(labels_a) == len(labels):
+            # Compute fused scores for the union of candidates
+            Sv = (pooled @ E.T)[0]
+            Sa = (qa @ Ea.T)[0]
+            # Normalize each branch to [0,1]
+            import numpy as _np
+            def _mm(x):
+                if not x.size:
+                    return x
+                mn, mx = float(x.min(initial=0.0)), float(x.max(initial=0.0))
+                return (x - mn) / (mx - mn + 1e-9)
+            fused = w_video * _mm(Sv) + w_audio * _mm(Sa)
+            order = _np.argsort(fused)[::-1][: int(k)]
+            top = [(labels[i], float(fused[i]), int(i)) for i in order]
+            audio_info = {'used': True}
+        else:
+            audio_info = {'used': False}
+    if stage2 and top:
+        top_idx = [t[2] for t in top]
+        rer = rerank_with_frames(top_idx, E, frames_emb, agg=str(agg))
+        out = [{'label': labels[i], 'score': sc} for i, sc in rer[:k]]
+    else:
+        out = [{'label': lbl, 'score': sc} for lbl, sc, _ in top]
+    return {'results': out, 'k': k, 'frames': frames, 'model': model, 'audio': audio_info}

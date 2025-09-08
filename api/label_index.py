@@ -1,0 +1,255 @@
+from __future__ import annotations
+
+import os
+from typing import List, Tuple, Optional, Dict, Any
+
+import numpy as np
+import torch
+
+try:
+    import faiss  # type: ignore
+except Exception:  # pragma: no cover
+    faiss = None  # type: ignore
+
+import clip  # type: ignore
+try:
+    from laion_clap import CLAP_Module  # type: ignore
+except Exception:  # pragma: no cover
+    CLAP_Module = None  # type: ignore
+
+
+def _normalize(x: torch.Tensor) -> torch.Tensor:
+    return torch.nn.functional.normalize(x, dim=-1, eps=1e-9)
+
+
+def _read_labels(master_path: str, mode: str = "video") -> List[str]:
+    labels: List[str] = []
+    if not os.path.isfile(master_path):
+        return labels
+    with open(master_path, "r", encoding="utf-8") as f:
+        for line in f:
+            s = line.strip()
+            if not s or s.startswith("#"):
+                continue
+            if "|" in s:
+                # format: video-prompt | photo-prompt
+                parts = [p.strip() for p in s.split("|", 1)]
+                labels.append(parts[0] if mode == "video" else parts[-1])
+            else:
+                # plain category
+                labels.append(("a video of {}" if mode == "video" else "a photo of {}"))
+                labels[-1] = labels[-1].format(s)
+    return labels
+
+
+def _templates_for_mode(mode: str) -> List[str]:
+    if mode == "video":
+        return [
+            "a video of a {}",
+            "a video of {}",
+            "a clip of a {}",
+            "a recording of a {}",
+        ]
+    else:
+        return [
+            "a photo of a {}",
+            "a photo of {}",
+            "an image of a {}",
+            "a picture of a {}",
+        ]
+
+
+def _strip_prompt_prefix(label: str, mode: str) -> str:
+    l = label.strip()
+    low = l.lower()
+    prefixes = (
+        ("video", ["a video of ", "a video about ", "video of ", "video about ", "a clip of ", "a recording of "]),
+        ("photo", ["a photo of ", "photo of ", "an image of ", "a picture of "]),
+    )
+    for m, pres in prefixes:
+        if mode == m:
+            for p in pres:
+                if low.startswith(p):
+                    return l[len(p):].strip()
+    return l
+
+
+def build_label_embeddings(master_path: str, model_name: str = "ViT-B/32", mode: str = "video", device: str = "cpu") -> Tuple[np.ndarray, List[str]]:
+    raw = _read_labels(master_path, mode=mode)
+    if not raw:
+        return np.zeros((0, 1), dtype=np.float32), []
+    # Convert any prompts to base labels for multi-template ensembling
+    base_labels = [_strip_prompt_prefix(s, mode) for s in raw]
+    templates = _templates_for_mode(mode)
+    model, _pre = clip.load(model_name, device=device)
+    emb_accum: Optional[torch.Tensor] = None
+    for tmpl in templates:
+        prompts = [tmpl.format(c) for c in base_labels]
+        tokens = clip.tokenize(prompts, truncate=True).to(device)
+        with torch.no_grad():
+            emb = _normalize(model.encode_text(tokens).float())  # [L, D]
+        emb_accum = emb if emb_accum is None else (emb_accum + emb)
+    assert emb_accum is not None
+    emb_avg = _normalize(emb_accum / float(len(templates)))
+    return emb_avg.cpu().numpy().astype(np.float32), base_labels
+
+
+def ensure_index(master_path: str, out_dir: str = "indexes", model_name: str = "ViT-B/32", mode: str = "video") -> Dict[str, Any]:
+    os.makedirs(out_dir, exist_ok=True)
+    key = f"labels_clip_{mode}_{model_name.replace('/', '-')}.npz"
+    npz_path = os.path.join(out_dir, key)
+    labels: List[str]
+    if os.path.isfile(npz_path):
+        d = np.load(npz_path, allow_pickle=True)
+        E = d["E"].astype(np.float32)
+        labels = list(d["labels"].tolist())
+    else:
+        E, labels = build_label_embeddings(master_path, model_name=model_name, mode=mode, device="cpu")
+        np.savez_compressed(npz_path, E=E, labels=np.array(labels, dtype=object))
+    index = None
+    if faiss is not None and E.size > 0:
+        dim = E.shape[1]
+        index = faiss.IndexFlatIP(dim)
+        index.add(E)
+    return {"emb": E, "labels": labels, "index": index, "npz": npz_path}
+
+
+def build_label_embeddings_audio(master_path: str, mode: str = "video") -> Tuple[np.ndarray, List[str]]:
+    if CLAP_Module is None:
+        return np.zeros((0, 1), dtype=np.float32), []
+    raw = _read_labels(master_path, mode=mode)
+    if not raw:
+        return np.zeros((0, 1), dtype=np.float32), []
+    base_labels = [_strip_prompt_prefix(s, mode) for s in raw]
+    try:
+        model = CLAP_Module(enable_fusion=False)
+        model.eval()
+        model.load_ckpt()  # expects default checkpoint; may fail if not present
+        with torch.no_grad():
+            text_emb = model.get_text_embedding(base_labels)
+        text_emb = text_emb / (np.linalg.norm(text_emb, axis=1, keepdims=True) + 1e-9)
+        return text_emb.astype(np.float32), base_labels
+    except Exception:
+        return np.zeros((0, 1), dtype=np.float32), []
+
+
+def embed_audio_from_video(video_path: str, sr: int = 48000) -> Optional[np.ndarray]:
+    if CLAP_Module is None:
+        return None
+    try:
+        import tempfile
+        import ffmpeg  # type: ignore
+        import soundfile as sf  # type: ignore
+        # Extract audio to temp wav
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+            tmp_path = tmp.name
+        (
+            ffmpeg
+            .input(video_path)
+            .output(tmp_path, ac=1, ar=sr, format='wav')
+            .overwrite_output()
+            .run(quiet=True)
+        )
+        # Load and embed
+        wav, file_sr = sf.read(tmp_path, dtype='float32')
+        if file_sr != sr:
+            import librosa  # type: ignore
+            wav = librosa.resample(wav, orig_sr=file_sr, target_sr=sr)
+        model = CLAP_Module(enable_fusion=False)
+        model.eval()
+        # Optional checkpoint override
+        ckpt_path = os.environ.get('CLAP_CKPT_PATH')
+        if not ckpt_path:
+            # try downloading if URL provided
+            url = os.environ.get('CLAP_CKPT_URL')
+            if url:
+                try:
+                    import urllib.request as _ur
+                    import tempfile
+                    td = tempfile.gettempdir()
+                    fname = os.path.join(td, 'clap_ckpt.pt')
+                    _ur.urlretrieve(url, fname)
+                    ckpt_path = fname
+                except Exception:
+                    ckpt_path = None
+        if ckpt_path:
+            model.load_ckpt(ckpt_path=ckpt_path)
+        else:
+            model.load_ckpt()
+        with torch.no_grad():
+            audio_emb = model.get_audio_embedding_from_data(x=wav, sr=sr)
+        audio_emb = audio_emb / (np.linalg.norm(audio_emb, axis=1, keepdims=True) + 1e-9)
+        return audio_emb.astype(np.float32).mean(axis=0, keepdims=True)
+    except Exception:
+        return None
+
+
+def _sample_video_frames(video_path: str, max_frames: int = 8) -> List[Any]:
+    import cv2  # type: ignore
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return []
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    stride = max(1, total // max(1, max_frames))
+    frames: List[Any] = []
+    i = 0
+    while True and len(frames) < max_frames:
+        ok, frame = cap.read()
+        if not ok:
+            break
+        if i % stride == 0:
+            # BGR to RGB
+            frames.append(frame[:, :, ::-1])
+        i += 1
+    cap.release()
+    return frames
+
+
+def embed_video(video_path: str, model_name: str = "ViT-B/32", frames: int = 8, device: str = "cpu") -> Tuple[np.ndarray, np.ndarray]:
+    model, preprocess = clip.load(model_name, device=device)
+    imgs = _sample_video_frames(video_path, max_frames=frames)
+    if not imgs:
+        raise RuntimeError("No frames sampled from video")
+    img_tensors = torch.stack([preprocess(im) for im in imgs]).to(device)
+    with torch.no_grad():
+        vid = _normalize(model.encode_image(img_tensors).float())  # [F, D]
+    pooled = _normalize(vid.mean(dim=0, keepdim=True))  # [1, D]
+    return vid.cpu().numpy().astype(np.float32), pooled.cpu().numpy().astype(np.float32)
+
+
+def ann_search(E: np.ndarray, labels: List[str], query: np.ndarray, k: int = 10, index=None) -> List[Tuple[str, float, int]]:
+    # query: [1, D]
+    if E.size == 0:
+        return []
+    if index is not None and faiss is not None:
+        D, I = index.search(query, min(k, E.shape[0]))
+        out: List[Tuple[str, float, int]] = []
+        for score, idx in zip(D[0], I[0]):
+            out.append((labels[idx], float(score), int(idx)))
+        return out
+    # Fallback: brute-force inner product
+    scores = (query @ E.T)[0]
+    order = np.argsort(scores)[::-1][: min(k, E.shape[0])]
+    return [(labels[i], float(scores[i]), int(i)) for i in order]
+
+
+def rerank_with_frames(top_idx: List[int], E: np.ndarray, frames_emb: np.ndarray, agg: str = 'mean') -> List[Tuple[int, float]]:
+    # frames_emb: [F, D], E[top_idx]: [K, D]
+    if not top_idx:
+        return []
+    K = len(top_idx)
+    E_top = E[top_idx]  # [K, D]
+    # Sim per frame per label
+    sims = frames_emb @ E_top.T  # [F, K]
+    if agg == 'max':
+        scores = sims.max(axis=0)
+    elif agg == 'softmax':
+        # Softmax over frames then average expected similarity
+        import numpy as _np
+        sm = _np.exp(sims - sims.max(axis=0, keepdims=True))
+        sm = sm / (sm.sum(axis=0, keepdims=True) + 1e-9)
+        scores = (sm * sims).sum(axis=0)
+    else:
+        scores = sims.mean(axis=0)
+    order = np.argsort(scores)[::-1]
+    return [(int(top_idx[i]), float(scores[i])) for i in order]

@@ -47,7 +47,24 @@ class App:
     def __init__(self, root: tk.Tk):
         self.root = root
         root.title("Knot-Labs GUI")
-        root.geometry("900x650")
+        root.geometry("1000x720")
+        # Dark theme with light red accents
+        try:
+            style = ttk.Style(root)
+            style.theme_use('clam')
+            bg = '#0b0b0e'; card = '#141416'; fg = '#e5e7eb'; border = '#23242a'; primary = '#f87171'
+            root.configure(bg=bg)
+            style.configure('.', background=bg, foreground=fg)
+            style.configure('TFrame', background=bg)
+            style.configure('TLabelframe', background=card, foreground=fg, bordercolor=border)
+            style.configure('TLabelframe.Label', background=card, foreground=fg)
+            style.configure('TLabel', background=card, foreground=fg)
+            style.configure('TEntry', fieldbackground='#1a1b1f', foreground=fg)
+            style.configure('TCombobox', fieldbackground='#1a1b1f', foreground=fg)
+            style.configure('TButton', background=primary, foreground='#1b1b1b', borderwidth=1)
+            style.map('TButton', background=[('active', '#ef4444')])
+        except Exception:
+            pass
 
         main = ttk.Frame(root, padding=10)
         main.grid(row=0, column=0, sticky="nsew")
@@ -58,9 +75,18 @@ class App:
         title = ttk.Label(main, text="Knot-Labs GUI", font=("Segoe UI", 14, "bold"))
         title.grid(row=0, column=0, sticky="w", pady=(0, 8))
 
+        # Theme selector (Dark/Light)
+        f_theme = ttk.LabelFrame(main, text="Appearance")
+        f_theme.grid(row=1, column=0, sticky="ew", pady=4)
+        ttk.Label(f_theme, text="Theme").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        self.theme_sel = ttk.Combobox(f_theme, values=["Dark","Light"], state="readonly", width=10)
+        self.theme_sel.set("Dark")
+        self.theme_sel.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        ttk.Button(f_theme, text="Apply", command=lambda: self.apply_theme(self.theme_sel.get())).grid(row=0, column=2, padx=5, pady=5)
+
         # Create User
         f_user = ttk.LabelFrame(main, text="Create User")
-        f_user.grid(row=1, column=0, sticky="ew", pady=4)
+        f_user.grid(row=2, column=0, sticky="ew", pady=4)
         f_user.columnconfigure(1, weight=1)
         ttk.Label(f_user, text="Username").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.user_name = ttk.Entry(f_user)
@@ -73,7 +99,7 @@ class App:
 
         # Create Post + Analyze
         f_post = ttk.LabelFrame(main, text="Create Post + Analyze")
-        f_post.grid(row=2, column=0, sticky="ew", pady=4)
+        f_post.grid(row=3, column=0, sticky="ew", pady=4)
         for c in range(3):
             f_post.columnconfigure(c, weight=1 if c == 1 else 0)
         ttk.Label(f_post, text="Creator (userID or username)").grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -92,10 +118,37 @@ class App:
         self.analyze_btn.grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.analyze_prog = ttk.Progressbar(f_post, mode="indeterminate", length=200)
         self.analyze_prog.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+        # Fast classify (ANN) — align with web UI
+        ttk.Label(f_post, text="ANN K").grid(row=4, column=0, padx=5, pady=5, sticky="e")
+        self.ann_k = ttk.Entry(f_post, width=6)
+        self.ann_k.insert(0, "10")
+        self.ann_k.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(f_post, text="Frames").grid(row=4, column=2, padx=5, pady=5, sticky="e")
+        self.ann_frames = ttk.Entry(f_post, width=6)
+        self.ann_frames.insert(0, "8")
+        self.ann_frames.grid(row=4, column=3, padx=5, pady=5, sticky="w")
+        ttk.Label(f_post, text="Model").grid(row=5, column=0, padx=5, pady=5, sticky="e")
+        self.ann_model = ttk.Combobox(f_post, values=["ViT-B/32","ViT-B/16","ViT-L/14","ViT-H/14","ViT-g/14"], state="readonly", width=10)
+        self.ann_model.set("ViT-B/32")
+        self.ann_model.grid(row=5, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(f_post, text="Aggregation").grid(row=5, column=2, padx=5, pady=5, sticky="e")
+        self.ann_agg = ttk.Combobox(f_post, values=["mean","max","softmax"], state="readonly", width=10)
+        self.ann_agg.set("mean")
+        self.ann_agg.grid(row=5, column=3, padx=5, pady=5, sticky="w")
+        # Audio fusion controls
+        self.use_audio = tk.BooleanVar(value=False)
+        ttk.Label(f_post, text="Use Audio (CLAP)").grid(row=6, column=0, padx=5, pady=5, sticky="e")
+        ttk.Checkbutton(f_post, variable=self.use_audio).grid(row=6, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(f_post, text="Weights v/a").grid(row=6, column=2, padx=5, pady=5, sticky="e")
+        self.w_video = ttk.Entry(f_post, width=6); self.w_video.insert(0, "1.0")
+        self.w_audio = ttk.Entry(f_post, width=6); self.w_audio.insert(0, "0.0")
+        self.w_video.grid(row=6, column=3, padx=2, pady=5, sticky="w")
+        self.w_audio.grid(row=6, column=4, padx=2, pady=5, sticky="w")
+        ttk.Button(f_post, text="Classify (ANN)", command=self.on_classify_ann).grid(row=7, column=0, padx=5, pady=5, sticky="w")
 
         # Generators (randomized; only count inputs)
         f_gen = ttk.LabelFrame(main, text="Generators")
-        f_gen.grid(row=3, column=0, sticky="ew", pady=4)
+        f_gen.grid(row=4, column=0, sticky="ew", pady=4)
         for c in range(4):
             f_gen.columnconfigure(c, weight=0)
         # Users generator (random gender)
@@ -185,10 +238,27 @@ class App:
         f_sim.grid(row=7, column=0, sticky="ew", pady=4)
         ttk.Button(f_sim, text="Simulate Interactions", command=self.on_simulate).grid(row=0, column=0, padx=5, pady=5, sticky="w")
 
+        # Category Browser (like website)
+        f_tree = ttk.LabelFrame(main, text="Category Browser")
+        f_tree.grid(row=5, column=0, sticky="nsew", pady=4)
+        f_tree.columnconfigure(0, weight=1)
+        f_tree.rowconfigure(1, weight=1)
+        ttk.Button(f_tree, text="Load Categories", command=self.on_load_categories).grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        # Treeview with scrollbar
+        tree_frame = ttk.Frame(f_tree)
+        tree_frame.grid(row=1, column=0, sticky="nsew")
+        tree_frame.columnconfigure(0, weight=1)
+        tree_frame.rowconfigure(0, weight=1)
+        self.tree = ttk.Treeview(tree_frame, show='tree')
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=vsb.set)
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        vsb.grid(row=0, column=1, sticky="ns")
+
         # Log
         self.log = ScrolledText(main, height=16, wrap="word")
-        self.log.grid(row=8, column=0, sticky="nsew", pady=8)
-        main.rowconfigure(8, weight=1)
+        self.log.grid(row=9, column=0, sticky="nsew", pady=8)
+        main.rowconfigure(9, weight=1)
 
         # Quit
         ttk.Button(main, text="Quit", command=root.destroy).grid(row=9, column=0, sticky="e")
@@ -198,6 +268,26 @@ class App:
         sys.stderr = TextRedirector(self.log)  # type: ignore
 
     # UI Actions
+    def apply_theme(self, name: str) -> None:
+        try:
+            style = ttk.Style(self.root)
+            style.theme_use('clam')
+            if (name or '').lower().startswith('light'):
+                bg = '#f5f6f8'; card = '#ffffff'; fg = '#1f2937'; border = '#e5e7eb'; primary = '#ef4444'
+            else:
+                bg = '#0b0b0e'; card = '#141416'; fg = '#e5e7eb'; border = '#23242a'; primary = '#f87171'
+            self.root.configure(bg=bg)
+            style.configure('.', background=bg, foreground=fg)
+            style.configure('TFrame', background=bg)
+            style.configure('TLabelframe', background=card, foreground=fg, bordercolor=border)
+            style.configure('TLabelframe.Label', background=card, foreground=fg)
+            style.configure('TLabel', background=card, foreground=fg)
+            style.configure('TEntry', fieldbackground=('#ffffff' if name.lower().startswith('light') else '#1a1b1f'), foreground=fg)
+            style.configure('TCombobox', fieldbackground=('#ffffff' if name.lower().startswith('light') else '#1a1b1f'), foreground=fg)
+            style.configure('TButton', background=primary, foreground=('#1b1b1b' if name.lower().startswith('dark') else '#ffffff'), borderwidth=1)
+            style.map('TButton', background=[('active', '#ef4444')])
+        except Exception:
+            pass
     def on_browse(self) -> None:
         path = filedialog.askopenfilename()
         if path:
@@ -238,6 +328,92 @@ class App:
             finally:
                 self.root.after(0, lambda: (self.analyze_prog.stop(), self.analyze_btn.configure(state=tk.NORMAL)))
         threading.Thread(target=worker, daemon=True).start()
+
+    def on_classify_ann(self) -> None:
+        try:
+            media = self.media_path.get().strip()
+            if not os.path.isfile(media):
+                _notify(self.log, "Select a valid media file")
+                return
+            try:
+                k = int(self.ann_k.get().strip() or "10")
+            except Exception:
+                k = 10
+            # Import locally to avoid hard dependency if missing
+            try:
+                from api.label_index import ensure_index, embed_video, ann_search, rerank_with_frames, build_label_embeddings_audio, embed_audio_from_video  # type: ignore
+            except Exception as e:  # pragma: no cover
+                _notify(self.log, f"ANN unavailable: {e}")
+                return
+            model = (self.ann_model.get() or "ViT-B/32").strip()
+            frames = 8
+            try:
+                frames = int((self.ann_frames.get() or "8").strip())
+            except Exception:
+                pass
+            idx = ensure_index(os.path.join("Mesh", "mastercategories.txt"), out_dir="indexes", model_name=model, mode="video")
+            E = idx['emb']; labels = idx['labels']; index = idx['index']
+            frames_emb, pooled = embed_video(media, model_name=model, frames=frames, device='cpu')
+            top = ann_search(E, labels, pooled, k=int(k), index=index)
+            # Optional audio fusion
+            try:
+                if self.use_audio.get():
+                    Ea, labels_a = build_label_embeddings_audio(os.path.join("Mesh","mastercategories.txt"), mode='video')
+                    qa = embed_audio_from_video(media)
+                    if qa is not None and Ea.size and len(labels_a) == len(labels):
+                        import numpy as _np
+                        Sv = (pooled @ E.T)[0]; Sa = (qa @ Ea.T)[0]
+                        def _mm(x):
+                            if not x.size:
+                                return x
+                            mn, mx = float(x.min(initial=0.0)), float(x.max(initial=0.0))
+                            return (x - mn) / (mx - mn + 1e-9)
+                        try:
+                            wv = float(self.w_video.get().strip() or '1.0'); wa = float(self.w_audio.get().strip() or '0.0')
+                        except Exception:
+                            wv, wa = 1.0, 0.0
+                        fused = wv * _mm(Sv) + wa * _mm(Sa)
+                        order = _np.argsort(fused)[::-1][: int(k)]
+                        top = [(labels[i], float(fused[i]), int(i)) for i in order]
+            except Exception:
+                pass
+            if top:
+                top_idx = [t[2] for t in top]
+                agg = (self.ann_agg.get() or 'mean').strip()
+                rer = rerank_with_frames(top_idx, E, frames_emb, agg=agg)
+                out = [(labels[i], sc) for i, sc in rer[: k]]
+                _notify(self.log, f"ANN top-{k}:")
+                for lbl, sc in out:
+                    _notify(self.log, f"  {lbl}: {round(sc,3)}")
+            else:
+                _notify(self.log, "No ANN results")
+        except Exception as e:
+            _notify(self.log, f"Error: {e}")
+
+    def on_load_categories(self) -> None:
+        try:
+            tree_path = os.path.join("Mesh", "master_tree.json")
+            if not os.path.isfile(tree_path):
+                _notify(self.log, "Tree not found. Run build_mastercategories_tree.py first.")
+                return
+            import json
+            with open(tree_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            # clear tree
+            for it in self.tree.get_children():
+                self.tree.delete(it)
+            # populate
+            for macro, mesos in (data or {}).items():
+                mid = self.tree.insert('', 'end', text=str(macro))
+                if isinstance(mesos, dict):
+                    for meso, micros in mesos.items():
+                        sid = self.tree.insert(mid, 'end', text=str(meso))
+                        if isinstance(micros, list):
+                            for mi in micros:
+                                self.tree.insert(sid, 'end', text=str(mi))
+            _notify(self.log, "Loaded categories tree")
+        except Exception as e:
+            _notify(self.log, f"Error loading tree: {e}")
 
     def on_gen_users(self) -> None:
         try:

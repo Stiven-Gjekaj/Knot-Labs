@@ -1,34 +1,10 @@
 # Knot-Labs TODOs (Next Iterations)
 
-Completed in this iteration
+Backlog (next)
 
-- Improved ranking signals (Drift): added recency decay and configurable weights; category affinity/freshness/diversity handled via weights and run-limits.
-- GUI enhancements: generators (users/posts), gender and country selectors, and an indeterminate progress bar for Veil analysis.
-- SQLite persistence (initial): lightweight SQLite store for users and posts with write-through on create/update.
-- Auth & API keys: FastAPI now checks `X-API-Key` when `KNOT_API_KEY` is set.
-- Rate limiting & quotas: simple in-memory per-identity, per-endpoint limiter over a 60s window.
-
-- Redis integration (optional): `REDIS_URL` support, Redis-backed rate limiting (`KNOT_RATE_BACKEND=redis`), request-safe initialization and clean shutdown.
-- Caching: lightweight cache with Redis or in-memory fallback; `/search` results cached with TTL (`KNOT_CACHE_TTL`, default 60s).
-- Health and admin: `/health/redis` ping endpoint; `/cache/flush` admin endpoint (API-key guarded) to clear memory cache and Redis by prefix.
-- Web UI: simple static page served at `/ui` providing core GUI functions (create user, create post + analyze, interactions, rank, search, cache flush).
- - Uploads: `/upload` endpoint to save media to `Mesh/Uploads`; `/ui` now supports browser file upload and auto-fills the media path for analysis.
- - Preview uploads: optional `GET /uploads/{filename}` (enable with `KNOT_SERVE_UPLOADS=1`); UI shows a clickable preview link after upload.
- - Inline previews in Web UI: dedicated Preview section renders video/audio/image inline (with link fallback) after upload.
- - MIME detection: `/upload` returns a `mime` field (basic guess via extension); UI prefers MIME to select the preview element.
- - Root redirect and ping: `/` redirects to `/ui`; added `GET /ping` for connectivity tests.
- - CORS + Pages: `KNOT_CORS_ORIGINS` enables cross-origin calls (e.g., from GitHub Pages). UI supports configurable API base URL and provides “Test API” and “Test CORS” buttons.
- - Docs & config: added `.env` with sensible defaults (serve uploads; CORS for localhost + GitHub Pages). README updated with env usage and Pages setup.
-  - Redis KV: added demo KV endpoints (`PUT|GET|DELETE /redis/kv/{key}`) and a Redis KV panel in the UI to set/get/delete keys.
-
-Tests added:
-
-- `tests/test_admin_and_uploads.py` covering `/health/redis`, static `/ui`, `/upload` + `/uploads/{filename}` preview, and `/cache/flush`.
-- Observability & metrics: structured logging; Prometheus counters/histograms with `/metrics`; basic request timing middleware; job metrics.
-- Lint/format/type config: added `pyproject.toml` with ruff/black/mypy defaults (CI wiring pending).
-- Multi-modal Scribe: added `backend="hybrid"` combining BoW and Sentence-Transformers with a tunable weight.
-- Personalization pipeline (initial): offline job `Mesh/tools/personalize.py` recomputes per-user `CategoryScores` from `SeenPosts`.
-- Export/Import tooling: `Mesh/tools/export_import.py` for NDJSON export/import with simple dedup.
+- Add audio fusion controls to the UI (use_audio, w_video/w_audio sliders) and persist choices.
+- Macro/meso browser polish: search/filter; expand/collapse all.
+- Optional CLAP checkpoint bootstrap script and env docs.
 
 Next Updates:
 
