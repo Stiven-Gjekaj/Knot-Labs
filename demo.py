@@ -108,10 +108,13 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 26) -> List[str]:
         media_path,
         "--master_labels_file",
         MASTER_PATH,
-        "--use_whisper",
-        "true",
-        "--use_yamnet",
-        "true",
+        # Enable ANN + CLAP fusion by default
+        "--use_ann","true",
+        "--ann_k","64",
+        "--ann_agg","mean",
+        "--use_clap","true",
+        "--use_whisper","true",
+        "--use_yamnet","false",
         "--w_video","0.7",
         "--w_speech","0.2",
         "--w_audio","0.1",
@@ -417,7 +420,7 @@ def simulate_update() -> None:
         viewer, creator = _bump_user_after_action(viewer, creator, category, v_delta, c_delta)
         post = _apply_action_to_post(post, act, amount)
         _save_json(v_path, viewer)
-        _save_json(c_path, creator)
+        _save_json(c_path, creator)        
         _save_json(p_path, post)
     print("Simulated interactions complete.")
 

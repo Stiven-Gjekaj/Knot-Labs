@@ -475,6 +475,7 @@ function resetUI() {
     <div class="grid">
     <fieldset>
       <legend>Classify (ANN)</legend>
+      <div class="muted">Uses FAISS for ANN if available; falls back to a fast dot product. Optional audio fusion via CLAP when installed.</div>
       <div class="row"><label>Media Path (server path)</label><input type="text" id="clsMedia" placeholder="/path/to/video" /></div>
       <div class="row"><label>Top K</label><input type="number" id="clsK" value="10" min="1" /></div>
       <div class="row"><label>Frames</label><input type="number" id="clsFrames" value="8" min="1" /></div>

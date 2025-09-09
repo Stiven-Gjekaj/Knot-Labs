@@ -38,6 +38,13 @@ Everything is Python. One requirements file: `requirements.txt`.
 - Run demo (CLI)
   - `python demo.py`
 
+- Veil fusion (ANN + CLAP)
+  - Ensure `Veil/src` is on `PYTHONPATH` when using `-m veil.run`.
+  - `python -m veil.run --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt --use_ann true --ann_k 64 --ann_agg mean --use_clap true --w_video 0.7 --w_speech 0.2 --w_audio 0.1 --topk 10`
+  - Uses FAISS for ANN when available; falls back to dot product.
+  - Audio scoring uses CLAP when installed; falls back to zeros (or YAMNet if `--use_yamnet true`).
+  - Precompute label embeddings once: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
+
 - Run GUI (Tkinter)
   - `python gui_demo.py`
   - Ships with Python on most platforms. If missing: install your OS tk package (e.g., `sudo apt-get install python3-tk`).
@@ -271,6 +278,20 @@ Tip: an example `.env` is included at the repo root. Start the API via the run s
   - Symptom: `ModuleNotFoundError: No module named 'api'` when invoking the script directly.
   - Fix: run from the repo root using module form: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`.
   - Alternative: call `python tools/embed_labels.py ...` from the repo root; the script now auto-adds the repo root to `sys.path`.
+
+- ModuleNotFoundError: `veil.run` when invoking `python -m veil.run`:
+  - Cause: `veil` lives under `Veil/src` and is not installed as a package.
+  - Fix: add `Veil/src` to `PYTHONPATH` before running. PowerShell: `$env:PYTHONPATH = (Resolve-Path 'Veil/src').Path + ';' + $env:PYTHONPATH`; bash/zsh: `export PYTHONPATH=Veil/src:$PYTHONPATH`.
+
+- torchvision TypeError in classify-ann (resize expects PIL/Tensor):
+  - Symptom: `TypeError: Unexpected type <class 'numpy.ndarray'>` inside `torchvision.transforms.functional.resize`.
+  - Cause: CLIP preprocess expects a PIL Image or torch Tensor, not a NumPy array.
+  - Fix: ensure Pillow is installed (`python -m pip install pillow`) and update to latest code, which converts frames to PIL before preprocessing.
+  - Verify: `python -c "from PIL import Image; print(Image.__version__)"` prints a version.
+
+- No frames sampled from video:
+  - Symptom: `RuntimeError: No frames sampled from video`.
+  - Fix: confirm OpenCV can open the file (correct path/permissions/codecs). Test with `ffmpeg -i <video>` and ensure FFmpeg is on PATH. Try `--frames 16` for sparse videos.
 
 - PowerShell execution policy blocks scripts:
   - Symptom: running `scripts\\start-api.ps1` errors about execution policy.

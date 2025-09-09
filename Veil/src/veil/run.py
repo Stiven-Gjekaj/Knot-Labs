@@ -1,20 +1,25 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 """
-Unified runner for Veil fusion: CLIP (video/image), Whisper+CLIP (speech),
-and YAMNet (audio events). Uses the exact master label prompts.
+Unified runner for Veil fusion using:
+  - CLIP (video/image)
+  - Whisper+CLIP (speech)
+  - CLAP (audio) with FAISS-accelerated ANN over label embeddings
 
 Example:
   python -m veil.run \
     --mode video \
     --video path/to/video.mp4 \
     --master_labels_file Mesh/mastercategories.txt \
-    --use_whisper true --whisper_model base \
-    --w_video 0.5 --w_speech 0.3 --w_audio 0.2 \
-    --threshold 0.25 \
-    --print_event_matches
+    --use_ann true --ann_k 64 --ann_agg mean \
+    --use_clap true --use_whisper true --whisper_model base \
+    --w_video 0.7 --w_speech 0.2 --w_audio 0.1 \
+    --threshold 0.25
 
-YAMNet runs by default; add --use_yamnet false to disable event scoring.
+Notes:
+  - FAISS is used for ANN if installed; otherwise falls back to dot product.
+  - If CLAP is unavailable, audio falls back to zeros (or YAMNet when enabled).
+  - Precompute label embeddings once with tools/embed_labels.py for best startup time.
 """
 
 import warnings
@@ -99,6 +104,17 @@ def _strip_prompt_prefix(label: str, mode: str) -> str:
                     return l[len(p):].strip()
     return l
 
+# Optional ANN + CLAP helpers (shared with API)
+try:
+    from api.label_index import ensure_index, embed_video as _embed_video_api, ann_search, rerank_with_frames, build_label_embeddings_audio, embed_audio_from_video  # type: ignore
+except Exception:
+    ensure_index = None  # type: ignore
+    _embed_video_api = None  # type: ignore
+    ann_search = None  # type: ignore
+    rerank_with_frames = None  # type: ignore
+    build_label_embeddings_audio = None  # type: ignore
+    embed_audio_from_video = None  # type: ignore
+
 
 def _build_label_embeddings(
     base_labels: List[str],
@@ -151,7 +167,7 @@ def _build_label_embeddings(
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Veil fusion runner")
+    p = argparse.ArgumentParser(description="Veil fusion runner (CLIP + Whisper + CLAP + ANN)")
     p.add_argument("--mode", choices=["video", "image"], required=True)
     p.add_argument("--video")
     p.add_argument("--image")
@@ -161,16 +177,22 @@ def main() -> None:
     p.add_argument("--topk", type=int, default=5)
     p.add_argument("--threshold", type=float)
 
-    # Speech / events
+    # Speech / audio
     p.add_argument("--use_whisper", default="false")
     p.add_argument("--whisper_model", default="base")
-    p.add_argument("--use_yamnet", default="true")
+    p.add_argument("--use_clap", default="true")
+    p.add_argument("--use_yamnet", default="false")
     p.add_argument("--print_event_matches", action="store_true")
 
     # Weights
-    p.add_argument("--w_video", type=float, default=0.5)
-    p.add_argument("--w_speech", type=float, default=0.3)
-    p.add_argument("--w_audio", type=float, default=0.2)
+    p.add_argument("--w_video", type=float, default=0.7)
+    p.add_argument("--w_speech", type=float, default=0.2)
+    p.add_argument("--w_audio", type=float, default=0.1)
+
+    # ANN controls
+    p.add_argument("--use_ann", default="true")
+    p.add_argument("--ann_k", type=int, default=64)
+    p.add_argument("--ann_agg", choices=["mean","max","softmax"], default="mean")
 
     args = p.parse_args()
 
@@ -180,31 +202,84 @@ def main() -> None:
     if args.mode == "image" and not args.image:
         raise SystemExit("--image is required when --mode image")
 
+    # Parse toggles early (used by embedding/ANN path)
+    use_whisper = _parse_bool(args.use_whisper)
+    use_clap = _parse_bool(args.use_clap)
+    use_yamnet = _parse_bool(args.use_yamnet)
+    use_ann = _parse_bool(args.use_ann)
+
     # Load labels (prompts)
     master = load_master_labels(args.master_labels_file, expect_exact_count=False)
     labels: List[str] = select_labels(master, "video" if args.mode == "video" else "photo")
 
-    # Precompute label embeddings once with multi-template ensembling
+    # Build or load label embeddings
     device = "cpu"
-    # Derive base category strings from prompts and build robust embeddings
-    base_labels = [_strip_prompt_prefix(l, "video" if args.mode == "video" else "photo") for l in labels]
-    # Cache by the representative prompt list
-    rep_prompts = [
-        ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
-        for c in base_labels
-    ]
-    ck = _cache_key(args.model, args.mode, rep_prompts)
-    if ck in _LABEL_CACHE:
-        label_emb = _LABEL_CACHE[ck]
+    label_emb: torch.Tensor
+    E_np: Optional[np.ndarray] = None
+    ann_labels: Optional[List[str]] = None
+    ann_index = None
+    if use_ann and ensure_index is not None and _embed_video_api is not None:
+        try:
+            idx = ensure_index(args.master_labels_file, out_dir="indexes", model_name=args.model, mode=("video" if args.mode == "video" else "image"))
+            E_np = idx.get("emb")
+            ann_labels = idx.get("labels")
+            ann_index = idx.get("index")
+            if isinstance(E_np, np.ndarray):
+                label_emb = torch.from_numpy(E_np)
+                if isinstance(ann_labels, list) and len(ann_labels) == len(labels):
+                    labels = ann_labels
+            else:
+                raise RuntimeError("Invalid ANN embeddings")
+        except Exception:
+            E_np = None
+            ann_labels = None
+            ann_index = None
+            # Fallback to local build
+            base_labels = [_strip_prompt_prefix(l, "video" if args.mode == "video" else "photo") for l in labels]
+            rep_prompts = [
+                ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
+                for c in base_labels
+            ]
+            ck = _cache_key(args.model, args.mode, rep_prompts)
+            if ck in _LABEL_CACHE:
+                label_emb = _LABEL_CACHE[ck]
+            else:
+                label_emb, _ = _build_label_embeddings(base_labels, args.mode, args.model, device)
+                _LABEL_CACHE[ck] = label_emb
     else:
-        label_emb, rep = _build_label_embeddings(base_labels, args.mode, args.model, device)
-        _LABEL_CACHE[ck] = label_emb
+        base_labels = [_strip_prompt_prefix(l, "video" if args.mode == "video" else "photo") for l in labels]
+        rep_prompts = [
+            ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
+            for c in base_labels
+        ]
+        ck = _cache_key(args.model, args.mode, rep_prompts)
+        if ck in _LABEL_CACHE:
+            label_emb = _LABEL_CACHE[ck]
+        else:
+            label_emb, _ = _build_label_embeddings(base_labels, args.mode, args.model, device)
+            _LABEL_CACHE[ck] = label_emb
 
     # Launch modality scorers concurrently
-    use_whisper = _parse_bool(args.use_whisper)
-    use_yamnet = _parse_bool(args.use_yamnet)
 
     def _video_task():
+        if args.mode == "video" and use_ann and E_np is not None and _embed_video_api is not None:
+            frames_emb, pooled = _embed_video_api(args.video, model_name=args.model, frames=args.frames, device='cpu')
+            Sv = (pooled @ E_np.T)[0]
+            try:
+                if ann_search is not None:
+                    top = ann_search(E_np, labels, pooled, k=max(args.topk, args.ann_k), index=ann_index)
+                    top_idx = [t[2] for t in top]
+                else:
+                    top_idx = []
+                if rerank_with_frames is not None and top_idx:
+                    rer = rerank_with_frames(top_idx, E_np, frames_emb, agg=args.ann_agg)
+                    Sv_rer = np.zeros_like(Sv)
+                    for i, sc in rer:
+                        Sv_rer[int(i)] = float(sc)
+                    Sv = Sv_rer
+            except Exception:
+                pass
+            return {"categories": labels, "scores": Sv, "frame_count": frames_emb.shape[0] if hasattr(frames_emb, 'shape') else len(frames_emb)}
         if args.mode == "video":
             return classify_video_clip(
                 args.video,
@@ -233,32 +308,44 @@ def main() -> None:
             label_emb=label_emb,
         )
 
-    def _event_task():
-        try:
-            from .fusion.yamnet_events import run_yamnet, score_events_to_labels
-
-            ydiag_local = run_yamnet(args.video, topn=10)
-            emap = score_events_to_labels(
-                args.video,
-                labels,
-                model_name=args.model,
-                topn_events=15,
-                label_emb=label_emb,
-            )
-            escores_local = np.array([emap[lbl] for lbl in labels], dtype=np.float32)
-            return escores_local, ydiag_local
-        except Exception as e:
-            if args.print_event_matches:
-                print(f"YAMNet scoring failed: {e}")
-            return np.zeros(len(labels), dtype=np.float32), None
+    def _audio_task():
+        # Prefer CLAP when requested and available
+        if args.mode == "video" and use_clap and build_label_embeddings_audio is not None and embed_audio_from_video is not None:
+            try:
+                Ea, labels_a = build_label_embeddings_audio(args.master_labels_file, mode='video')
+                qa = embed_audio_from_video(args.video)
+                if qa is not None and Ea.size and len(labels_a) == len(labels):
+                    Sa = (qa @ Ea.T)[0]
+                    return Sa, None, 'clap'
+            except Exception as e:
+                if args.print_event_matches:
+                    print(f"CLAP audio scoring failed: {e}")
+        # Optional YAMNet fallback when enabled
+        if args.mode == "video" and use_yamnet:
+            try:
+                from .fusion.yamnet_events import run_yamnet, score_events_to_labels
+                ydiag_local = run_yamnet(args.video, topn=10)
+                emap = score_events_to_labels(
+                    args.video,
+                    labels,
+                    model_name=args.model,
+                    topn_events=15,
+                    label_emb=label_emb,
+                )
+                escores_local = np.array([emap[lbl] for lbl in labels], dtype=np.float32)
+                return escores_local, ydiag_local, 'yamnet'
+            except Exception as e:
+                if args.print_event_matches:
+                    print(f"YAMNet scoring failed: {e}")
+        return np.zeros(len(labels), dtype=np.float32), None, 'none'
 
     futures: Dict[str, concurrent.futures.Future] = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
         futures["video"] = ex.submit(_video_task)
         if args.mode == "video" and use_whisper and args.w_speech > 0:
             futures["speech"] = ex.submit(_speech_task)
-        if args.mode == "video" and use_yamnet and args.w_audio > 0:
-            futures["event"] = ex.submit(_event_task)
+        if args.mode == "video" and args.w_audio > 0:
+            futures["audio"] = ex.submit(_audio_task)
 
     # Gather results
     vres = futures["video"].result()
@@ -267,8 +354,9 @@ def main() -> None:
     else:
         sres = {"categories": labels, "scores": np.zeros(len(labels)), "chunk_count": 0}
 
-    if "event" in futures:
-        escores, ydiag = futures["event"].result()
+    audio_backend = 'none'
+    if "audio" in futures:
+        escores, ydiag, audio_backend = futures["audio"].result()
     else:
         escores = np.zeros(len(labels), dtype=np.float32)
         ydiag = None
@@ -308,7 +396,7 @@ def main() -> None:
     print("Speech top-k:")
     for i in np.argsort(min_max_norm(sres["scores"]))[::-1][: args.topk]:
         print(f"  {labels[i]}: {min_max_norm(sres['scores'])[i]:.3f}")
-    print("Events top-k:")
+    print(("Audio (CLAP) top-k:" if audio_backend == 'clap' else ("Events top-k:" if audio_backend == 'yamnet' else "Audio top-k:")))
     for i in np.argsort(min_max_norm(escores))[::-1][: args.topk]:
         print(f"  {labels[i]}: {min_max_norm(escores)[i]:.3f}")
 
@@ -328,7 +416,7 @@ def main() -> None:
     # Diagnostics
     chunks = sres.get("chunk_count", 0)
     print(f"Frames used: {vres['frame_count']} | Transcript chunks: {chunks}")
-    if args.print_event_matches and ydiag is not None:
+    if args.print_event_matches and ydiag is not None and audio_backend == 'yamnet':
         print("Top YAMNet events:")
         for name, sc in ydiag.top_events:
             print(f"  {name}: {sc:.3f}")

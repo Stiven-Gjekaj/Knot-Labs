@@ -210,7 +210,21 @@ def embed_video(video_path: str, model_name: str = "ViT-B/32", frames: int = 8, 
     imgs = _sample_video_frames(video_path, max_frames=frames)
     if not imgs:
         raise RuntimeError("No frames sampled from video")
-    img_tensors = torch.stack([preprocess(im) for im in imgs]).to(device)
+    # CLIP preprocess expects PIL Images or torch tensors; convert np arrays to PIL
+    try:
+        from PIL import Image  # type: ignore
+    except Exception:
+        Image = None  # type: ignore
+    proc_inputs = []
+    for im in imgs:
+        x = im
+        if Image is not None and not torch.is_tensor(im):
+            try:
+                x = Image.fromarray(im)
+            except Exception:
+                x = im
+        proc_inputs.append(preprocess(x))
+    img_tensors = torch.stack(proc_inputs).to(device)
     with torch.no_grad():
         vid = _normalize(model.encode_image(img_tensors).float())  # [F, D]
     pooled = _normalize(vid.mean(dim=0, keepdim=True))  # [1, D]
