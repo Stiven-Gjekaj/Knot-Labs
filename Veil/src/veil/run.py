@@ -4,7 +4,7 @@
 Unified runner for Veil fusion using:
   - CLIP (video/image)
   - Whisper+CLIP (speech)
-  - CLAP (audio) with FAISS-accelerated ANN over label embeddings
+  - YAMNet (audio events -> label scores)
 
 Example:
   python -m veil.run \
@@ -12,13 +12,13 @@ Example:
     --video path/to/video.mp4 \
     --master_labels_file Mesh/mastercategories.txt \
     --use_ann true --ann_k 64 --ann_agg mean \
-    --use_clap true --use_whisper true --whisper_model base \
+    --use_whisper true --whisper_model base \
     --w_video 0.7 --w_speech 0.2 --w_audio 0.1 \
     --threshold 0.25
 
 Notes:
   - FAISS is used for ANN if installed; otherwise falls back to dot product.
-  - If CLAP is unavailable, audio falls back to zeros (or YAMNet when enabled).
+  - Audio uses YAMNet by default when w_audio > 0.
   - Precompute label embeddings once with tools/embed_labels.py for best startup time.
 """
 
@@ -104,16 +104,14 @@ def _strip_prompt_prefix(label: str, mode: str) -> str:
                     return l[len(p):].strip()
     return l
 
-# Optional ANN + CLAP helpers (shared with API)
+# Optional ANN helpers (shared with API)
 try:
-    from api.label_index import ensure_index, embed_video as _embed_video_api, ann_search, rerank_with_frames, build_label_embeddings_audio, embed_audio_from_video  # type: ignore
+    from api.label_index import ensure_index, embed_video as _embed_video_api, ann_search, rerank_with_frames  # type: ignore
 except Exception:
     ensure_index = None  # type: ignore
     _embed_video_api = None  # type: ignore
     ann_search = None  # type: ignore
     rerank_with_frames = None  # type: ignore
-    build_label_embeddings_audio = None  # type: ignore
-    embed_audio_from_video = None  # type: ignore
 
 
 def _build_label_embeddings(
@@ -167,7 +165,7 @@ def _build_label_embeddings(
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Veil fusion runner (CLIP + Whisper + CLAP + ANN)")
+    p = argparse.ArgumentParser(description="Veil fusion runner (CLIP + Whisper + YAMNet + ANN)")
     p.add_argument("--mode", choices=["video", "image"], required=True)
     p.add_argument("--video")
     p.add_argument("--image")
@@ -180,8 +178,6 @@ def main() -> None:
     # Speech / audio
     p.add_argument("--use_whisper", default="false")
     p.add_argument("--whisper_model", default="base")
-    p.add_argument("--use_clap", default="true")
-    p.add_argument("--use_yamnet", default="false")
     p.add_argument("--print_event_matches", action="store_true")
 
     # Weights
@@ -204,8 +200,6 @@ def main() -> None:
 
     # Parse toggles early (used by embedding/ANN path)
     use_whisper = _parse_bool(args.use_whisper)
-    use_clap = _parse_bool(args.use_clap)
-    use_yamnet = _parse_bool(args.use_yamnet)
     use_ann = _parse_bool(args.use_ann)
 
     # Load labels (prompts)
@@ -309,19 +303,8 @@ def main() -> None:
         )
 
     def _audio_task():
-        # Prefer CLAP when requested and available
-        if args.mode == "video" and use_clap and build_label_embeddings_audio is not None and embed_audio_from_video is not None:
-            try:
-                Ea, labels_a = build_label_embeddings_audio(args.master_labels_file, mode='video')
-                qa = embed_audio_from_video(args.video)
-                if qa is not None and Ea.size and len(labels_a) == len(labels):
-                    Sa = (qa @ Ea.T)[0]
-                    return Sa, None, 'clap'
-            except Exception as e:
-                if args.print_event_matches:
-                    print(f"CLAP audio scoring failed: {e}")
-        # Optional YAMNet fallback when enabled
-        if args.mode == "video" and use_yamnet:
+        # YAMNet-based audio events mapped into label scores
+        if args.mode == "video":
             try:
                 from .fusion.yamnet_events import run_yamnet, score_events_to_labels
                 ydiag_local = run_yamnet(args.video, topn=10)
@@ -396,7 +379,7 @@ def main() -> None:
     print("Speech top-k:")
     for i in np.argsort(min_max_norm(sres["scores"]))[::-1][: args.topk]:
         print(f"  {labels[i]}: {min_max_norm(sres['scores'])[i]:.3f}")
-    print(("Audio (CLAP) top-k:" if audio_backend == 'clap' else ("Events top-k:" if audio_backend == 'yamnet' else "Audio top-k:")))
+    print(("Audio (YAMNet) top-k:" if audio_backend == 'yamnet' else "Audio top-k:"))
     for i in np.argsort(min_max_norm(escores))[::-1][: args.topk]:
         print(f"  {labels[i]}: {min_max_norm(escores)[i]:.3f}")
 

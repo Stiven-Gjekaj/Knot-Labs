@@ -13,7 +13,7 @@ def _add_veil_to_path() -> None:
         sys.path.insert(0, veil_src)
 
 
-def test_veil_run_ann_and_clap_path(tmp_path, monkeypatch, capsys):
+def test_veil_run_ann_and_yamnet_path(tmp_path, monkeypatch, capsys):
     _add_veil_to_path()
 
     # Stub 'clip' before importing veil.run (avoid heavy deps)
@@ -76,23 +76,24 @@ def test_veil_run_ann_and_clap_path(tmp_path, monkeypatch, capsys):
         # Rerank to prefer index 0 with higher score
         return [(0, 0.9), (1, 0.1)]
 
-    # Stub CLAP audio: make non-zero audio scores and ensure backend label matches
-    Ea_audio = E.copy()
-    qa = np.array([[0.2, 0.8, 0, 0]], dtype=np.float32)  # favors cats in audio
+    # Stub YAMNet mapping: produce label scores favoring cats
+    def _fake_run_yamnet(path: str, topn: int = 10):
+        class R:
+            top_events = [("meow", 0.9)]
+        return R()
 
-    def _fake_build_label_embeddings_audio(master_path: str, mode: str):
-        return Ea_audio, labels
-
-    def _fake_embed_audio_from_video(video_path: str):
-        return qa
+    def _fake_score_events_to_labels(path: str, lbls, model_name: str, topn_events: int = 15, label_emb=None):
+        return {lbls[0]: 0.2, lbls[1]: 0.8}
 
     # Apply monkeypatches
     monkeypatch.setattr(vr, "ensure_index", _fake_ensure_index)
     monkeypatch.setattr(vr, "_embed_video_api", _fake_embed_video)
     monkeypatch.setattr(vr, "ann_search", _fake_ann_search)
     monkeypatch.setattr(vr, "rerank_with_frames", _fake_rerank_with_frames)
-    monkeypatch.setattr(vr, "build_label_embeddings_audio", _fake_build_label_embeddings_audio)
-    monkeypatch.setattr(vr, "embed_audio_from_video", _fake_embed_audio_from_video)
+    # Inject fake yamnet module so veil.run import finds our stubs
+    import types as _types
+    fake_yam = _types.SimpleNamespace(run_yamnet=_fake_run_yamnet, score_events_to_labels=_fake_score_events_to_labels)
+    sys.modules['veil.fusion.yamnet_events'] = fake_yam  # type: ignore
 
     # Dummy video path
     dummy_video = tmp_path / "dummy.mp4"
@@ -108,8 +109,6 @@ def test_veil_run_ann_and_clap_path(tmp_path, monkeypatch, capsys):
         "--ann_k", "2",
         "--ann_agg", "mean",
         "--use_whisper", "false",
-        "--use_clap", "true",
-        "--use_yamnet", "false",
         "--w_video", "0.9",
         "--w_speech", "0.0",
         "--w_audio", "0.1",
@@ -124,6 +123,6 @@ def test_veil_run_ann_and_clap_path(tmp_path, monkeypatch, capsys):
     assert "Predictions:" in out
     pred_line = next((ln for ln in out.splitlines() if ln.startswith("Predictions:")), "")
     assert "trains" in pred_line.split(":", 1)[1]
-    # Audio backend should be CLAP
-    assert "Audio (CLAP) top-k:" in out
+    # Audio backend should be YAMNet
+    assert "Audio (YAMNet) top-k:" in out
 

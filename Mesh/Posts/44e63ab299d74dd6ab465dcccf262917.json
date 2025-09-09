@@ -1,0 +1,41 @@
+{
+  "postID": "44e63ab299d74dd6ab465dcccf262917",
+  "creator": "a104c28c24f7409a8d131767f17af9ec",
+  "description": "Description Here",
+  "Score": 0.0,
+  "Category": {
+    "macro": [
+      "games by company",
+      "games by country"
+    ],
+    "meso": [
+      "games by date",
+      "games by designer",
+      "games by topic",
+      "games by location"
+    ],
+    "micro": [
+      "games by number of players",
+      "chess organizations",
+      "contract bridge organizations",
+      "go organizations",
+      "japan shogi association",
+      "mahjong organizations"
+    ]
+  },
+  "country": "US",
+  "created_at": 1757426684.4370232,
+  "isPayPerView": false,
+  "PostType": "Video",
+  "isPromotion": false,
+  "isFlagged": false,
+  "isActive": true,
+  "isDeleted": false,
+  "payPerViewCount": 0,
+  "likesCount": 0,
+  "commentsCount": 0,
+  "giftsCount": 0,
+  "isSuggested": false,
+  "shareCount": 0,
+  "star": 0
+}

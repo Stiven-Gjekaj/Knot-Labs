@@ -108,13 +108,11 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 26) -> List[str]:
         media_path,
         "--master_labels_file",
         MASTER_PATH,
-        # Enable ANN + CLAP fusion by default
+        # Enable ANN fusion by default; YAMNet handles audio
         "--use_ann","true",
         "--ann_k","64",
         "--ann_agg","mean",
-        "--use_clap","true",
         "--use_whisper","true",
-        "--use_yamnet","false",
         "--w_video","0.7",
         "--w_speech","0.2",
         "--w_audio","0.1",

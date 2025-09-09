@@ -3,7 +3,11 @@
 Backlog (next)
 
 - Macro/meso browser polish: search/filter; expand/collapse all.
-- CLAP bootstrap enhancements: optionally provide a default checkpoint URL for quick start and more explicit errors.
+- YAMNet tuning: expose top-N event count and label-mapping weight controls in UI/API.
+
+- bump any UI copy in api/static/index.html to display audio options like the docs page
+- keep audio weight defaults consistent across CLI/GUI/docs, standardize them (e.g., 0.7 video / 0.3 audio)
+- change category system for posts to be 2 macro, 4 meso, 8 micro.
 
 Next Updates:
 
@@ -52,7 +56,3 @@ Newly Added Next Updates:
 11. Expand Web UI
 
 - Admin actions (rebuild categories, simulators); continue visual polish.
-
-12. UI polish passes
-
-- Completed: responsive two-column layout; Compact Mode; toast notifications + Reset UI; Dark/Light theme toggle; Copy curl buttons.

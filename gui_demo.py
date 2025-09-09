@@ -17,11 +17,14 @@ from Mesh.tools.gen_videos import COUNTRIES as POST_COUNTRIES  # type: ignore
 
 
 def _ensure_paths_on_sys_path() -> None:
-    # Ensure Veil src path is available for subprocess calls that rely on environment
+    # Ensure Veil src path is available for imports and subprocess calls
     root = os.path.dirname(os.path.abspath(__file__))
     veil_src = os.path.join(root, 'Veil', 'src')
-    if os.path.isdir(veil_src) and veil_src not in (os.environ.get('PYTHONPATH','').split(os.pathsep)):
-        os.environ['PYTHONPATH'] = veil_src + os.pathsep + os.environ.get('PYTHONPATH','')
+    if os.path.isdir(veil_src):
+        if veil_src not in (os.environ.get('PYTHONPATH','').split(os.pathsep)):
+            os.environ['PYTHONPATH'] = veil_src + os.pathsep + os.environ.get('PYTHONPATH','')
+        if veil_src not in sys.path:
+            sys.path.insert(0, veil_src)
 
 
 class TextRedirector:
@@ -45,24 +48,25 @@ def _notify(text_widget: tk.Text, text: str) -> None:
 
 class App:
     def __init__(self, root: tk.Tk):
+        _ensure_paths_on_sys_path()
         self.root = root
         root.title("Knot-Labs GUI")
         root.geometry("1000x720")
-        # Dark theme with light red accents
+        # Light theme by default
         try:
             style = ttk.Style(root)
             style.theme_use('clam')
-            bg = '#0b0b0e'; card = '#141416'; fg = '#e5e7eb'; border = '#23242a'; primary = '#f87171'
+            bg = '#f5f6f8'; card = '#ffffff'; fg = '#1f2937'; border = '#e5e7eb'; primary = '#b91c1c'
             root.configure(bg=bg)
             style.configure('.', background=bg, foreground=fg)
             style.configure('TFrame', background=bg)
             style.configure('TLabelframe', background=card, foreground=fg, bordercolor=border)
             style.configure('TLabelframe.Label', background=card, foreground=fg)
             style.configure('TLabel', background=card, foreground=fg)
-            style.configure('TEntry', fieldbackground='#1a1b1f', foreground=fg)
-            style.configure('TCombobox', fieldbackground='#1a1b1f', foreground=fg)
-            style.configure('TButton', background=primary, foreground='#1b1b1b', borderwidth=1)
-            style.map('TButton', background=[('active', '#ef4444')])
+            style.configure('TEntry', fieldbackground='#ffffff', foreground=fg)
+            style.configure('TCombobox', fieldbackground='#ffffff', foreground=fg)
+            style.configure('TButton', background=primary, foreground='#ffffff', borderwidth=1)
+            style.map('TButton', background=[('active', '#991b1b')])
         except Exception:
             pass
 
@@ -79,8 +83,8 @@ class App:
         f_theme = ttk.LabelFrame(main, text="Appearance")
         f_theme.grid(row=1, column=0, sticky="ew", pady=4)
         ttk.Label(f_theme, text="Theme").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-        self.theme_sel = ttk.Combobox(f_theme, values=["Dark","Light"], state="readonly", width=10)
-        self.theme_sel.set("Dark")
+        self.theme_sel = ttk.Combobox(f_theme, values=["Light","Dark"], state="readonly", width=10)
+        self.theme_sel.set("Light")
         self.theme_sel.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         ttk.Button(f_theme, text="Apply", command=lambda: self.apply_theme(self.theme_sel.get())).grid(row=0, column=2, padx=5, pady=5)
 
@@ -135,13 +139,13 @@ class App:
         self.ann_agg = ttk.Combobox(f_post, values=["mean","max","softmax"], state="readonly", width=10)
         self.ann_agg.set("mean")
         self.ann_agg.grid(row=5, column=3, padx=5, pady=5, sticky="w")
-        # Audio fusion controls
-        self.use_audio = tk.BooleanVar(value=False)
-        ttk.Label(f_post, text="Use Audio (CLAP)").grid(row=6, column=0, padx=5, pady=5, sticky="e")
+        # Audio fusion controls (YAMNet)
+        self.use_audio = tk.BooleanVar(value=True)
+        ttk.Label(f_post, text="Use Audio (YAMNet)").grid(row=6, column=0, padx=5, pady=5, sticky="e")
         ttk.Checkbutton(f_post, variable=self.use_audio).grid(row=6, column=1, padx=5, pady=5, sticky="w")
         ttk.Label(f_post, text="Weights v/a").grid(row=6, column=2, padx=5, pady=5, sticky="e")
-        self.w_video = ttk.Entry(f_post, width=6); self.w_video.insert(0, "1.0")
-        self.w_audio = ttk.Entry(f_post, width=6); self.w_audio.insert(0, "0.0")
+        self.w_video = ttk.Entry(f_post, width=6); self.w_video.insert(0, "0.9")
+        self.w_audio = ttk.Entry(f_post, width=6); self.w_audio.insert(0, "0.1")
         self.w_video.grid(row=6, column=3, padx=2, pady=5, sticky="w")
         self.w_audio.grid(row=6, column=4, padx=2, pady=5, sticky="w")
         ttk.Button(f_post, text="Classify (ANN)", command=self.on_classify_ann).grid(row=7, column=0, padx=5, pady=5, sticky="w")
@@ -355,26 +359,32 @@ class App:
             E = idx['emb']; labels = idx['labels']; index = idx['index']
             frames_emb, pooled = embed_video(media, model_name=model, frames=frames, device='cpu')
             top = ann_search(E, labels, pooled, k=int(k), index=index)
-            # Optional audio fusion
+            # Optional audio fusion (YAMNet)
             try:
                 if self.use_audio.get():
-                    Ea, labels_a = build_label_embeddings_audio(os.path.join("Mesh","mastercategories.txt"), mode='video')
-                    qa = embed_audio_from_video(media)
-                    if qa is not None and Ea.size and len(labels_a) == len(labels):
-                        import numpy as _np
-                        Sv = (pooled @ E.T)[0]; Sa = (qa @ Ea.T)[0]
-                        def _mm(x):
-                            if not x.size:
-                                return x
-                            mn, mx = float(x.min(initial=0.0)), float(x.max(initial=0.0))
-                            return (x - mn) / (mx - mn + 1e-9)
-                        try:
-                            wv = float(self.w_video.get().strip() or '1.0'); wa = float(self.w_audio.get().strip() or '0.0')
-                        except Exception:
-                            wv, wa = 1.0, 0.0
-                        fused = wv * _mm(Sv) + wa * _mm(Sa)
-                        order = _np.argsort(fused)[::-1][: int(k)]
-                        top = [(labels[i], float(fused[i]), int(i)) for i in order]
+                    from Veil.src.veil.fusion.yamnet_events import score_events_to_labels  # type: ignore
+                    emap = score_events_to_labels(
+                        media,
+                        labels,
+                        model_name=model,
+                        topn_events=15,
+                        label_emb=None,
+                    )
+                    import numpy as _np
+                    Sv = (pooled @ E.T)[0]
+                    Sa = _np.array([emap[lbl] for lbl in labels], dtype=_np.float32)
+                    def _mm(x):
+                        if not hasattr(x, 'size') or not x.size:
+                            return x
+                        mn, mx = float(x.min(initial=0.0)), float(x.max(initial=0.0))
+                        return (x - mn) / (mx - mn + 1e-9)
+                    try:
+                        wv = float(self.w_video.get().strip() or '0.9'); wa = float(self.w_audio.get().strip() or '0.1')
+                    except Exception:
+                        wv, wa = 0.9, 0.1
+                    fused = wv * _mm(Sv) + wa * _mm(Sa)
+                    order = _np.argsort(fused)[::-1][: int(k)]
+                    top = [(labels[i], float(fused[i]), int(i)) for i in order]
             except Exception:
                 pass
             if top:

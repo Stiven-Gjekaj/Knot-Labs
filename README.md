@@ -12,12 +12,14 @@ Everything is Python. One requirements file: `requirements.txt`.
 ## Quick Start
 
 - Install (Python 3.10+; tested on 3.13)
+
   - PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\\setup.ps1`
   - Bash/WSL: `bash scripts/setup.sh`
   - Make: `make setup`
   - Manual: `python -m venv .venv && .venv\\Scripts\\python.exe -m pip install -r requirements.txt`
 
 - Build labels (writes `Mesh/mastercategories.txt`)
+
   - Flat builder (cities and adjective-combos removed):
     - `.venv\\Scripts\\python.exe -m Mesh.tools.build_mastercategories --count 1000`
   - Tree builder from Wikipedia (macros → mesos → micros):
@@ -29,6 +31,7 @@ Everything is Python. One requirements file: `requirements.txt`.
     - GUI has Generate Users/Posts buttons. If no users exist, Generate Posts will auto-create one.
 
 - Label embeddings (fast ANN)
+
   - Recommended: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
   - Direct: `python tools/embed_labels.py --master Mesh/mastercategories.txt --out indexes`
   - Output: writes `indexes/labels_clip_<mode>_<model>.npz` (e.g., `labels_clip_video_ViT-B-32.npz`)
@@ -36,20 +39,24 @@ Everything is Python. One requirements file: `requirements.txt`.
   - Usage: API and CLI reuse this file for `classify/ann`; if missing, it will be (re)built on first use.
 
 - Run demo (CLI)
+
   - `python demo.py`
 
-- Veil fusion (ANN + CLAP)
+- Veil fusion (ANN + YAMNet)
+
   - Ensure `Veil/src` is on `PYTHONPATH` when using `-m veil.run`.
-  - `python -m veil.run --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt --use_ann true --ann_k 64 --ann_agg mean --use_clap true --w_video 0.7 --w_speech 0.2 --w_audio 0.1 --topk 10`
+  - `python -m Veil\src\veil\run.py --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt --use_ann true --ann_k 64 --ann_agg mean --use_whisper true --whisper_model base --w_video 0.7 --w_speech 0.2 --w_audio 0.1 --topk 10`
   - Uses FAISS for ANN when available; falls back to dot product.
-  - Audio scoring uses CLAP when installed; falls back to zeros (or YAMNet if `--use_yamnet true`).
+  - Audio scoring uses YAMNet by default when `--w_audio > 0`; otherwise audio scores are zeros.
   - Precompute label embeddings once: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
 
 - Run GUI (Tkinter)
+
   - `python gui_demo.py`
   - Ships with Python on most platforms. If missing: install your OS tk package (e.g., `sudo apt-get install python3-tk`).
 
 - Start API (FastAPI)
+
   - Windows (cmd): `scripts\\start-api.bat`
   - PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\\start-api.ps1`
   - Bash/WSL: `bash scripts/start-api.sh`
@@ -83,6 +90,7 @@ Everything is Python. One requirements file: `requirements.txt`.
     - Users and posts created via API write through to Mongo (`users`, `posts` collections) in addition to JSON and optional SQLite.
     - Health: `GET /health/mongo`.
   - Uploads + preview:
+
     - Upload media via `POST /upload` (multipart field `file`). Response includes `filename`, server `path`, size, and `mime`.
     - Optional serving: set `KNOT_SERVE_UPLOADS=1` to enable `GET /uploads/{filename}` for browser preview.
     - The web UI at `/ui` supports uploads and shows inline preview (video/audio/image) and a link fallback.
@@ -98,17 +106,14 @@ Everything is Python. One requirements file: `requirements.txt`.
     - Then call: `GET /classify/ann?video_path=/abs/path.mp4&k=10` to get top labels using CLIP + ANN.
     - If `faiss` is installed, uses ANN; otherwise falls back to a fast vector dot product.
     - Stage 2 re-rank recomputes scores over per-frame embeddings for the top-K for higher accuracy.
-    - Optional audio fusion with CLAP when available: set `use_audio=true&w_audio>0`.
+    - Optional audio fusion with YAMNet: set `use_audio=true&w_audio>0`.
   - CLI equivalents:
-      - `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes`
-      - `python cli_demo.py classify-ann --video /abs/path.mp4 --k 10 --frames 8 --model ViT-B/32 --agg mean`
+    - `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes`
+    - `python cli_demo.py classify-ann --video /abs/path.mp4 --k 10 --frames 8 --model ViT-B/32 --agg mean`
     - UI controls: Classify panel includes Use Audio and weight inputs; results render in a table.
 
-  - CLAP bootstrap (optional):
-    - Download checkpoint: `python tools/bootstrap_clap.py --url https://.../clap_ckpt.pt --out models/clap_ckpt.pt`
-    - Set env: `CLAP_CKPT_PATH=models/clap_ckpt.pt` (or `CLAP_CKPT_URL=https://...`)
-
 Notes
+
 - ANN acceleration uses FAISS if available (optional dependency). Install `faiss-cpu` for your platform to enable.
 
 - Tests
@@ -163,7 +168,7 @@ Gaming, Music, Sports, Movies & TV, Anime & Comics, Technology & Gadgets, Scienc
 - For each macro it pulls mesos (subcategories) from Wikipedia when online using topic mappings (e.g., Film + Television for “Movies & TV”) and a descriptive User‑Agent; otherwise a compact offline fallback is used.
 - For each meso it collects micros (leaf topics), avoids repeating macro/meso terms, and deduplicates.
 - Writes micros as prompts in `Mesh/mastercategories.txt` (Veil prompt format) and writes the full tree to `Mesh/master_tree.json`.
- 
+
 Generate N categories from Wikipedia:
 
 `.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --count 200`
@@ -173,6 +178,7 @@ Or use fixed counts per macro/meso:
 `.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --mesos 3 --micros 3`
 
 Notes:
+
 - If Wikipedia is unreachable, the builder falls back to offline seeds and may produce fewer micros than requested.
 - The flat builder no longer injects city lists or adjective‑styled object combinations to reduce proper‑noun/adjective bias.
 
@@ -270,45 +276,55 @@ Tip: an example `.env` is included at the repo root. Start the API via the run s
 ## Troubleshooting
 
 - Uvicorn resolves to the wrong binary:
+
   - Symptom: `uvicorn: error: unrecognized arguments: --env-file ...` or ML training args appear.
   - Fix: run via module to force the venv: `.venv\\Scripts\\python.exe -m uvicorn --env-file .env api.main:app --reload`, or use `scripts\\start-api.bat` / `scripts\\start-api.ps1` / `scripts/start-api.sh`.
   - Verify: `Get-Command uvicorn` should point inside `.venv\\Scripts`.
 
 - ModuleNotFoundError running `tools/embed_labels.py`:
+
   - Symptom: `ModuleNotFoundError: No module named 'api'` when invoking the script directly.
   - Fix: run from the repo root using module form: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`.
   - Alternative: call `python tools/embed_labels.py ...` from the repo root; the script now auto-adds the repo root to `sys.path`.
 
 - ModuleNotFoundError: `veil.run` when invoking `python -m veil.run`:
+
   - Cause: `veil` lives under `Veil/src` and is not installed as a package.
   - Fix: add `Veil/src` to `PYTHONPATH` before running. PowerShell: `$env:PYTHONPATH = (Resolve-Path 'Veil/src').Path + ';' + $env:PYTHONPATH`; bash/zsh: `export PYTHONPATH=Veil/src:$PYTHONPATH`.
 
 - torchvision TypeError in classify-ann (resize expects PIL/Tensor):
+
   - Symptom: `TypeError: Unexpected type <class 'numpy.ndarray'>` inside `torchvision.transforms.functional.resize`.
   - Cause: CLIP preprocess expects a PIL Image or torch Tensor, not a NumPy array.
   - Fix: ensure Pillow is installed (`python -m pip install pillow`) and update to latest code, which converts frames to PIL before preprocessing.
   - Verify: `python -c "from PIL import Image; print(Image.__version__)"` prints a version.
 
 - No frames sampled from video:
+
   - Symptom: `RuntimeError: No frames sampled from video`.
   - Fix: confirm OpenCV can open the file (correct path/permissions/codecs). Test with `ffmpeg -i <video>` and ensure FFmpeg is on PATH. Try `--frames 16` for sparse videos.
 
 - PowerShell execution policy blocks scripts:
+
   - Symptom: running `scripts\\start-api.ps1` errors about execution policy.
   - Fix: either use `powershell -ExecutionPolicy Bypass -File scripts\\start-api.ps1` or set once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
 - Wikipedia categories don’t load in tree builder:
+
   - Uses a proper User‑Agent and maps friendly macros to Wikipedia topics. If behind a proxy/captive network, set `HTTP_PROXY`/`HTTPS_PROXY` and ensure outbound HTTPS to `en.wikipedia.org` is allowed.
   - The builder falls back to offline seeds; try a smaller `--count` or rerun when online.
 
 - GUI fails due to missing Tk on Linux:
+
   - Install Tk: Debian/Ubuntu `sudo apt-get install python3-tk`, Fedora `sudo dnf install python3-tkinter`.
 
 - TensorFlow oneDNN and timm warnings:
+
   - oneDNN note: set `TF_ENABLE_ONEDNN_OPTS=0` to silence.
   - timm deprecation: messages about `timm.models.layers` are harmless; upgrade or import via `timm.layers` where applicable.
 
 - FAISS (ANN) install tips:
+
   - CPU (recommended):
     - Linux/macOS: `python -m pip install faiss-cpu`
     - Windows: prefer Conda or WSL. With Conda: `conda install -c pytorch faiss-cpu`.
@@ -319,6 +335,7 @@ Tip: an example `.env` is included at the repo root. Start the API via the run s
   - If FAISS is unavailable, the app falls back to a pure-Python scorer automatically.
 
 - Proxy and SSL (pip/Git behind corporate networks):
+
   - Environment proxies: set `HTTP_PROXY`/`HTTPS_PROXY` (and optionally `NO_PROXY`). Example (PowerShell):
     - `$env:HTTPS_PROXY='http://user:pass@proxy.company.com:8080'`
   - Pip proxy flags/config:
@@ -335,6 +352,7 @@ Tip: an example `.env` is included at the repo root. Start the API via the run s
   - Avoid disabling SSL verification; prefer installing your corporate CA instead.
 
 - CUDA / GPU not used or errors:
+
   - Check availability: `.venv\\Scripts\\python.exe -c "import torch;print(torch.cuda.is_available());import tensorflow as tf;print(tf.config.list_physical_devices('GPU'))"`
   - Drivers and toolkit: install the latest NVIDIA driver; prefer prebuilt wheels that bundle CUDA (e.g., PyTorch `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121`). For TensorFlow 2.16+, GPU support uses CUDA 12; refer to TF release notes.
   - Mismatch errors (version/driver/CUDA): align your wheel to the installed driver; avoid mixing system CUDA with pip wheels that already bundle CUDA.
@@ -353,4 +371,3 @@ Tip: an example `.env` is included at the repo root. Start the API via the run s
 ## License
 
 MIT — see `LICENSE`.
-

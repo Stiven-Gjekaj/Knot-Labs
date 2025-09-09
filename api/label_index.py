@@ -110,78 +110,8 @@ def ensure_index(master_path: str, out_dir: str = "indexes", model_name: str = "
     return {"emb": E, "labels": labels, "index": index, "npz": npz_path}
 
 
-def build_label_embeddings_audio(master_path: str, mode: str = "video") -> Tuple[np.ndarray, List[str]]:
-    try:
-        from laion_clap import CLAP_Module  # type: ignore
-    except Exception:  # pragma: no cover
-        return np.zeros((0, 1), dtype=np.float32), []
-    raw = _read_labels(master_path, mode=mode)
-    if not raw:
-        return np.zeros((0, 1), dtype=np.float32), []
-    base_labels = [_strip_prompt_prefix(s, mode) for s in raw]
-    try:
-        model = CLAP_Module(enable_fusion=False)
-        model.eval()
-        model.load_ckpt()  # expects default checkpoint; may fail if not present
-        with torch.no_grad():
-            text_emb = model.get_text_embedding(base_labels)
-        text_emb = text_emb / (np.linalg.norm(text_emb, axis=1, keepdims=True) + 1e-9)
-        return text_emb.astype(np.float32), base_labels
-    except Exception:
-        return np.zeros((0, 1), dtype=np.float32), []
-
-
-def embed_audio_from_video(video_path: str, sr: int = 48000) -> Optional[np.ndarray]:
-    try:
-        from laion_clap import CLAP_Module  # type: ignore
-    except Exception:  # pragma: no cover
-        return None
-    try:
-        import tempfile
-        import ffmpeg  # type: ignore
-        import soundfile as sf  # type: ignore
-        # Extract audio to temp wav
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
-            tmp_path = tmp.name
-        (
-            ffmpeg
-            .input(video_path)
-            .output(tmp_path, ac=1, ar=sr, format='wav')
-            .overwrite_output()
-            .run(quiet=True)
-        )
-        # Load and embed
-        wav, file_sr = sf.read(tmp_path, dtype='float32')
-        if file_sr != sr:
-            import librosa  # type: ignore
-            wav = librosa.resample(wav, orig_sr=file_sr, target_sr=sr)
-        model = CLAP_Module(enable_fusion=False)
-        model.eval()
-        # Optional checkpoint override
-        ckpt_path = os.environ.get('CLAP_CKPT_PATH')
-        if not ckpt_path:
-            # try downloading if URL provided
-            url = os.environ.get('CLAP_CKPT_URL')
-            if url:
-                try:
-                    import urllib.request as _ur
-                    import tempfile
-                    td = tempfile.gettempdir()
-                    fname = os.path.join(td, 'clap_ckpt.pt')
-                    _ur.urlretrieve(url, fname)
-                    ckpt_path = fname
-                except Exception:
-                    ckpt_path = None
-        if ckpt_path:
-            model.load_ckpt(ckpt_path=ckpt_path)
-        else:
-            model.load_ckpt()
-        with torch.no_grad():
-            audio_emb = model.get_audio_embedding_from_data(x=wav, sr=sr)
-        audio_emb = audio_emb / (np.linalg.norm(audio_emb, axis=1, keepdims=True) + 1e-9)
-        return audio_emb.astype(np.float32).mean(axis=0, keepdims=True)
-    except Exception:
-        return None
+# NOTE: CLAP-based audio helpers removed. Audio classification now uses
+# YAMNet via veil.fusion.yamnet_events (no direct API dependency here).
 
 
 def _sample_video_frames(video_path: str, max_frames: int = 8) -> List[Any]:

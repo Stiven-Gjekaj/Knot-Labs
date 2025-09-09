@@ -23,6 +23,7 @@ except Exception:  # pragma: no cover
     redis = None  # type: ignore
 
 from api.jobs import job_queue
+import sys
 from Mesh.category import make_category_from_micro
 
 from Mesh.tools.gen_user import make_user, save_user
@@ -31,7 +32,7 @@ from Mesh.drift_adapter import mesh_user_to_drift_user, mesh_posts_to_drift_cand
 from Drift.drift_ranker import rank_videos
 from Scribe.search import build_index
 from Mesh.analytics import category_stats
-from api.label_index import ensure_index, embed_video, ann_search, rerank_with_frames, build_label_embeddings_audio, embed_audio_from_video
+from api.label_index import ensure_index, embed_video, ann_search, rerank_with_frames
 try:
     from Mesh.mongo_store import mongo_health as _mongo_health, save_user as save_user_mongo, save_post as save_post_mongo  # type: ignore
 except Exception:
@@ -46,6 +47,11 @@ USERS_DIR = os.path.join(MESH_DIR, 'Users')
 POSTS_DIR = os.path.join(MESH_DIR, 'Posts')
 MASTER_PATH = os.path.join(MESH_DIR, 'mastercategories.txt')
 UPLOADS_DIR = os.path.join(MESH_DIR, 'Uploads')
+
+# Ensure Veil/src is importable for YAMNet mapping
+_veil_src = os.path.join(ROOT, 'Veil', 'src')
+if os.path.isdir(_veil_src) and _veil_src not in sys.path:
+    sys.path.insert(0, _veil_src)
 
 app = FastAPI(title="Knot-Labs API")
 
@@ -674,28 +680,33 @@ def api_classify_ann(request: Request, video_path: str, k: int = 10, frames: int
     frames_emb, pooled = embed_video(video_path, model_name=model, frames=int(frames), device='cpu')
     # Stage 1 video ANN
     top = ann_search(E, labels, pooled, k=int(k), index=index)
-    # Optional audio fusion (requires CLAP at runtime)
+    # Optional audio fusion (YAMNet)
     audio_info = None
     if bool(use_audio) and w_audio > 0:
-        Ea, labels_a = build_label_embeddings_audio(master, mode='video')
-        qa = embed_audio_from_video(video_path)
-        if qa is not None and Ea.size and len(labels_a) == len(labels):
-            # Compute fused scores for the union of candidates
-            Sv = (pooled @ E.T)[0]
-            Sa = (qa @ Ea.T)[0]
-            # Normalize each branch to [0,1]
+        try:
+            from veil.fusion.yamnet_events import score_events_to_labels  # type: ignore
+            # Compute CLIP-based label scores using YAMNet top events as evidence
+            emap = score_events_to_labels(
+                video_path,
+                labels,
+                model_name=model,
+                topn_events=15,
+                label_emb=None,
+            )
             import numpy as _np
+            Sv = (pooled @ E.T)[0]
+            Sa = _np.array([emap[lbl] for lbl in labels], dtype=_np.float32)
             def _mm(x):
-                if not x.size:
+                if not hasattr(x, 'size') or not x.size:
                     return x
                 mn, mx = float(x.min(initial=0.0)), float(x.max(initial=0.0))
                 return (x - mn) / (mx - mn + 1e-9)
             fused = w_video * _mm(Sv) + w_audio * _mm(Sa)
             order = _np.argsort(fused)[::-1][: int(k)]
             top = [(labels[i], float(fused[i]), int(i)) for i in order]
-            audio_info = {'used': True}
-        else:
-            audio_info = {'used': False}
+            audio_info = {'used': True, 'backend': 'yamnet'}
+        except Exception:
+            audio_info = {'used': False, 'backend': 'none'}
     if stage2 and top:
         top_idx = [t[2] for t in top]
         rer = rerank_with_frames(top_idx, E, frames_emb, agg=str(agg))

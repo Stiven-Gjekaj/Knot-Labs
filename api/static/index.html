@@ -493,7 +493,7 @@ function showToast(level, msg, timeoutMs = 3500) {
       applyCompact(c);
       const chk = document.getElementById('compactToggle');
       if (chk) chk.checked = c;
-      const t = localStorage.getItem('knot_theme') || 'dark';
+      const t = localStorage.getItem('knot_theme') || 'light';
       applyTheme(t);
       const th = document.getElementById('themeToggle');
       if (th) th.checked = (t !== 'light');
