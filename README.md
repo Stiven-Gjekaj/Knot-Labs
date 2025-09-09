@@ -28,6 +28,13 @@ Everything is Python. One requirements file: `requirements.txt`.
   - GUI: `python gui_demo.py`
     - GUI has Generate Users/Posts buttons. If no users exist, Generate Posts will auto-create one.
 
+- Label embeddings (fast ANN)
+  - Recommended: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
+  - Direct: `python tools/embed_labels.py --master Mesh/mastercategories.txt --out indexes`
+  - Output: writes `indexes/labels_clip_<mode>_<model>.npz` (e.g., `labels_clip_video_ViT-B-32.npz`)
+  - Options: `--mode video|image` (default `video`), `--model ViT-B/32|RN50|...`
+  - Usage: API and CLI reuse this file for `classify/ann`; if missing, it will be (re)built on first use.
+
 - Run demo (CLI)
   - `python demo.py`
 
@@ -76,7 +83,11 @@ Everything is Python. One requirements file: `requirements.txt`.
     - The UI also provides a “Redis KV” panel to set/get/delete keys via the demo endpoints.
 
   - Fast label ANN (optional):
-    - Precompute label embeddings once: `python tools/embed_labels.py --master Mesh/mastercategories.txt --out indexes`
+    - Precompute label embeddings once:
+      - Recommended: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
+      - Or direct: `python tools/embed_labels.py --master Mesh/mastercategories.txt --out indexes` (script auto-adds repo root to PYTHONPATH)
+      - Image prompts: add `--mode image`; choose model via `--model ViT-B/32|RN50|...`
+    - Auto-build on demand: if the NPZ is missing, the API builds it on the first classify request (precompute to avoid the initial delay).
     - Then call: `GET /classify/ann?video_path=/abs/path.mp4&k=10` to get top labels using CLIP + ANN.
     - If `faiss` is installed, uses ANN; otherwise falls back to a fast vector dot product.
     - Stage 2 re-rank recomputes scores over per-frame embeddings for the top-K for higher accuracy.
@@ -255,6 +266,11 @@ Tip: an example `.env` is included at the repo root. Start the API via the run s
   - Symptom: `uvicorn: error: unrecognized arguments: --env-file ...` or ML training args appear.
   - Fix: run via module to force the venv: `.venv\\Scripts\\python.exe -m uvicorn --env-file .env api.main:app --reload`, or use `scripts\\start-api.bat` / `scripts\\start-api.ps1` / `scripts/start-api.sh`.
   - Verify: `Get-Command uvicorn` should point inside `.venv\\Scripts`.
+
+- ModuleNotFoundError running `tools/embed_labels.py`:
+  - Symptom: `ModuleNotFoundError: No module named 'api'` when invoking the script directly.
+  - Fix: run from the repo root using module form: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`.
+  - Alternative: call `python tools/embed_labels.py ...` from the repo root; the script now auto-adds the repo root to `sys.path`.
 
 - PowerShell execution policy blocks scripts:
   - Symptom: running `scripts\\start-api.ps1` errors about execution policy.
