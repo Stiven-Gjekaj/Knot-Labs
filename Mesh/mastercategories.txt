@@ -517,133 +517,29 @@ a video about teenagers | a photo of teenagers
 a video about tour guides | a photo of tour guides
 a video about volunteers | a photo of volunteers
 a video about writers | a photo of writers
-a video about abu dhabi city | a photo of abu dhabi city
-a video about addis ababa city | a photo of addis ababa city
 a video about airports | a photo of airports
-a video about alexandria city | a photo of alexandria city
-a video about algiers city | a photo of algiers city
-a video about amsterdam city | a photo of amsterdam city
-a video about ankara city | a photo of ankara city
-a video about athens city | a photo of athens city
-a video about auckland city | a photo of auckland city
-a video about bangalore city | a photo of bangalore city
-a video about bangkok city | a photo of bangkok city
-a video about barcelona city | a photo of barcelona city
-a video about beijing city | a photo of beijing city
-a video about berlin city | a photo of berlin city
-a video about birmingham city | a photo of birmingham city
-a video about bogota city | a photo of bogota city
-a video about brisbane city | a photo of brisbane city
-a video about brussels city | a photo of brussels city
-a video about budapest city | a photo of budapest city
-a video about buenos aires city | a photo of buenos aires city
 a video about cafes | a photo of cafes
-a video about cairo city | a photo of cairo city
-a video about capetown city | a photo of capetown city
-a video about casablanca city | a photo of casablanca city
 a video about castles | a photo of castles
-a video about chengdu city | a photo of chengdu city
-a video about chennai city | a photo of chennai city
-a video about chicago city | a photo of chicago city
 a video about churches | a photo of churches
 a video about cities | a photo of cities
-a video about copenhagen city | a photo of copenhagen city
-a video about delhi city | a photo of delhi city
-a video about dhaka city | a photo of dhaka city
-a video about doha city | a photo of doha city
-a video about dubai city | a photo of dubai city
-a video about frankfurt city | a photo of frankfurt city
-a video about geneva city | a photo of geneva city
-a video about guangzhou city | a photo of guangzhou city
-a video about hamburg city | a photo of hamburg city
-a video about hanoi city | a photo of hanoi city
-a video about helsinki city | a photo of helsinki city
-a video about ho chi minh city city | a photo of ho chi minh city city
-a video about hong kong city | a photo of hong kong city
 a video about hospitals | a photo of hospitals
-a video about houston city | a photo of houston city
-a video about istanbul city | a photo of istanbul city
-a video about jakarta city | a photo of jakarta city
-a video about jeddah city | a photo of jeddah city
-a video about jerusalem city | a photo of jerusalem city
-a video about johannesburg city | a photo of johannesburg city
-a video about karachi city | a photo of karachi city
-a video about kolkata city | a photo of kolkata city
-a video about kuala lumpur city | a photo of kuala lumpur city
-a video about kyiv city | a photo of kyiv city
-a video about kyoto city | a photo of kyoto city
-a video about lagos city | a photo of lagos city
-a video about lahore city | a photo of lahore city
 a video about landmarks | a photo of landmarks
 a video about libraries | a photo of libraries
-a video about lima city | a photo of lima city
-a video about lisbon city | a photo of lisbon city
-a video about london city | a photo of london city
-a video about los angeles city | a photo of los angeles city
-a video about madrid city | a photo of madrid city
-a video about manchester city | a photo of manchester city
-a video about manila city | a photo of manila city
 a video about markets | a photo of markets
-a video about marrakesh city | a photo of marrakesh city
-a video about marseille city | a photo of marseille city
-a video about melbourne city | a photo of melbourne city
-a video about mexico city city | a photo of mexico city city
-a video about miami city | a photo of miami city
-a video about milan city | a photo of milan city
 a video about monuments | a photo of monuments
-a video about moscow city | a photo of moscow city
 a video about mosques | a photo of mosques
-a video about mumbai city | a photo of mumbai city
-a video about munich city | a photo of munich city
 a video about museums | a photo of museums
-a video about nairobi city | a photo of nairobi city
-a video about naples city | a photo of naples city
-a video about new york city city | a photo of new york city city
-a video about osaka city | a photo of osaka city
-a video about oslo city | a photo of oslo city
 a video about palaces | a photo of palaces
-a video about paris city | a photo of paris city
 a video about parks | a photo of parks
-a video about phnom penh city | a photo of phnom penh city
-a video about porto city | a photo of porto city
-a video about prague city | a photo of prague city
 a video about restaurants | a photo of restaurants
-a video about rio de janeiro city | a photo of rio de janeiro city
-a video about riyadh city | a photo of riyadh city
-a video about rome city | a photo of rome city
-a video about rotterdam city | a photo of rotterdam city
-a video about santiago city | a photo of santiago city
-a video about sao paulo city | a photo of sao paulo city
-a video about sapporo city | a photo of sapporo city
 a video about schools | a photo of schools
-a video about seoul city | a photo of seoul city
-a video about shanghai city | a photo of shanghai city
-a video about shenzhen city | a photo of shenzhen city
-a video about singapore city | a photo of singapore city
-a video about st petersburg city | a photo of st petersburg city
 a video about stadiums | a photo of stadiums
-a video about stockholm city | a photo of stockholm city
-a video about sydney city | a photo of sydney city
 a video about synagogues | a photo of synagogues
-a video about taipei city | a photo of taipei city
-a video about tehran city | a photo of tehran city
-a video about tel aviv city | a photo of tel aviv city
 a video about temples | a photo of temples
-a video about tokyo city | a photo of tokyo city
-a video about toronto city | a photo of toronto city
 a video about towns | a photo of towns
 a video about train stations | a photo of train stations
-a video about tunis city | a photo of tunis city
 a video about universities | a photo of universities
-a video about valencia city | a photo of valencia city
-a video about vancouver city | a photo of vancouver city
-a video about vienna city | a photo of vienna city
-a video about vientiane city | a photo of vientiane city
 a video about villages | a photo of villages
-a video about warsaw city | a photo of warsaw city
-a video about wuhan city | a photo of wuhan city
-a video about xi an city | a photo of xi an city
-a video about zurich city | a photo of zurich city
 a video about anthropology | a photo of anthropology
 a video about archaeology | a photo of archaeology
 a video about astronomy | a photo of astronomy
@@ -718,206 +614,6 @@ a video about ultimate frisbee | a photo of ultimate frisbee
 a video about volleyball | a photo of volleyball
 a video about water polo | a photo of water polo
 a video about wrestling | a photo of wrestling
-a video about ancient bridge | a photo of ancient bridge
-a video about ancient building | a photo of ancient building
-a video about ancient car | a photo of ancient car
-a video about ancient castle | a photo of ancient castle
-a video about ancient computer | a photo of ancient computer
-a video about ancient festival | a photo of ancient festival
-a video about ancient garden | a photo of ancient garden
-a video about ancient instrument | a photo of ancient instrument
-a video about ancient library | a photo of ancient library
-a video about ancient market | a photo of ancient market
-a video about ancient museum | a photo of ancient museum
-a video about ancient park | a photo of ancient park
-a video about ancient phone | a photo of ancient phone
-a video about ancient robot | a photo of ancient robot
-a video about ancient ship | a photo of ancient ship
-a video about ancient statue | a photo of ancient statue
-a video about ancient tower | a photo of ancient tower
-a video about ancient train | a photo of ancient train
-a video about ancient vehicle | a photo of ancient vehicle
-a video about ancient village | a photo of ancient village
-a video about colorful bridge | a photo of colorful bridge
-a video about colorful building | a photo of colorful building
-a video about colorful car | a photo of colorful car
-a video about colorful castle | a photo of colorful castle
-a video about colorful computer | a photo of colorful computer
-a video about colorful festival | a photo of colorful festival
-a video about colorful garden | a photo of colorful garden
-a video about colorful instrument | a photo of colorful instrument
-a video about colorful library | a photo of colorful library
-a video about colorful market | a photo of colorful market
-a video about colorful museum | a photo of colorful museum
-a video about colorful park | a photo of colorful park
-a video about colorful phone | a photo of colorful phone
-a video about colorful robot | a photo of colorful robot
-a video about colorful ship | a photo of colorful ship
-a video about colorful statue | a photo of colorful statue
-a video about colorful tower | a photo of colorful tower
-a video about colorful train | a photo of colorful train
-a video about colorful vehicle | a photo of colorful vehicle
-a video about colorful village | a photo of colorful village
-a video about futuristic bridge | a photo of futuristic bridge
-a video about futuristic building | a photo of futuristic building
-a video about futuristic car | a photo of futuristic car
-a video about futuristic castle | a photo of futuristic castle
-a video about futuristic computer | a photo of futuristic computer
-a video about futuristic festival | a photo of futuristic festival
-a video about futuristic garden | a photo of futuristic garden
-a video about futuristic instrument | a photo of futuristic instrument
-a video about futuristic library | a photo of futuristic library
-a video about futuristic market | a photo of futuristic market
-a video about futuristic museum | a photo of futuristic museum
-a video about futuristic park | a photo of futuristic park
-a video about futuristic phone | a photo of futuristic phone
-a video about futuristic robot | a photo of futuristic robot
-a video about futuristic ship | a photo of futuristic ship
-a video about futuristic statue | a photo of futuristic statue
-a video about futuristic tower | a photo of futuristic tower
-a video about futuristic train | a photo of futuristic train
-a video about futuristic vehicle | a photo of futuristic vehicle
-a video about futuristic village | a photo of futuristic village
-a video about metallic bridge | a photo of metallic bridge
-a video about metallic building | a photo of metallic building
-a video about metallic car | a photo of metallic car
-a video about metallic castle | a photo of metallic castle
-a video about metallic computer | a photo of metallic computer
-a video about metallic festival | a photo of metallic festival
-a video about metallic garden | a photo of metallic garden
-a video about metallic instrument | a photo of metallic instrument
-a video about metallic library | a photo of metallic library
-a video about metallic market | a photo of metallic market
-a video about metallic museum | a photo of metallic museum
-a video about metallic park | a photo of metallic park
-a video about metallic phone | a photo of metallic phone
-a video about metallic robot | a photo of metallic robot
-a video about metallic ship | a photo of metallic ship
-a video about metallic statue | a photo of metallic statue
-a video about metallic tower | a photo of metallic tower
-a video about metallic train | a photo of metallic train
-a video about metallic vehicle | a photo of metallic vehicle
-a video about metallic village | a photo of metallic village
-a video about minimalist bridge | a photo of minimalist bridge
-a video about minimalist building | a photo of minimalist building
-a video about minimalist car | a photo of minimalist car
-a video about minimalist castle | a photo of minimalist castle
-a video about minimalist computer | a photo of minimalist computer
-a video about minimalist festival | a photo of minimalist festival
-a video about minimalist garden | a photo of minimalist garden
-a video about minimalist instrument | a photo of minimalist instrument
-a video about minimalist library | a photo of minimalist library
-a video about minimalist market | a photo of minimalist market
-a video about minimalist museum | a photo of minimalist museum
-a video about minimalist park | a photo of minimalist park
-a video about minimalist phone | a photo of minimalist phone
-a video about minimalist robot | a photo of minimalist robot
-a video about minimalist ship | a photo of minimalist ship
-a video about minimalist statue | a photo of minimalist statue
-a video about minimalist tower | a photo of minimalist tower
-a video about minimalist train | a photo of minimalist train
-a video about minimalist vehicle | a photo of minimalist vehicle
-a video about minimalist village | a photo of minimalist village
-a video about modern bridge | a photo of modern bridge
-a video about modern building | a photo of modern building
-a video about modern car | a photo of modern car
-a video about modern castle | a photo of modern castle
-a video about modern computer | a photo of modern computer
-a video about modern festival | a photo of modern festival
-a video about modern garden | a photo of modern garden
-a video about modern instrument | a photo of modern instrument
-a video about modern library | a photo of modern library
-a video about modern market | a photo of modern market
-a video about modern museum | a photo of modern museum
-a video about modern park | a photo of modern park
-a video about modern phone | a photo of modern phone
-a video about modern robot | a photo of modern robot
-a video about modern ship | a photo of modern ship
-a video about modern statue | a photo of modern statue
-a video about modern tower | a photo of modern tower
-a video about modern train | a photo of modern train
-a video about modern vehicle | a photo of modern vehicle
-a video about modern village | a photo of modern village
-a video about ornate bridge | a photo of ornate bridge
-a video about ornate building | a photo of ornate building
-a video about ornate car | a photo of ornate car
-a video about ornate castle | a photo of ornate castle
-a video about ornate computer | a photo of ornate computer
-a video about ornate festival | a photo of ornate festival
-a video about ornate garden | a photo of ornate garden
-a video about ornate instrument | a photo of ornate instrument
-a video about ornate library | a photo of ornate library
-a video about ornate market | a photo of ornate market
-a video about ornate museum | a photo of ornate museum
-a video about ornate park | a photo of ornate park
-a video about ornate phone | a photo of ornate phone
-a video about ornate robot | a photo of ornate robot
-a video about ornate ship | a photo of ornate ship
-a video about ornate statue | a photo of ornate statue
-a video about ornate tower | a photo of ornate tower
-a video about ornate train | a photo of ornate train
-a video about ornate vehicle | a photo of ornate vehicle
-a video about ornate village | a photo of ornate village
-a video about rustic bridge | a photo of rustic bridge
-a video about rustic building | a photo of rustic building
-a video about rustic car | a photo of rustic car
-a video about rustic castle | a photo of rustic castle
-a video about rustic computer | a photo of rustic computer
-a video about rustic festival | a photo of rustic festival
-a video about rustic garden | a photo of rustic garden
-a video about rustic instrument | a photo of rustic instrument
-a video about rustic library | a photo of rustic library
-a video about rustic market | a photo of rustic market
-a video about rustic museum | a photo of rustic museum
-a video about rustic park | a photo of rustic park
-a video about rustic phone | a photo of rustic phone
-a video about rustic robot | a photo of rustic robot
-a video about rustic ship | a photo of rustic ship
-a video about rustic statue | a photo of rustic statue
-a video about rustic tower | a photo of rustic tower
-a video about rustic train | a photo of rustic train
-a video about rustic vehicle | a photo of rustic vehicle
-a video about rustic village | a photo of rustic village
-a video about translucent bridge | a photo of translucent bridge
-a video about translucent building | a photo of translucent building
-a video about translucent car | a photo of translucent car
-a video about translucent castle | a photo of translucent castle
-a video about translucent computer | a photo of translucent computer
-a video about translucent festival | a photo of translucent festival
-a video about translucent garden | a photo of translucent garden
-a video about translucent instrument | a photo of translucent instrument
-a video about translucent library | a photo of translucent library
-a video about translucent market | a photo of translucent market
-a video about translucent museum | a photo of translucent museum
-a video about translucent park | a photo of translucent park
-a video about translucent phone | a photo of translucent phone
-a video about translucent robot | a photo of translucent robot
-a video about translucent ship | a photo of translucent ship
-a video about translucent statue | a photo of translucent statue
-a video about translucent tower | a photo of translucent tower
-a video about translucent train | a photo of translucent train
-a video about translucent vehicle | a photo of translucent vehicle
-a video about translucent village | a photo of translucent village
-a video about wooden bridge | a photo of wooden bridge
-a video about wooden building | a photo of wooden building
-a video about wooden car | a photo of wooden car
-a video about wooden castle | a photo of wooden castle
-a video about wooden computer | a photo of wooden computer
-a video about wooden festival | a photo of wooden festival
-a video about wooden garden | a photo of wooden garden
-a video about wooden instrument | a photo of wooden instrument
-a video about wooden library | a photo of wooden library
-a video about wooden market | a photo of wooden market
-a video about wooden museum | a photo of wooden museum
-a video about wooden park | a photo of wooden park
-a video about wooden phone | a photo of wooden phone
-a video about wooden robot | a photo of wooden robot
-a video about wooden ship | a photo of wooden ship
-a video about wooden statue | a photo of wooden statue
-a video about wooden tower | a photo of wooden tower
-a video about wooden train | a photo of wooden train
-a video about wooden vehicle | a photo of wooden vehicle
-a video about wooden village | a photo of wooden village
 a video about 3d printing | a photo of 3d printing
 a video about artificial intelligence | a photo of artificial intelligence
 a video about augmented reality | a photo of augmented reality

@@ -12,10 +12,6 @@ except Exception:  # pragma: no cover
     faiss = None  # type: ignore
 
 import clip  # type: ignore
-try:
-    from laion_clap import CLAP_Module  # type: ignore
-except Exception:  # pragma: no cover
-    CLAP_Module = None  # type: ignore
 
 
 def _normalize(x: torch.Tensor) -> torch.Tensor:
@@ -115,7 +111,9 @@ def ensure_index(master_path: str, out_dir: str = "indexes", model_name: str = "
 
 
 def build_label_embeddings_audio(master_path: str, mode: str = "video") -> Tuple[np.ndarray, List[str]]:
-    if CLAP_Module is None:
+    try:
+        from laion_clap import CLAP_Module  # type: ignore
+    except Exception:  # pragma: no cover
         return np.zeros((0, 1), dtype=np.float32), []
     raw = _read_labels(master_path, mode=mode)
     if not raw:
@@ -134,7 +132,9 @@ def build_label_embeddings_audio(master_path: str, mode: str = "video") -> Tuple
 
 
 def embed_audio_from_video(video_path: str, sr: int = 48000) -> Optional[np.ndarray]:
-    if CLAP_Module is None:
+    try:
+        from laion_clap import CLAP_Module  # type: ignore
+    except Exception:  # pragma: no cover
         return None
     try:
         import tempfile

@@ -11,16 +11,20 @@ Everything is Python. One requirements file: `requirements.txt`.
 
 ## Quick Start
 
-- Install (Python 3.10+)
-  - `pip install -r requirements.txt`
+- Install (Python 3.10+; tested on 3.13)
+  - PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\\setup.ps1`
+  - Bash/WSL: `bash scripts/setup.sh`
+  - Make: `make setup`
+  - Manual: `python -m venv .venv && .venv\\Scripts\\python.exe -m pip install -r requirements.txt`
 
 - Build labels (writes `Mesh/mastercategories.txt`)
-  - Flat builder: `python Mesh/tools/build_mastercategories.py --count 1000`
-  - Tree builder (macros -> mesos -> micros): `python Mesh/tools/build_mastercategories_tree.py --mesos 3 --micros 3`
-    - Integrated alternative: `python Mesh/tools/build_mastercategories.py --use-tree --mesos 3 --micros 3`
-    - Uses a fixed macro list (Gaming, Music, Sports, ... 25 total)
-    - Pulls mesos/micros from the web when online (Wikipedia); falls back to offline seeds
-    - Also writes `Mesh/master_tree.json` with the full hierarchy
+  - Flat builder (cities and adjective-combos removed):
+    - `.venv\\Scripts\\python.exe -m Mesh.tools.build_mastercategories --count 1000`
+  - Tree builder from Wikipedia (macros → mesos → micros):
+    - Total N micros: `.venv\\Scripts\\python.exe -m Mesh.tools.build_mastercategories --use-tree --count 200`
+    - Or fixed counts: `.venv\\Scripts\\python.exe -m Mesh.tools.build_mastercategories --use-tree --mesos 3 --micros 3`
+    - Uses a fixed macro list and maps friendly names to Wikipedia topics (e.g., Film/Television for “Movies & TV”), sending a proper User-Agent.
+    - Falls back to compact offline seeds when offline and also writes `Mesh/master_tree.json`.
   - GUI: `python gui_demo.py`
     - GUI has Generate Users/Posts buttons. If no users exist, Generate Posts will auto-create one.
 
@@ -32,9 +36,10 @@ Everything is Python. One requirements file: `requirements.txt`.
   - Ships with Python on most platforms. If missing: install your OS tk package (e.g., `sudo apt-get install python3-tk`).
 
 - Start API (FastAPI)
-  - `uvicorn api.main:app --reload`
-  - Or load env vars from the provided `.env` file:
-    - `uvicorn --env-file .env api.main:app --reload`
+  - Windows (cmd): `scripts\\start-api.bat`
+  - PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\\start-api.ps1`
+  - Bash/WSL: `bash scripts/start-api.sh`
+  - Equivalent explicit command (uses venv): `.venv\\Scripts\\python.exe -m uvicorn --env-file .env api.main:app --reload`
   - Endpoints:
     - `POST /users`
     - `POST /posts` (optionally classifies with Veil when `media_path` provided)
@@ -76,7 +81,7 @@ Everything is Python. One requirements file: `requirements.txt`.
     - If `faiss` is installed, uses ANN; otherwise falls back to a fast vector dot product.
     - Stage 2 re-rank recomputes scores over per-frame embeddings for the top-K for higher accuracy.
     - Optional audio fusion with CLAP when available: set `use_audio=true&w_audio>0`.
-    - CLI equivalents:
+  - CLI equivalents:
       - `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes`
       - `python cli_demo.py classify-ann --video /abs/path.mp4 --k 10 --frames 8 --model ViT-B/32 --agg mean`
     - UI controls: Classify panel includes Use Audio and weight inputs; results render in a table.
@@ -133,13 +138,25 @@ Example:
 
 ## Category Tree (Macros → Mesos → Micros)
 
-The hierarchical builder `Mesh/tools/build_mastercategories_tree.py` uses a fixed macro list:
+The hierarchical builder is integrated into `Mesh/tools/build_mastercategories.py` and uses a fixed macro list:
 
 Gaming, Music, Sports, Movies & TV, Anime & Comics, Technology & Gadgets, Science & Education, Art & Design, Fashion & Beauty, Food & Cooking, Travel & Places, Cars & Vehicles, Health & Fitness, Lifestyle & Routines, History & Culture, Politics & News, Finance & Business, Nature & Animals, DIY & How-To, Comedy & Memes, Motivation & Self-Help, Mystery & Horror, Podcasts & Talk, Relationships & Community, Spirituality & Philosophy.
 
-- For each macro it pulls several mesos (subcategories) from the web (Wikipedia) when online; otherwise a compact offline fallback is used.
-- For each meso it collects several micros (leaf topics), deduplicates simple adjective variants, and avoids repeating macro/meso terms.
+- For each macro it pulls mesos (subcategories) from Wikipedia when online using topic mappings (e.g., Film + Television for “Movies & TV”) and a descriptive User‑Agent; otherwise a compact offline fallback is used.
+- For each meso it collects micros (leaf topics), avoids repeating macro/meso terms, and deduplicates.
 - Writes micros as prompts in `Mesh/mastercategories.txt` (Veil prompt format) and writes the full tree to `Mesh/master_tree.json`.
+ 
+Generate N categories from Wikipedia:
+
+`.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --count 200`
+
+Or use fixed counts per macro/meso:
+
+`.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --mesos 3 --micros 3`
+
+Notes:
+- If Wikipedia is unreachable, the builder falls back to offline seeds and may produce fewer micros than requested.
+- The flat builder no longer injects city lists or adjective‑styled object combinations to reduce proper‑noun/adjective bias.
 
 ## Feed Ranking (Drift)
 
@@ -169,6 +186,19 @@ The feed is scored and ordered by `Drift/drift_ranker.py`.
 - Make/PS shortcuts:
   - `make install|test|demo|gui|labels|cli`
   - `scripts/tasks.ps1 -Task Install|Test|Demo|GUI|Labels|CLI`
+
+## Dev Environment & Automation
+
+- Virtualenv: the repo uses a local `./.venv`. A PowerShell profile snippet auto‑activates it when you cd into the repo.
+- Requirements: `requirements.txt` is pinned; recreate the venv with `scripts/setup.ps1|sh` or `make setup`.
+- Make targets:
+  - `make venv` — create `./.venv`
+  - `make install` — upgrade pip and install requirements
+  - `make setup` — venv + install
+  - `make run` — start `uvicorn` with `.env`
+  - `make clean` — remove venv
+  - `make check` — verify FAISS and FFmpeg presence
+- CI: GitHub Actions workflow `.github/workflows/ci.yml` installs deps on Python 3.13, caches pip, and prints environment summary.
 
 ## GitHub Pages (Static UI)
 
@@ -210,14 +240,78 @@ The feed is scored and ordered by `Drift/drift_ranker.py`.
 - `MONGO_URI`: if set, enables MongoDB client; API writes users/posts to Mongo.
 - `MONGO_DB`: Mongo database name (default `knot`).
 
-Tip: an example `.env` is included at the repo root. Start the API with:
+Tip: an example `.env` is included at the repo root. Start the API via the run scripts above or with:
 
-`uvicorn --env-file .env api.main:app --reload`
+`.venv\Scripts\python.exe -m uvicorn --env-file .env api.main:app --reload`
 
 ## Notes
 
 - No special “t1” user is required. Create users via GUI, demo, or API as needed.
 - Old “video” naming is preserved as aliases (e.g., `make_video` → `make_post`).
+
+## Troubleshooting
+
+- Uvicorn resolves to the wrong binary:
+  - Symptom: `uvicorn: error: unrecognized arguments: --env-file ...` or ML training args appear.
+  - Fix: run via module to force the venv: `.venv\\Scripts\\python.exe -m uvicorn --env-file .env api.main:app --reload`, or use `scripts\\start-api.bat` / `scripts\\start-api.ps1` / `scripts/start-api.sh`.
+  - Verify: `Get-Command uvicorn` should point inside `.venv\\Scripts`.
+
+- PowerShell execution policy blocks scripts:
+  - Symptom: running `scripts\\start-api.ps1` errors about execution policy.
+  - Fix: either use `powershell -ExecutionPolicy Bypass -File scripts\\start-api.ps1` or set once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+- Wikipedia categories don’t load in tree builder:
+  - Uses a proper User‑Agent and maps friendly macros to Wikipedia topics. If behind a proxy/captive network, set `HTTP_PROXY`/`HTTPS_PROXY` and ensure outbound HTTPS to `en.wikipedia.org` is allowed.
+  - The builder falls back to offline seeds; try a smaller `--count` or rerun when online.
+
+- GUI fails due to missing Tk on Linux:
+  - Install Tk: Debian/Ubuntu `sudo apt-get install python3-tk`, Fedora `sudo dnf install python3-tkinter`.
+
+- TensorFlow oneDNN and timm warnings:
+  - oneDNN note: set `TF_ENABLE_ONEDNN_OPTS=0` to silence.
+  - timm deprecation: messages about `timm.models.layers` are harmless; upgrade or import via `timm.layers` where applicable.
+
+- FAISS (ANN) install tips:
+  - CPU (recommended):
+    - Linux/macOS: `python -m pip install faiss-cpu`
+    - Windows: prefer Conda or WSL. With Conda: `conda install -c pytorch faiss-cpu`.
+  - GPU (advanced):
+    - Conda: `conda install -c pytorch -c nvidia faiss-gpu`
+    - Pip GPU wheels are Linux-only and tied to specific CUDA versions; align with your driver/CUDA or use Conda.
+  - Verify: `python -c "import faiss, numpy as np; xb=np.random.rand(100,512).astype('float32'); index=faiss.IndexFlatIP(512); index.add(xb); print(index.ntotal)"`
+  - If FAISS is unavailable, the app falls back to a pure-Python scorer automatically.
+
+- Proxy and SSL (pip/Git behind corporate networks):
+  - Environment proxies: set `HTTP_PROXY`/`HTTPS_PROXY` (and optionally `NO_PROXY`). Example (PowerShell):
+    - `$env:HTTPS_PROXY='http://user:pass@proxy.company.com:8080'`
+  - Pip proxy flags/config:
+    - One-off: `python -m pip install --proxy http://user:pass@proxy:8080 -r requirements.txt`
+    - Persist: `pip config set global.proxy http://user:pass@proxy:8080`
+  - Corporate CA certificates:
+    - Provide CA to pip/requests: set `PIP_CERT=C:\path\corp-ca.pem` or `REQUESTS_CA_BUNDLE=C:\path\corp-ca.pem`
+    - Pip config: `pip config set global.cert C:\\path\\corp-ca.pem`
+    - Git: `git config --global http.sslCAInfo C:\\path\\corp-ca.pem` (or on Windows: `git config --global http.sslBackend schannel` to use system store)
+  - Git proxies:
+    - `git config --global http.proxy http://user:pass@proxy:8080`
+    - `git config --global https.proxy http://user:pass@proxy:8080`
+  - If PyPI is blocked, use an internal mirror: `pip config set global.index-url https://<internal-mirror>/simple`
+  - Avoid disabling SSL verification; prefer installing your corporate CA instead.
+
+- CUDA / GPU not used or errors:
+  - Check availability: `.venv\\Scripts\\python.exe -c "import torch;print(torch.cuda.is_available());import tensorflow as tf;print(tf.config.list_physical_devices('GPU'))"`
+  - Drivers and toolkit: install the latest NVIDIA driver; prefer prebuilt wheels that bundle CUDA (e.g., PyTorch `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121`). For TensorFlow 2.16+, GPU support uses CUDA 12; refer to TF release notes.
+  - Mismatch errors (version/driver/CUDA): align your wheel to the installed driver; avoid mixing system CUDA with pip wheels that already bundle CUDA.
+  - Force CPU for debugging: set `CUDA_VISIBLE_DEVICES=` (empty) or `TF_CPP_MIN_LOG_LEVEL=2` to reduce logs.
+  - Verify runtime: run `nvidia-smi` in a terminal; ensure a compatible driver is present and no other process is exhausting VRAM.
+
+- FFmpeg missing (video/audio handling):
+  - Symptom: errors like “ffmpeg not found” or failure to probe media.
+  - Install FFmpeg:
+    - Windows: `choco install ffmpeg` or download a static build and add `bin` to PATH.
+    - macOS: `brew install ffmpeg`
+    - Debian/Ubuntu: `sudo apt-get update && sudo apt-get install -y ffmpeg`
+    - Fedora: `sudo dnf install ffmpeg`
+  - Test: run `ffmpeg -version`; ensure it's on PATH before your shell or VS Code.
 
 ## License
 

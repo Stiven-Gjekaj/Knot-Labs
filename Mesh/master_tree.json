@@ -1,47 +1,4052 @@
 {
   "Gaming": {
-    "pc gaming": [],
-    "console gaming": [],
-    "mobile gaming": []
+    "games": [
+      "games by company",
+      "games by country",
+      "games by date"
+    ],
+    "game associations": [
+      "chess organizations",
+      "contract bridge organizations",
+      "go organizations"
+    ],
+    "game awards": [
+      "board game awards",
+      "diana jones award winners",
+      "game awards navigational boxes"
+    ],
+    "game characters": [
+      "lists of game characters",
+      "tabletop game characters",
+      "video game characters"
+    ],
+    "game competitions": [
+      "board games competitions",
+      "card game competitions",
+      "esports competitions"
+    ],
+    "game databases": [
+      "chess databases",
+      "online game databases"
+    ],
+    "game design": [
+      "game designers"
+    ],
+    "gaming devices": [
+      "dice",
+      "merchandisers",
+      "playing cards"
+    ],
+    "game equipment": [
+      "card game equipment",
+      "chess equipment",
+      "cue sports equipment"
+    ],
+    "game franchises": [
+      "video game franchises",
+      "battletech",
+      "chaotic"
+    ],
+    "gambling": [
+      "gambling by country",
+      "gambling in ancient history",
+      "cheating in gambling"
+    ],
+    "game studies": [
+      "game design",
+      "gamification",
+      "video game studies"
+    ],
+    "gamebooks": [
+      "choose your own adventure",
+      "fantasy gamebooks",
+      "gamebooks by peter darvill evans"
+    ],
+    "game manufacturers": [
+      "board game publishing companies",
+      "card game publishing companies",
+      "wargame companies"
+    ],
+    "gaming organizations": [
+      "gaming conventions",
+      "game manufacturers",
+      "playing card organisations"
+    ],
+    "people in the games industry": [
+      "game artists",
+      "game award winners",
+      "board game personalities"
+    ],
+    "game rules": [
+      "game variants",
+      "poker terminology",
+      "role playing game systems"
+    ],
+    "game shows": [
+      "game shows by country",
+      "game shows by decade",
+      "game shows by network"
+    ],
+    "game systems": [
+      "chess notation",
+      "playing card suit systems",
+      "game rules"
+    ],
+    "game terminology": [
+      "board game terminology",
+      "card game terminology",
+      "chess terminology"
+    ],
+    "game theory": [
+      "game theorists",
+      "organizations related to game theory",
+      "game theory game classes"
+    ],
+    "video gaming": [
+      "video gaming by country",
+      "works adapted into video games",
+      "video gaming by topic"
+    ],
+    "video games by franchise": [
+      "20th century studios video games by franchise",
+      "nintendo games by franchise",
+      "ace attorney video games"
+    ],
+    "video games by game mode": [
+      "multiplayer video games",
+      "single player video games"
+    ],
+    "video games by narrative form": [
+      "video game prequels",
+      "video game reboots",
+      "video game sequels"
+    ],
+    "video games by programming language": [
+      "lua programming language scripted video games",
+      "python programming language scripted video games",
+      "video games written in forth"
+    ],
+    "video games by company": [
+      "arcade games by company",
+      "beat em ups by company",
+      "video game characters by company"
+    ],
+    "video games by date": [
+      "video games by century",
+      "video games by decade",
+      "video games by year"
+    ],
+    "video games by development status": [
+      "cancelled video games",
+      "video games by country of developer",
+      "crowdfunded video games"
+    ],
+    "video games by featured character": [
+      "video games based on real people",
+      "video games based on alice in wonderland",
+      "video games based on asterix"
+    ],
+    "video games by game engine": [
+      "lists of video games by game engine",
+      "3d gamestudio games",
+      "adventure game studio games"
+    ],
+    "video games by gameplay element": [
+      "video games with 6 degrees of freedom",
+      "video games using barcodes",
+      "cellular automata in video games"
+    ],
+    "video games by genre": [
+      "lists of video games by genre",
+      "video game franchises by genre",
+      "video games by narrative genre"
+    ],
+    "video games by graphical style": [
+      "video games with 2 5d graphics",
+      "video games with cel shaded animation",
+      "claymation video games"
+    ],
+    "video games by software license": [
+      "video games with available source code",
+      "commercial video games with freely available source code",
+      "creative commons licensed video games"
+    ],
+    "video games by physics engine": [
+      "video games using havok",
+      "video games using physx"
+    ],
+    "video games by platform": [
+      "lists of video games by platform",
+      "video games with cross platform play",
+      "games on apple inc platforms"
+    ],
+    "video games by source": [
+      "video games based on actual events",
+      "video games inspired by m c escher",
+      "video games based on mythology"
+    ],
+    "video games by staff": [
+      "video games by composer",
+      "video games by designer",
+      "video games by developer"
+    ],
+    "video games by topic": [
+      "lists of video games by topic",
+      "massively multiplayer online role playing games by topic",
+      "video games by type of protagonist"
+    ],
+    "video games adapted for other media": [
+      "video games adapted into comics",
+      "video games adapted into films",
+      "video games adapted into novels"
+    ],
+    "fiction about video games": [
+      "fiction about massively multiplayer online role playing games"
+    ],
+    "history of video games": [
+      "video gaming by period",
+      "history books about video games",
+      "video game exhibitions"
+    ],
+    "indie games": [
+      "indie game festivals",
+      "indie game developers",
+      "ambrosia software games"
+    ],
+    "video game lists": [
+      "lists of video games",
+      "indexes of video game topics",
+      "incomplete video game lists"
+    ],
+    "online games": [
+      "browser games",
+      "chat games",
+      "cloud gaming"
+    ],
+    "video game stubs": [
+      "action game stubs",
+      "action adventure video game stubs",
+      "adventure game stubs"
+    ]
   },
   "Music": {
-    "pop music": [],
-    "hip hop": [],
-    "classical music": []
+    "music by culture": [
+      "music festivals by culture",
+      "music of ancient egypt",
+      "ancient greek music"
+    ],
+    "music by date": [
+      "music by century",
+      "music by decade",
+      "music by year"
+    ],
+    "music by ethnicity": [
+      "musicians by ethnicity",
+      "music of the african diaspora",
+      "african american music"
+    ],
+    "music by genre": [
+      "concerts by genre",
+      "musical subgenres by genre",
+      "music by genre and country"
+    ],
+    "music by language": [
+      "compositions by language",
+      "albums by language",
+      "bands by language"
+    ],
+    "music by location": [
+      "albums by recording location",
+      "concert residencies by location",
+      "musicians by location"
+    ],
+    "music by media franchise": [
+      "albums by media franchise",
+      "film music by media franchise",
+      "songs by media franchise"
+    ],
+    "music by source": [
+      "musicals by source",
+      "songs by source",
+      "music based on actual events"
+    ],
+    "music by theme": [
+      "ballets by topic",
+      "music genres by theme",
+      "musicals by topic"
+    ],
+    "music by war": [
+      "musical compositions about the american civil war",
+      "musicals about war",
+      "songs by war"
+    ],
+    "works about music and musicians": [
+      "books about musicians",
+      "music books",
+      "works about cellos and cellists"
+    ],
+    "music people": [
+      "music people by nationality",
+      "people by music school",
+      "lgbtq music people"
+    ],
+    "musical analysis": [
+      "bass sound",
+      "classical music analysis",
+      "elements of music"
+    ],
+    "music books": [
+      "books about australian music",
+      "christmas carol collections",
+      "encyclopedias of music"
+    ],
+    "campanology": [
+      "bell ringing organizations",
+      "bellringers",
+      "bells percussion"
+    ],
+    "music classification": [
+      "hornbostel sachs",
+      "organology"
+    ],
+    "musical collaborations": [
+      "musical collaboration awards",
+      "collaborative albums",
+      "collaborations in classical music"
+    ],
+    "musical composition": [
+      "musical compositions",
+      "composers",
+      "accompaniment"
+    ],
+    "music conferences": [
+      "international rostrum of composers"
+    ],
+    "music in culture": [
+      "fiction about music",
+      "given names derived from musical terms",
+      "music in popular culture"
+    ],
+    "musical culture": [
+      "music awards",
+      "censorship of music",
+      "music criticism"
+    ],
+    "music databases": [
+      "online music and lyrics databases"
+    ],
+    "music education": [
+      "music education by continent",
+      "music education by country",
+      "music educators"
+    ],
+    "essays about music": [
+      "essays by richard wagner"
+    ],
+    "music and fashion": [
+      "fashion of madonna",
+      "heavy metal fashion",
+      "punk fashion"
+    ],
+    "music genres": [
+      "microgenres",
+      "music genres by century",
+      "music genres by period"
+    ],
+    "music history": [
+      "timelines of music",
+      "music history by country",
+      "music history by genre"
+    ],
+    "music and humour": [
+      "humor in classical music",
+      "comedy songs",
+      "comedy hip hop"
+    ],
+    "music images": [
+      "images of musical groups",
+      "images of musicians",
+      "music score excerpts"
+    ],
+    "music industry": [
+      "music industries by country",
+      "music industry associations",
+      "audio branding"
+    ],
+    "music libraries": [
+      "musical instrument libraries",
+      "music librarians",
+      "music libraries in the united states"
+    ],
+    "nicknames in music": [
+      "nicknames in classical music"
+    ],
+    "music organizations": [
+      "music organizations by city",
+      "music organizations by continent",
+      "music organizations by country"
+    ],
+    "music performance": [
+      "bugle calls",
+      "concerts",
+      "promotional images for music performances"
+    ],
+    "music and politics": [
+      "anti fascist music",
+      "political music artists",
+      "music in the movement against apartheid"
+    ],
+    "music psychology": [
+      "auditory illusions",
+      "cognitive musicology",
+      "music cognition"
+    ],
+    "quotations from music": [
+      "quotations from hip hop",
+      "jingles",
+      "popular songs based on classical music"
+    ],
+    "religion and music": [
+      "music and singing deities",
+      "mythological musical instruments",
+      "religion in music"
+    ],
+    "solo music": [
+      "instrumental solo pieces",
+      "one man bands",
+      "solo piano albums"
+    ],
+    "soundtracks": [
+      "soundtrack albums by date",
+      "soundtrack by medium",
+      "soundtracks by artist"
+    ],
+    "music technology": [
+      "amplified instruments",
+      "electronic music",
+      "music equipment manufacturers"
+    ],
+    "musical terminology": [
+      "glossaries of music",
+      "carnatic music terminology",
+      "formal sections in music analysis"
+    ],
+    "music visualization": [
+      "music visualization software"
+    ],
+    "music stubs": [
+      "album stubs",
+      "music award stubs",
+      "music biography stubs"
+    ]
   },
   "Sports": {
-    "ball sports": [],
-    "combat sports": []
+    "sports by continent of origin": [
+      "sports originating in africa",
+      "sports originating in asia",
+      "sports originating in europe"
+    ],
+    "sports by country of origin": [
+      "sports originating in argentina",
+      "sports originating in australia",
+      "sports originating in austria"
+    ],
+    "sport by location": [
+      "sport by continent and location",
+      "sport by location and sport",
+      "sports competitions by location"
+    ],
+    "sport by period": [
+      "sport by continent and period",
+      "sport by period and sport",
+      "international sports by period"
+    ],
+    "sports by region of origin": [
+      "sports originating in the global north",
+      "sports originating in south asia",
+      "sports originating in west asia"
+    ],
+    "sports by topic": [
+      "gender and sport",
+      "health and sports",
+      "politics and sports"
+    ],
+    "sports by type": [
+      "sports by continent",
+      "sports by country",
+      "individual sports"
+    ],
+    "categories by sport": [
+      "men s sports by sport and country",
+      "women s sports by sport and country",
+      "amateur sports by sport"
+    ],
+    "sports in popular culture": [
+      "hunting in popular culture",
+      "kabaddi in popular culture",
+      "pittsburgh steelers in popular culture"
+    ],
+    "sports accomplishments": [
+      "baseball accomplishments",
+      "perfect scores in sports",
+      "sports champions"
+    ],
+    "sports administration": [
+      "sports executives and administrators",
+      "major league baseball rules",
+      "rules of the national basketball association"
+    ],
+    "sports business": [
+      "sports business by sport",
+      "sport industry",
+      "sports businesspeople"
+    ],
+    "sports communication": [
+      "sports conferences",
+      "sports education and training"
+    ],
+    "comparison of sports": [
+      "association football comparisons",
+      "comparison of football codes"
+    ],
+    "criticism of sports": [
+      "association football hooliganism",
+      "criticisms of bullfighting"
+    ],
+    "sports culture": [
+      "sports culture by competition",
+      "sports culture by sport"
+    ],
+    "deaths in sport": [
+      "sportspeople by cause of death",
+      "sport deaths by continent"
+    ],
+    "sports deities": [
+      "sports goddesses",
+      "sports gods"
+    ],
+    "sports equipment": [
+      "sports by equipment",
+      "sports equipment by sport"
+    ],
+    "sports events": [
+      "sports events by continent",
+      "sports events by venue"
+    ],
+    "extinct sports": [
+      "obsolete blood sports"
+    ],
+    "history of sports": [
+      "history of sports by competition",
+      "history of sports by city"
+    ],
+    "sports museums": [
+      "sports museums by country",
+      "sports museums by sport"
+    ],
+    "sports management": [
+      "sports managers",
+      "sports management academics"
+    ],
+    "military sport": [
+      "military sport by country",
+      "military association football"
+    ],
+    "naming in sports": [
+      "nicknames in sports"
+    ],
+    "numbering in sports": [
+      "sportspeople with retired numbers"
+    ],
+    "sports occupations and roles": [
+      "sports occupations and roles by sport",
+      "leadership positions in sports"
+    ],
+    "sports organizations": [
+      "sports organizations by location",
+      "sports organizations by sport"
+    ],
+    "people in sports": [
+      "people in sports by competition",
+      "people in sports by continent"
+    ],
+    "sports moments": [
+      "historic baseball plays",
+      "american football incidents"
+    ],
+    "proposals in sports": [
+      "cancelled sports events",
+      "sports competitions bids"
+    ],
+    "sports rules and regulations": [
+      "sports rules and regulations by sport",
+      "sport variants"
+    ],
+    "sports science": [
+      "sports scientists",
+      "ergogenic aids"
+    ],
+    "sports strategy and tactics": [
+      "sports strategy",
+      "sports tactics"
+    ],
+    "superlatives in sports": [
+      "sports competition records",
+      "lists of highest scoring sports matches"
+    ],
+    "sports techniques": [
+      "cricket skills",
+      "figure skating elements"
+    ],
+    "sports terminology": [
+      "glossaries of sports",
+      "positions team sports"
+    ],
+    "sports titles": [
+      "chess titles",
+      "first overall draft picks"
+    ],
+    "sports venues": [
+      "sports venues by competition",
+      "sports venues by continent"
+    ],
+    "western sports": [
+      "sport in the western world",
+      "sports originating in the western world"
+    ],
+    "works about sports": [
+      "sports mass media",
+      "works about animals playing sports"
+    ],
+    "yachting": [
+      "yachting by country",
+      "yachting associations"
+    ],
+    "sports stubs": [
+      "african sport stubs",
+      "asian sport stubs"
+    ]
   },
   "Movies & TV": {
-    "movie reviews": [],
-    "tv series": []
+    "film by century": [
+      "films by century of setting",
+      "cinema by country and century"
+    ],
+    "film by decade": [
+      "films by decade of setting",
+      "cinema by country and decade"
+    ],
+    "film by year": [
+      "films by year of setting",
+      "film awards by year"
+    ],
+    "cinema by culture": [
+      "films by culture",
+      "film festivals by culture"
+    ],
+    "cinema by location": [
+      "cinema by city",
+      "cinema by continent"
+    ],
+    "films": [
+      "films by award won",
+      "films by city"
+    ],
+    "depictions of people on film": [
+      "depictions of grand duchess anastasia nikolaevna of russia on film",
+      "depictions of mark antony on film"
+    ],
+    "film characters": [
+      "film characters by creator",
+      "film characters by franchise"
+    ],
+    "film criticism": [
+      "film critics associations",
+      "books of film criticism"
+    ],
+    "film education": [
+      "animation education",
+      "film archives"
+    ],
+    "film element redirects to lists": [
+      "bill and ted element redirects to lists",
+      "charlie and the chocolate factory element redirects to lists"
+    ],
+    "film events": [
+      "film awards",
+      "cancelled film events"
+    ],
+    "film fandom": [
+      "disney fandom",
+      "film fan clubs"
+    ],
+    "filmmaking": [
+      "filmmakers",
+      "works about filmmaking"
+    ],
+    "film genres": [
+      "films by genre",
+      "abstract animation"
+    ],
+    "history of film": [
+      "history of film by country",
+      "depictions of people on film"
+    ],
+    "film industry": [
+      "film industry by location",
+      "film advertising material"
+    ],
+    "film and television memes": [
+      "the amazing digital circus",
+      "family guy"
+    ],
+    "film memorabilia": [
+      "film posters"
+    ],
+    "movie channels": [
+      "movie channels in australia",
+      "movie channels in bulgaria"
+    ],
+    "film music": [
+      "films with songs by composer",
+      "films with songs by lyricist"
+    ],
+    "nudity in film": [
+      "erotic films",
+      "nudist films"
+    ],
+    "film people": [
+      "film people by company",
+      "film people by ethnicity"
+    ],
+    "film preservation": [
+      "fiaf affiliated institutions",
+      "film preservation organizations"
+    ],
+    "cinemas and movie theaters": [
+      "cinemas and movie theaters by architectural style",
+      "cinemas and movie theaters by populated place"
+    ],
+    "film theory": [
+      "academic works about film theory",
+      "concepts in film theory"
+    ],
+    "works about film": [
+      "works about films",
+      "books about film"
+    ],
+    "works adapted into films": [
+      "works adapted into films by country",
+      "works adapted into animated films"
+    ],
+    "television by continent": [
+      "television broadcasting companies by continent",
+      "television stations by continent"
+    ],
+    "television by country": [
+      "television by century and country",
+      "television by country and century"
+    ],
+    "television by culture": [
+      "african american television",
+      "arabic television series"
+    ],
+    "television by language": [
+      "television networks by language",
+      "television shows by language"
+    ],
+    "television by period": [
+      "television by century",
+      "television by decade"
+    ],
+    "television by region": [
+      "lists of television channels by region"
+    ],
+    "television franchises": [
+      "television characters by franchise",
+      "television franchises by year of introduction"
+    ],
+    "television networks": [
+      "defunct television networks",
+      "television channels and networks by content"
+    ],
+    "television stations": [
+      "tv stations by channel number",
+      "television stations by city"
+    ],
+    "television programming": [
+      "television programming by country",
+      "television shows"
+    ],
+    "works about television": [
+      "books about television",
+      "documentary films about television"
+    ],
+    "television advertising": [
+      "television commercials",
+      "infomercials"
+    ],
+    "television characters": [
+      "female characters in television",
+      "male characters in television"
+    ],
+    "television companies": [
+      "television companies by country",
+      "television networks"
+    ],
+    "television criticism": [
+      "television critics",
+      "criticism of television series"
+    ],
+    "television debuts": [
+      "television series debuts",
+      "television pilots"
+    ],
+    "disability in television": [
+      "autism in television",
+      "down syndrome in television"
+    ],
+    "television endings": [
+      "television series finales",
+      "television series endings"
+    ],
+    "television events": [
+      "television awards",
+      "cancelled television events"
+    ],
+    "television fandom": [
+      "anime and manga fandom",
+      "brony fandom"
+    ],
+    "fiction about television": [
+      "films about television",
+      "fictional television personalities"
+    ],
+    "history of television": [
+      "history of television by country",
+      "television by period"
+    ],
+    "holography in television": [
+      "star trek holodeck episodes",
+      "steven universe"
+    ],
+    "television images": [
+      "non free images of television program posters",
+      "promotional images for television series"
+    ],
+    "television industry": [
+      "television advertising",
+      "television censorship"
+    ],
+    "television lists": [
+      "television lists by country",
+      "television lists by decade"
+    ],
+    "television music": [
+      "television theme songs",
+      "television music awards"
+    ],
+    "mythology in television": [
+      "television shows based on mythology",
+      "angels in television"
+    ],
+    "television news": [
+      "television news anchors",
+      "television news by country"
+    ],
+    "nudity in television": [
+      "masters of sex"
+    ],
+    "television occupations": [
+      "talent agencies",
+      "talent and literary agencies"
+    ],
+    "television organizations": [
+      "television organizations by continent",
+      "television organizations by country"
+    ],
+    "television people": [
+      "television people by nationality",
+      "television people by occupation"
+    ],
+    "public television": [
+      "public television in australia",
+      "public television in bangladesh"
+    ],
+    "television studies": [
+      "television studies journals"
+    ],
+    "television technology": [
+      "3d television",
+      "atsc 3 0 television stations"
+    ],
+    "television redirects": [
+      "animated television series redirects",
+      "arrowverse redirects"
+    ],
+    "television terminology": [
+      "breakfast television",
+      "brokered programming"
+    ],
+    "women and television": [
+      "women in television"
+    ],
+    "television stubs": [
+      "television award stubs",
+      "television biography stubs"
+    ]
   },
   "Anime & Comics": {
-    "shonen": [],
-    "seinen": []
+    "anime series": [
+      "anime series based on manga",
+      "anime television series"
+    ],
+    "anime by medium": [
+      "anime films",
+      "anime onas"
+    ],
+    "anime by source": [
+      "anime films by source",
+      "anime with original screenplays"
+    ],
+    "anime by studio": [
+      "3hz",
+      "100studio"
+    ],
+    "anime debuts by date": [
+      "anime debuts by century",
+      "anime debuts by decade"
+    ],
+    "anime and manga redirects": [
+      "anime and manga character redirects to lists",
+      "redirects from digimon"
+    ],
+    "anime with original screenplays": [
+      "anime films with original screenplays",
+      "gunbuster"
+    ],
+    "anime industry": [
+      "animation making in anime and manga",
+      "anime awards"
+    ],
+    "manga debuts by date": [
+      "manga debuts by century",
+      "manga debuts by decade"
+    ],
+    "manga by publisher": [
+      "akane shinsha manga",
+      "akita shoten manga"
+    ],
+    "manga by source": [
+      "manga based on comics",
+      "manga based on novels"
+    ],
+    "manga awards": [
+      "kodansha manga award",
+      "manga taish"
+    ],
+    "doujinshi": [
+      "megatokyo"
+    ],
+    "manga adapted into films": [
+      "old boy"
+    ],
+    "manga industry": [
+      "manga creation in anime and manga",
+      "manga artists"
+    ],
+    "manga series": [
+      "lists of manga series",
+      "the legendary starfy"
+    ],
+    "works based on manga": [
+      "animation based on manga",
+      "films based on manga"
+    ],
+    "comics by continent": [
+      "comics by continent of setting",
+      "african comics"
+    ],
+    "comics by country of publication": [
+      "comics awards by country",
+      "comics characters by nationality"
+    ],
+    "comics by creator": [
+      "canadian comics by creator",
+      "comics by paul and ga tan brizzi"
+    ],
+    "comics by date": [
+      "comics by century",
+      "comics by decade"
+    ],
+    "comics by genre": [
+      "comics characters by genre",
+      "graphic novels by genre"
+    ],
+    "comics publications": [
+      "comics by company",
+      "comics by genre"
+    ],
+    "comics adapted for other media": [
+      "comics adapted into films",
+      "comics adapted into novels"
+    ],
+    "set index articles on comics": [
+      "set index articles on manga"
+    ],
+    "comics people": [
+      "comics creators",
+      "comic book company founders"
+    ],
+    "comics censorship": [
+      "censored comics"
+    ],
+    "comics characters": [
+      "comics characters in other media",
+      "comics superhumans by ability"
+    ],
+    "comic book collecting": [
+      "comic collectors",
+      "comic book podcasts"
+    ],
+    "comic book imprints": [
+      "archie comics imprints",
+      "dark horse comics imprints"
+    ],
+    "comic book lines": [
+      "dark horse comics lines",
+      "dc comics lines"
+    ],
+    "comics studies": [
+      "comics critics",
+      "comics scholars"
+    ],
+    "comics controversies": [
+      "anime and manga controversies",
+      "comics involved in plagiarism controversies"
+    ],
+    "comics events": [
+      "comics awards"
+    ],
+    "comics fandom": [
+      "comics conventions",
+      "comics fan clubs"
+    ],
+    "fictional content in comics": [
+      "storylines in comics",
+      "comics characters"
+    ],
+    "comics formats": [
+      "comics by format",
+      "comic book collection books"
+    ],
+    "comic franchises": [
+      "comic lists by franchise",
+      "anime and manga franchises"
+    ],
+    "history of comics": [
+      "comics by date",
+      "history of american comics"
+    ],
+    "comics industry": [
+      "comics companies",
+      "comic book imprints"
+    ],
+    "manga": [
+      "manga debuts by date",
+      "manga by publisher"
+    ],
+    "parodies of comics": [
+      "disney parodies",
+      "pornographic parody comics"
+    ],
+    "public domain comics": [
+      "little nemo",
+      "mutt and jeff"
+    ],
+    "comics spinoffs": [
+      "marsupilami",
+      "richie rich comics"
+    ],
+    "comics terminology": [
+      "anime and manga terminology",
+      "superhero fiction themes"
+    ],
+    "unfinished comics": [
+      "unfinished webcomics"
+    ],
+    "women and comics": [
+      "female comics artists",
+      "female comics writers"
+    ],
+    "works about comics": [
+      "books about comics",
+      "comics about comics"
+    ],
+    "works adapted into comics": [
+      "books adapted into comics",
+      "films adapted into comics"
+    ],
+    "works based on comics": [
+      "anime and manga based on comics",
+      "works based on manga"
+    ],
+    "comics images": [
+      "comics images by artist",
+      "images of comics characters"
+    ],
+    "comics stubs": [
+      "comic strip stubs",
+      "comics character stubs"
+    ],
+    "wikipedia categories named after comics": [
+      "wikipedia categories named after anime and manga series",
+      "300 comics"
+    ]
   },
   "Technology & Gadgets": {
-    "smartphones": [],
-    "pc hardware": []
+    "technology by country": [
+      "history of technology by country",
+      "medical technology by country"
+    ],
+    "technology by period": [
+      "technology by century",
+      "technology by decade"
+    ],
+    "technology by type": [
+      "computer hardware by type",
+      "software by type"
+    ],
+    "technology writers": [
+      "technology writers by nationality",
+      "women technology writers"
+    ],
+    "science and technology": [
+      "science and technology by decade",
+      "science and technology by war"
+    ],
+    "outlines of technology and applied science": [
+      "outlines of applied sciences",
+      "outlines of transport"
+    ],
+    "technology in society": [
+      "computing and society",
+      "electronics and society"
+    ],
+    "people associated with technology": [
+      "people in technology",
+      "people associated with energy"
+    ],
+    "people in technology": [
+      "people in technology by company",
+      "nigerian people in technology"
+    ],
+    "works about technology": [
+      "fictional technology",
+      "works about clocks"
+    ],
+    "artificial objects": [
+      "objects by material",
+      "archaeological artifacts"
+    ],
+    "inventions": [
+      "inventions by century",
+      "inventions by continent"
+    ],
+    "technological change": [
+      "appropriate technology",
+      "technology demonstrations"
+    ],
+    "technical communication": [
+      "aviation publications",
+      "technical books"
+    ],
+    "technological comparisons": [
+      "computing comparisons"
+    ],
+    "computing": [
+      "computing in classical studies",
+      "computer engineering"
+    ],
+    "technological controversies": [
+      "computing related controversies"
+    ],
+    "technology development": [
+      "software development"
+    ],
+    "technology evangelism": [
+      "technology evangelists",
+      "operating system advocacy"
+    ],
+    "glossaries of technology": [
+      "glossaries of computers"
+    ],
+    "history of technology": [
+      "technology by period",
+      "historiography of technology"
+    ],
+    "hypothetical technology": [
+      "anti gravity",
+      "exploratory engineering"
+    ],
+    "kilns": [
+      "chinese pottery kiln sites",
+      "japanese pottery kiln sites"
+    ],
+    "science and technology ministries": [
+      "ministry of science and technology bangladesh",
+      "ministry of science and technology of the people s republic of china"
+    ],
+    "mobile technology": [
+      "mobile content",
+      "crossover devices"
+    ],
+    "obsolete technologies": [
+      "discontinued media formats",
+      "historical scientific instruments"
+    ],
+    "technology organizations": [
+      "aerospace organizations",
+      "biotechnology organizations"
+    ],
+    "pejorative terms related to technology": [
+      "luddites"
+    ],
+    "philosophy of technology": [
+      "philosophy of artificial intelligence",
+      "books in philosophy of technology"
+    ],
+    "sociology of technology": [
+      "sociology of the internet"
+    ],
+    "technology systems": [
+      "aircraft instruments",
+      "amplifiers"
+    ],
+    "technology assessment": [
+      "technology assessments",
+      "critical design"
+    ],
+    "technology hazards": [
+      "anti patterns",
+      "computer security exploits"
+    ],
+    "technology stubs": [
+      "biotechnology stubs",
+      "communication stubs"
+    ],
+    "audio electronics": [
+      "audio amplifier specifications",
+      "audio amplifiers"
+    ],
+    "automotive electronics": [
+      "advanced driver assistance systems",
+      "motor vehicle batteries"
+    ],
+    "avionics": [
+      "aeronautical navigation systems",
+      "aircraft radars"
+    ],
+    "electronic circuits": [
+      "analog circuits",
+      "communication circuits"
+    ],
+    "consumer electronics": [
+      "audio hardware",
+      "blu ray disc"
+    ],
+    "digital electronics": [
+      "digital circuits",
+      "clock signal"
+    ],
+    "electrical connectors": [
+      "electrical power connectors",
+      "electrical signal connectors"
+    ],
+    "electronics and the environment": [
+      "computers and the environment",
+      "electronic waste"
+    ],
+    "electronics industry": [
+      "electronics industry by country",
+      "businesspeople in electronics"
+    ],
+    "electronics lists": [
+      "computing related lists",
+      "lists of consumer electronics manufacturers"
+    ],
+    "electronic engineering": [
+      "broadcast engineering",
+      "display technology"
+    ],
+    "hobby electronics": [
+      "hobby electronics authors",
+      "hobby electronics magazines"
+    ],
+    "images of electronics": [
+      "electronics company logos",
+      "telecommunications images"
+    ],
+    "interference": [
+      "interferometry"
+    ],
+    "marine electronics": [
+      "sea radars"
+    ],
+    "microwave technology": [
+      "microwave engineers",
+      "microwave chemistry"
+    ],
+    "military electronics": [
+      "military computers",
+      "electronic warfare equipment"
+    ],
+    "molecular electronics": [
+      "conductive polymers",
+      "organic semiconductors"
+    ],
+    "nanoelectronics": [
+      "microelectronic and microelectromechanical systems",
+      "molecular electronics"
+    ],
+    "open hardware electronic devices": [
+      "arduino",
+      "reprap project"
+    ],
+    "optoelectronics": [
+      "image sensors",
+      "lasers"
+    ],
+    "organic electronics": [
+      "organic solar cells"
+    ],
+    "power electronics": [
+      "ac to ac converters",
+      "battery charging"
+    ],
+    "quantum electronics": [
+      "spintronics"
+    ],
+    "radio electronics": [
+      "demodulation",
+      "electromagnetic compatibility"
+    ],
+    "semiconductor technology": [
+      "international technology roadmap for semiconductors lithography nodes"
+    ],
+    "signal processing filter": [
+      "electronic filter applications",
+      "electronic filter topology"
+    ],
+    "spintronics": [
+      "pauli exclusion principle"
+    ],
+    "electronics standards": [
+      "computer hardware standards",
+      "iec standards"
+    ],
+    "telecommunications": [
+      "telecommunications by continent",
+      "telecommunications by country"
+    ],
+    "television technology": [
+      "academy award for technical achievement winners",
+      "cable television"
+    ],
+    "electronic test equipment": [
+      "automatic test equipment",
+      "electronic test equipment manufacturers"
+    ],
+    "video hardware": [
+      "audiovisual connectors",
+      "digital video recorders"
+    ],
+    "works about electronics": [
+      "amateur radio magazines",
+      "electronics books"
+    ],
+    "electronics stubs": [
+      "telecommunications stubs"
+    ]
   },
-  "Science & Education": {},
-  "Art & Design": {},
-  "Fashion & Beauty": {},
-  "Food & Cooking": {},
-  "Travel & Places": {},
-  "Cars & Vehicles": {},
-  "Health & Fitness": {},
-  "Lifestyle & Routines": {},
-  "History & Culture": {},
-  "Politics & News": {},
-  "Finance & Business": {},
-  "Nature & Animals": {},
-  "DIY & How-To": {},
-  "Comedy & Memes": {},
-  "Motivation & Self-Help": {},
-  "Mystery & Horror": {},
-  "Podcasts & Talk": {},
-  "Relationships & Community": {},
-  "Spirituality & Philosophy": {}
+  "Science & Education": {
+    "branches of science": [
+      "concepts in science by field",
+      "applied sciences"
+    ],
+    "scientific disciplines": [
+      "history of science by discipline",
+      "philosophy of science by discipline"
+    ],
+    "scientists": [
+      "scientists by continent",
+      "scientists by ethnicity"
+    ],
+    "science in society": [
+      "science activism",
+      "berkeley open infrastructure for network computing projects"
+    ],
+    "science and technology": [
+      "science and technology by location",
+      "women in science and technology"
+    ],
+    "scientific terminology": [
+      "social sciences terminology",
+      "scientific nomenclature"
+    ],
+    "works about science": [
+      "academic works about science",
+      "science blogs"
+    ],
+    "science books": [
+      "books about science",
+      "encyclopedias of science"
+    ],
+    "scientific buildings": [
+      "aquariums",
+      "biorepositories"
+    ],
+    "scientific classification": [
+      "biological classification",
+      "chemical classification"
+    ],
+    "criticism of science": [
+      "anti gmo movement",
+      "anti psychiatry"
+    ],
+    "scientific exploration": [
+      "scientific diving",
+      "scientific expeditions"
+    ],
+    "fringe science": [
+      "fringe physics",
+      "fringe science journals"
+    ],
+    "history of science": [
+      "history of science by period",
+      "historiography of science"
+    ],
+    "scientific instruments": [
+      "astronomical instruments",
+      "electrical instruments"
+    ],
+    "metascience": [
+      "design of experiments",
+      "metascience related organizations"
+    ],
+    "scientific method": [
+      "data analysis",
+      "dating methods"
+    ],
+    "natural history": [
+      "natural history by continent",
+      "natural history by country"
+    ],
+    "science occupations": [
+      "social science occupations",
+      "forensic occupations"
+    ],
+    "open science": [
+      "free science software",
+      "open access publishing"
+    ],
+    "scientific organizations": [
+      "scientific organizations by continent",
+      "scientific organizations by city"
+    ],
+    "people in science": [
+      "scientists",
+      "science and technology studies scholars"
+    ],
+    "scientific phenomena": [
+      "chemical processes",
+      "chemical properties"
+    ],
+    "science pioneers": [
+      "neuroscience pioneers",
+      "rocket science pioneers"
+    ],
+    "scientific problems": [
+      "unsolved problems in astronomy",
+      "unsolved problems in biology"
+    ],
+    "scientific speculation": [
+      "cryonics",
+      "extraterrestrial life"
+    ],
+    "time in science": [
+      "time in astronomy",
+      "philosophy of time"
+    ],
+    "women and science": [
+      "women scientists",
+      "science awards honoring women"
+    ],
+    "images by scientific discipline": [
+      "astronomy images",
+      "biology images"
+    ],
+    "science stubs": [
+      "archaeology stubs",
+      "science award stubs"
+    ],
+    "wikipedia categories named after science projects": [
+      "wikipedia categories named after space telescopes",
+      "agency for defense development"
+    ],
+    "education by language": [
+      "language schools by language",
+      "basque language education"
+    ],
+    "education by location": [
+      "education in australia by location",
+      "education in indonesia by location"
+    ],
+    "education by method": [
+      "educational practices",
+      "alternative education"
+    ],
+    "education by subject": [
+      "education by subject and country",
+      "education in europe by subject"
+    ],
+    "education fraud": [
+      "education fraud in the united states"
+    ],
+    "education studies": [
+      "educational assessment and evaluation",
+      "learning theory education"
+    ],
+    "educational stages": [
+      "adult education",
+      "early childhood education"
+    ],
+    "learning": [
+      "students",
+      "applied learning"
+    ],
+    "teaching": [
+      "teaching by country",
+      "educators"
+    ],
+    "educators": [
+      "educators by century",
+      "educators by discipline"
+    ],
+    "students": [
+      "students by country",
+      "pupils by teacher"
+    ],
+    "education in culture": [
+      "education in popular culture",
+      "educational rites of passage"
+    ],
+    "educational personnel": [
+      "people by educational institution",
+      "fictional educational personnel"
+    ],
+    "works about education": [
+      "works about educators",
+      "works about higher education"
+    ],
+    "education activism": [
+      "education activists",
+      "education advocacy groups"
+    ],
+    "educational administration": [
+      "educational administrators",
+      "academic administration"
+    ],
+    "education awards": [
+      "education awards by country",
+      "education award winners"
+    ],
+    "curricula": [
+      "academic courses at the university of cambridge",
+      "great books"
+    ],
+    "education economics": [
+      "education economists",
+      "education finance"
+    ],
+    "educational environment": [
+      "campuses",
+      "educational buildings"
+    ],
+    "education events": [
+      "academic conferences",
+      "astronomy education events"
+    ],
+    "education and health": [
+      "health education"
+    ],
+    "history of education": [
+      "history of education by continent",
+      "history of education by country"
+    ],
+    "intellectual competitions": [
+      "computer science competitions",
+      "debating competitions"
+    ],
+    "international education industry": [
+      "international educational organizations",
+      "student migration"
+    ],
+    "education issues": [
+      "academic pressure in east asian culture",
+      "affirmative action"
+    ],
+    "ministries of education": [
+      "subnational education ministries",
+      "ministry of education bangladesh"
+    ],
+    "open education": [
+      "instructional design",
+      "open educational resources"
+    ],
+    "educational organizations": [
+      "educational organizations by populated place",
+      "educational organizations by continent"
+    ],
+    "private education": [
+      "private education by continent",
+      "private education by country"
+    ],
+    "educational programs": [
+      "educational programs by nation",
+      "high school research programs"
+    ],
+    "educational projects": [
+      "digital history projects",
+      "digital library projects"
+    ],
+    "public education": [
+      "public education by continent",
+      "public education by country"
+    ],
+    "education regulation": [
+      "education regulators",
+      "higher education regulation"
+    ],
+    "religion and education": [
+      "religious education",
+      "missionary educators"
+    ],
+    "education rights": [
+      "academic freedom",
+      "student rights"
+    ],
+    "special education": [
+      "special education by country",
+      "special educators"
+    ],
+    "statistics of education": [
+      "higher education data",
+      "university and college rankings"
+    ],
+    "education systems": [
+      "gymnasium school system",
+      "school systems"
+    ],
+    "educational technology": [
+      "assistive technology",
+      "educational technology academic and professional associations"
+    ],
+    "education terminology": [
+      "glossaries of education",
+      "school terminology"
+    ],
+    "training": [
+      "cognitive training",
+      "firearm training"
+    ],
+    "education stubs": [
+      "academic journal stubs",
+      "education book stubs"
+    ]
+  },
+  "Art & Design": {
+    "art by continent": [
+      "comics by continent",
+      "contemporary art by continent"
+    ],
+    "art by country": [
+      "art exhibitions by country",
+      "art museums and galleries by country"
+    ],
+    "art by source": [
+      "art based on actual events",
+      "biblical art"
+    ],
+    "art by type": [
+      "ancient egyptian art by type",
+      "ancient greek art by type"
+    ],
+    "art and design organizations": [
+      "animation organizations",
+      "anime clubs"
+    ],
+    "visual arts": [
+      "visual arts by ethnicity",
+      "visual arts by location"
+    ],
+    "art concepts": [
+      "art criticism",
+      "literary concepts"
+    ],
+    "conceptual art": [
+      "conceptual artists",
+      "art and language"
+    ],
+    "art controversies": [
+      "cartoon controversies",
+      "art forgery"
+    ],
+    "art criticism": [
+      "art critics",
+      "architecture critics"
+    ],
+    "art history": [
+      "art and cultural repatriation",
+      "art history books"
+    ],
+    "history of art": [
+      "art by century",
+      "art history by country"
+    ],
+    "art and culture law": [
+      "copyright infringement of fictional characters",
+      "art crime"
+    ],
+    "art movements": [
+      "art movements by country",
+      "contemporary art"
+    ],
+    "art occupations": [
+      "artists",
+      "artists models"
+    ],
+    "philosophers of art": [
+      "american philosophers of art",
+      "ancient greek philosophers of art"
+    ],
+    "artistic techniques": [
+      "artistic techniques by art",
+      "caricature"
+    ],
+    "art therapy": [
+      "art therapists"
+    ],
+    "art venues": [
+      "caves containing pictograms",
+      "art fairs"
+    ],
+    "western art": [
+      "art of europe",
+      "academic art"
+    ],
+    "women in art": [
+      "goddesses in art",
+      "amazons in art"
+    ],
+    "art writers": [
+      "american art writers",
+      "indian art writers"
+    ],
+    "design by country": [
+      "wikipedia images of logos by country",
+      "design schools by country"
+    ],
+    "design awards": [
+      "apple design awards recipients",
+      "commercial vehicle awards"
+    ],
+    "design companies": [
+      "design companies by country",
+      "design companies by year of disestablishment"
+    ],
+    "design engineering": [
+      "draughtsmen",
+      "mechanical designers"
+    ],
+    "design events": [
+      "british design exhibitions"
+    ],
+    "design history": [
+      "design writers",
+      "antiques"
+    ],
+    "design institutions": [
+      "design council",
+      "design museums"
+    ],
+    "design languages": [
+      "graphical user interface design languages",
+      "snow white design language"
+    ],
+    "design magazines": [
+      "architecture magazines",
+      "defunct design magazines"
+    ],
+    "design occupations": [
+      "designers",
+      "architecture occupations"
+    ],
+    "design patterns": [
+      "software design patterns"
+    ],
+    "accessibility": [
+      "adapted automobiles",
+      "wikipedia accessibility"
+    ],
+    "architectural design": [
+      "architectural styles",
+      "architectural elements"
+    ],
+    "book design": [
+      "bibliography",
+      "bookbinding"
+    ],
+    "communication design": [
+      "advertising",
+      "graphic design"
+    ],
+    "costume design": [
+      "costume designers",
+      "cosplay"
+    ],
+    "electronic design": [
+      "digital electronics",
+      "electronic design automation"
+    ],
+    "environmental design": [
+      "architectural design",
+      "community gardening"
+    ],
+    "fashion design": [
+      "fashion designers",
+      "fashion educators"
+    ],
+    "game design": [
+      "video game design"
+    ],
+    "industrial design": [
+      "3d scanners",
+      "apple inc industrial design"
+    ],
+    "intelligent design": [
+      "anthropic principle",
+      "criticism of intelligent design"
+    ],
+    "modular design": [
+      "modular rocket launchers",
+      "modular smartphones"
+    ],
+    "museum design": [
+      "museum designers",
+      "art nouveau museum buildings"
+    ],
+    "organization design": [
+      "organizational structure"
+    ],
+    "product design": [
+      "product designers",
+      "clock designs"
+    ],
+    "programming language design": [
+      "programming language designers"
+    ],
+    "prop design": [
+      "prop designers"
+    ],
+    "scenic design": [
+      "scenographers",
+      "scenic designers"
+    ],
+    "software design": [
+      "software architecture",
+      "data modeling"
+    ],
+    "spacecraft design": [
+      "spacecraft life support systems"
+    ],
+    "systems architecture": [
+      "information architects"
+    ],
+    "textile design": [
+      "textile designers",
+      "medieval textile design"
+    ],
+    "vehicle design": [
+      "aircraft configurations",
+      "aircraft wing design"
+    ],
+    "vexillography": [
+      "flags by design",
+      "flag designers"
+    ],
+    "weapon design": [
+      "weapon designers",
+      "firearm actions"
+    ],
+    "web design": [
+      "adaptive web design",
+      "cascading style sheets"
+    ],
+    "design stubs": [
+      "architecture stubs",
+      "decorative arts stubs"
+    ]
+  },
+  "Fashion & Beauty": {
+    "fashion by continent": [
+      "african fashion",
+      "asian fashion"
+    ],
+    "fashion by city": [
+      "clothing companies by city",
+      "models by populated place"
+    ],
+    "fashion by country": [
+      "clothing brands by country",
+      "clothing companies by country"
+    ],
+    "fashion accessories": [
+      "fashion accessory brands",
+      "armbands"
+    ],
+    "fashion aesthetics": [
+      "androgyny",
+      "anti fashion"
+    ],
+    "fashion awards": [
+      "costume design awards",
+      "film awards for makeup and hairstyling"
+    ],
+    "beauty": [
+      "lists of most beautiful villages",
+      "aesthetic beauty"
+    ],
+    "body art": [
+      "cosmetics",
+      "tattooing"
+    ],
+    "body modification": [
+      "people known for their body modification",
+      "body piercing"
+    ],
+    "fashion design": [
+      "costume design",
+      "haute couture"
+    ],
+    "fashion dolls": [
+      "barbie",
+      "bratz"
+    ],
+    "footwear": [
+      "footwear by country",
+      "footwear accessories"
+    ],
+    "gloves": [
+      "glovers",
+      "glove puppetry"
+    ],
+    "hairstyles": [
+      "hairstyles by culture",
+      "braid hairstyles"
+    ],
+    "history of fashion": [
+      "fashion by period",
+      "fashion historians"
+    ],
+    "hosiery": [
+      "hosiery brands",
+      "socks"
+    ],
+    "human appearance": [
+      "body art",
+      "body image in popular culture"
+    ],
+    "fashion industry": [
+      "businesspeople in fashion",
+      "clothing and the environment"
+    ],
+    "internet aesthetics": [
+      "core aesthetics"
+    ],
+    "jeans": [
+      "jeans by brand",
+      "jeans by type"
+    ],
+    "fashion journalism": [
+      "fashion editors",
+      "fashion journalists"
+    ],
+    "fashion museums": [
+      "fashion exhibitions",
+      "fashion museums by country"
+    ],
+    "music and fashion": [
+      "gothic fashion",
+      "hip hop fashion"
+    ],
+    "fashion occupations": [
+      "people in fashion",
+      "corsetmakers"
+    ],
+    "perfumery": [
+      "aromatherapy",
+      "fragrance companies"
+    ],
+    "trashion": [
+      "wearable art"
+    ],
+    "works about fashion": [
+      "fashion magazines",
+      "films about fashion"
+    ],
+    "fashion stubs": [
+      "fashion biography stubs",
+      "body modification stubs"
+    ],
+    "beauticians": [
+      "fictional beauticians",
+      "cosmetics people"
+    ],
+    "beauty salons": [
+      "hair salons"
+    ],
+    "cosmetic surgery": [
+      "circumcision",
+      "hair removal"
+    ],
+    "cosmetics": [
+      "beauty and cosmetics in anime and manga",
+      "cosmetics brands"
+    ],
+    "beauty deities": [
+      "beauty goddesses",
+      "beauty gods"
+    ],
+    "female beauty": [
+      "apsara",
+      "concubinage"
+    ],
+    "floristry": [
+      "floral industry",
+      "floral organizations"
+    ],
+    "hairdressing": [
+      "hairdressers",
+      "hair coloring"
+    ],
+    "human hair color": [
+      "blond hair",
+      "brown hair"
+    ],
+    "male beauty": [
+      "beard",
+      "moustache"
+    ],
+    "nail care": [
+      "nail polish"
+    ],
+    "beauty organisations": [
+      "beauty salons"
+    ],
+    "beauty pageants": [
+      "beauty pageants by continent",
+      "beauty pageants by country"
+    ],
+    "physical attractiveness": [
+      "body shape",
+      "ugliness"
+    ],
+    "skin care": [
+      "skin care products",
+      "skin whitening"
+    ]
+  },
+  "Food & Cooking": {
+    "chefs": [
+      "chefs by nationality",
+      "chefs by populated place"
+    ],
+    "cooking appliances": [
+      "boilers cookware",
+      "cooking appliance brands"
+    ],
+    "cooking competitions": [
+      "cooking competitions in australia",
+      "cooking competitions in canada"
+    ],
+    "cooking fats": [
+      "animal fats",
+      "butter"
+    ],
+    "cooking oils": [
+      "cooking fats",
+      "cottonseed oil"
+    ],
+    "cooking schools": [
+      "cooking schools by continent",
+      "cooking schools by country"
+    ],
+    "cooking weights and measures": [
+      "alcohol measurement"
+    ],
+    "cookware and bakeware": [
+      "cooking vessels",
+      "pottery"
+    ],
+    "creamy dishes": [
+      "cheese spreads",
+      "cream cheeses"
+    ],
+    "creamy food and drink": [
+      "creamy cocktails",
+      "creamy dishes"
+    ],
+    "cuisine": [
+      "cuisine by culture",
+      "cuisine by dependent territory"
+    ],
+    "culinary arts": [
+      "cooking schools",
+      "culinary professional associations"
+    ],
+    "food preparation utensils": [
+      "food preparation utensils by country",
+      "east asian food preparation utensils"
+    ],
+    "food services occupations": [
+      "culinary arts",
+      "cup bearers"
+    ],
+    "kitchen": [
+      "kitchen countertops",
+      "kitchenware"
+    ],
+    "kitchenware": [
+      "coffeeware",
+      "cookware and bakeware"
+    ],
+    "raw foodism": [
+      "raw foodists",
+      "orthopathy"
+    ],
+    "cooking techniques": [
+      "foods by cooking technique",
+      "barbecue"
+    ],
+    "works about cooking": [
+      "cooking in anime and manga",
+      "cookbooks"
+    ],
+    "cooking stubs": [
+      "kitchenware stubs"
+    ]
+  },
+  "Travel & Places": {
+    "adventure": [
+      "adventure fiction",
+      "adventure travel"
+    ],
+    "travel catering": [
+      "airline catering",
+      "rail catering"
+    ],
+    "travel gear": [
+      "hiking equipment",
+      "luggage"
+    ],
+    "hospitality industry": [
+      "hospitality industry by continent",
+      "hospitality industry by country"
+    ],
+    "international travel documents": [
+      "arrival cards",
+      "consular identification cards"
+    ],
+    "rest areas": [
+      "rest areas in canada",
+      "rest areas in japan"
+    ],
+    "routes": [
+      "routes by continent",
+      "lists of routes"
+    ],
+    "tourism": [
+      "tourism by city",
+      "tourism by continent"
+    ],
+    "travel technology": [
+      "computer reservation systems",
+      "hospitality services"
+    ],
+    "travelers": [
+      "travelers by century",
+      "female travelers"
+    ],
+    "travelogues": [
+      "travel television",
+      "travel writing"
+    ],
+    "types of travel": [
+      "types of tourism",
+      "business travel"
+    ],
+    "vacation": [
+      "vacation rental",
+      "works about vacationing"
+    ],
+    "voyages": [
+      "circumnavigations",
+      "expeditions"
+    ],
+    "works about travel": [
+      "travel podcasts",
+      "travel books"
+    ],
+    "travel writing": [
+      "travel autobiographies",
+      "tourism journals"
+    ],
+    "geography by location": [
+      "geography by city",
+      "geography by continent"
+    ],
+    "geography by period": [
+      "natural disasters by period",
+      "populated places by period of disestablishment"
+    ],
+    "geography by topic": [
+      "religion and geography"
+    ],
+    "subfields of geography": [
+      "branches of geography",
+      "human environment interaction"
+    ],
+    "geographers": [
+      "geographers by century",
+      "geographers by ethnicity"
+    ],
+    "works about geography": [
+      "geographical bibliographies",
+      "geographic literature"
+    ],
+    "geographical areas": [
+      "ecoregions",
+      "coves"
+    ],
+    "geography awards": [
+      "awards of the american geographical society",
+      "awards of the royal scottish geographical society"
+    ],
+    "geographic classifications": [
+      "biogeographic realms",
+      "biomes"
+    ],
+    "geography competitions": [
+      "national geographic bee"
+    ],
+    "deserts": [
+      "deserts by continent",
+      "deserts by country"
+    ],
+    "geography education": [
+      "geography education in russia",
+      "geography education in the united kingdom"
+    ],
+    "exploration": [
+      "exploration by continent",
+      "exploration by country"
+    ],
+    "geographical regions": [
+      "ecosystems by region",
+      "geographical regions of the arabian peninsula"
+    ],
+    "history of geography": [
+      "history of cartography",
+      "history books about geography"
+    ],
+    "landscape": [
+      "landscape architecture",
+      "land art"
+    ],
+    "geographic literature": [
+      "geography books",
+      "geography journals"
+    ],
+    "maps": [
+      "map types",
+      "maps by century"
+    ],
+    "geography organizations": [
+      "cartography organizations",
+      "geographic data and information organizations"
+    ],
+    "phantom geographical features": [
+      "cartographic errors"
+    ],
+    "places": [
+      "places by location",
+      "places by type"
+    ],
+    "geographic position": [
+      "geographic coordinate systems",
+      "outdoor locating games"
+    ],
+    "geographical superlatives": [
+      "lists of extreme points",
+      "extreme points of earth"
+    ],
+    "geography terminology": [
+      "geographic taxonomies",
+      "geopolitical terminology"
+    ],
+    "time zones": [
+      "tz database",
+      "time zones in the united states"
+    ],
+    "types of geographical division": [
+      "types of administrative division",
+      "ecclesiastical provinces"
+    ],
+    "world maps": [
+      "historic maps of the world"
+    ],
+    "geographical zones": [
+      "polar regions",
+      "subtropics"
+    ],
+    "geographic images": [
+      "images of buildings and structures",
+      "images of cities"
+    ],
+    "geography stubs": [
+      "area studies stubs",
+      "geography book stubs"
+    ]
+  },
+  "Cars & Vehicles": {
+    "vehicles by brand": [
+      "aircraft by manufacturer",
+      "buses by manufacturer"
+    ],
+    "vehicles by country": [
+      "aircraft by country",
+      "automotive industry by country"
+    ],
+    "vehicles by designer": [
+      "ships by designer",
+      "steam locomotives by designer"
+    ],
+    "vehicles by fuel": [
+      "green vehicles",
+      "animal powered vehicles"
+    ],
+    "vehicles by period": [
+      "vehicles by century of introduction",
+      "vehicles by decade of introduction"
+    ],
+    "vehicles by type": [
+      "vehicles by media",
+      "vehicles by purpose"
+    ],
+    "lists of vehicles": [
+      "lists of vehicles by manufacturer",
+      "lists of aircraft"
+    ],
+    "works about vehicles": [
+      "works about aircraft",
+      "works about cars"
+    ],
+    "vehicle classification": [
+      "car classifications",
+      "motorcycle classifications"
+    ],
+    "conservation and restoration of vehicles": [
+      "brass era vehicles",
+      "car restorers"
+    ],
+    "vehicle design": [
+      "aircraft recorders",
+      "automotive design"
+    ],
+    "vehicle fires": [
+      "arson attacks on vehicles",
+      "vehicle fires in africa"
+    ],
+    "vehicle graveyards": [
+      "aircraft boneyards",
+      "ship graveyards"
+    ],
+    "historic vehicles": [
+      "land speed record cars",
+      "land speed record motorcycles"
+    ],
+    "individual vehicles": [
+      "individual aircraft",
+      "individual buses"
+    ],
+    "vehicle industry": [
+      "automotive industry",
+      "bicycle industry"
+    ],
+    "vehicle law": [
+      "automotive testing agencies",
+      "bicycle law"
+    ],
+    "vehicle markings": [
+      "aircraft markings",
+      "liveries"
+    ],
+    "modified vehicles": [
+      "art vehicles",
+      "customised buses"
+    ],
+    "open hardware vehicles": [
+      "hyperloop"
+    ],
+    "vehicle operation": [
+      "ballooning",
+      "boating"
+    ],
+    "people associated with vehicles": [
+      "people in aeronautics",
+      "aeronauts"
+    ],
+    "propulsion": [
+      "spacecraft propulsion",
+      "aircraft by propulsion"
+    ],
+    "vehicle recycling": [
+      "aircraft recycling",
+      "ship breaking"
+    ],
+    "vehicle rental": [
+      "car rental",
+      "community bicycle programs"
+    ],
+    "vehicle retailers": [
+      "australian motor vehicle dealers",
+      "auto dealerships"
+    ],
+    "royal vehicles": [
+      "royal carriages",
+      "royal barges of thailand"
+    ],
+    "set index articles on vehicles": [
+      "set index articles on cars",
+      "set index articles on locomotives"
+    ],
+    "vehicle simulation games": [
+      "air traffic control simulators",
+      "bus simulation video games"
+    ],
+    "vehicles by speed": [
+      "subsonic missiles",
+      "supersonic aircraft"
+    ],
+    "vehicle technology": [
+      "automotive technologies",
+      "aviation technology"
+    ],
+    "vehicle stubs": [
+      "aircraft stubs",
+      "automobile stubs"
+    ],
+    "images of vehicles": [
+      "images of aircraft",
+      "art vehicle images"
+    ]
+  },
+  "Health & Fitness": {
+    "health by demographic": [
+      "children s health",
+      "geriatrics"
+    ],
+    "health by individual": [
+      "deaths by person",
+      "eyepatch wearers"
+    ],
+    "health by location": [
+      "health by city",
+      "health by continent"
+    ],
+    "health by period": [
+      "health disasters by period",
+      "health by century"
+    ],
+    "health effects by subject": [
+      "cannabis and health",
+      "aftermath of the chernobyl disaster"
+    ],
+    "health by topic": [
+      "alcohol and health",
+      "environment and health"
+    ],
+    "health and wellness writers": [
+      "health and wellness writers by nationality",
+      "diet food writers"
+    ],
+    "health care": [
+      "health care by city",
+      "health care by continent"
+    ],
+    "health professionals": [
+      "health professionals by nationality",
+      "health professionals by populated place"
+    ],
+    "health activism": [
+      "health activists",
+      "food activism"
+    ],
+    "animal health": [
+      "animal diseases",
+      "bird health"
+    ],
+    "death": [
+      "death by city",
+      "death by continent"
+    ],
+    "determinants of health": [
+      "health effects by subject",
+      "risk factors for obesity"
+    ],
+    "disability": [
+      "disability by continent",
+      "disability by country"
+    ],
+    "health disasters": [
+      "health disasters by location",
+      "wikipedia categories named after health disasters"
+    ],
+    "diseases and disorders": [
+      "diseases and disorders by continent",
+      "human diseases and disorders"
+    ],
+    "health economics": [
+      "health economics journals",
+      "health economists"
+    ],
+    "education and health": [
+      "student health"
+    ],
+    "global health": [
+      "food security",
+      "international medical and health organizations"
+    ],
+    "healing": [
+      "fictional healers",
+      "folk healers"
+    ],
+    "health informatics": [
+      "health informatics by country",
+      "cohort studies"
+    ],
+    "health law": [
+      "medical law",
+      "occupational safety and health law"
+    ],
+    "medical terminology": [
+      "anatomical terminology",
+      "deinstitutionalisation"
+    ],
+    "mental health": [
+      "mental health by country",
+      "mental disorders"
+    ],
+    "occupational safety and health": [
+      "workplace health and safety in australia",
+      "occupational safety and health awards"
+    ],
+    "physical fitness": [
+      "physical fitness in popular culture",
+      "endurance"
+    ],
+    "health and politics": [
+      "political responses to the covid 19 pandemic",
+      "food politics"
+    ],
+    "public health": [
+      "public health by country",
+      "people in public health"
+    ],
+    "quality of life": [
+      "happiness",
+      "international quality of life rankings"
+    ],
+    "religion and health": [
+      "anointing of the sick catholic church",
+      "religion and drugs"
+    ],
+    "health research": [
+      "biobanks",
+      "biological specimens"
+    ],
+    "health risk": [
+      "carcinogens",
+      "health risks of performing arts"
+    ],
+    "health sciences": [
+      "health sciences by country",
+      "medicine"
+    ],
+    "sexual health": [
+      "andrology",
+      "birth control"
+    ],
+    "health stubs": [
+      "mental health stubs",
+      "national health service stubs"
+    ],
+    "physical fitness in popular culture": [
+      "batman",
+      "yoga mass media"
+    ],
+    "endurance": [
+      "endurance art",
+      "endurance games"
+    ],
+    "flexibility": [
+      "stretching"
+    ],
+    "physical exercise": [
+      "exercise and fitness writers",
+      "exercise instructors"
+    ]
+  },
+  "Lifestyle & Routines": {
+    "lifestyles": [
+      "asceticism",
+      "bohemianism"
+    ],
+    "lifestyle magazines": [
+      "lifestyle magazines by country",
+      "works originally published in lifestyle magazines"
+    ]
+  },
+  "History & Culture": {
+    "history by location": [
+      "history by city",
+      "history by continent"
+    ],
+    "history by period": [
+      "history by continent and period",
+      "history by city and period"
+    ],
+    "history by topic": [
+      "history by city and topic",
+      "history by continent and topic"
+    ],
+    "fields of history": [
+      "historians by field of study",
+      "history by topic"
+    ],
+    "historians": [
+      "historians by academic institution",
+      "historians by century"
+    ],
+    "historiography": [
+      "historiography by country",
+      "historiography by topic"
+    ],
+    "people in history occupations": [
+      "antiques experts",
+      "archaeologists"
+    ],
+    "chronology": [
+      "millennia",
+      "centuries"
+    ],
+    "origins": [
+      "aids origin hypotheses",
+      "beginnings"
+    ],
+    "outlines of history and events": [
+      "outlines of wars"
+    ],
+    "works about history": [
+      "works about history by country",
+      "works about history by medium"
+    ],
+    "history awards": [
+      "history awards by country",
+      "historical fiction awards"
+    ],
+    "historical controversies": [
+      "archaeological controversies",
+      "baltimore plot"
+    ],
+    "history in culture": [
+      "historical eras in popular culture",
+      "historically themed events"
+    ],
+    "disasters": [
+      "disasters by time",
+      "disasters by cause"
+    ],
+    "history education": [
+      "history education in france",
+      "history departments"
+    ],
+    "legacies": [
+      "legacies by person",
+      "aftermath of the dissolution of the soviet union"
+    ],
+    "historical objects": [
+      "historical objects by country",
+      "archaeological corpora"
+    ],
+    "history organizations": [
+      "historical societies",
+      "history organizations by country"
+    ],
+    "people by historical event": [
+      "people by genocide",
+      "people by rebellion"
+    ],
+    "philosophy of history": [
+      "works about the philosophy of history",
+      "philosophers of history"
+    ],
+    "historic preservation": [
+      "historic preservation by country",
+      "historical preservationists"
+    ],
+    "pseudohistory": [
+      "pseudohistorians",
+      "afrocentrism"
+    ],
+    "historical works": [
+      "texts about the history of buddhism",
+      "chronicles"
+    ],
+    "history images": [
+      "images by time",
+      "polish historical images"
+    ],
+    "history stubs": [
+      "classical studies stubs",
+      "cultural history stubs"
+    ],
+    "culture by ethnicity": [
+      "cemeteries by ethnicity",
+      "cuisine by ethnicity"
+    ],
+    "culture by language": [
+      "music by language",
+      "honorifics by language"
+    ],
+    "culture by location": [
+      "culture by city",
+      "culture by continent"
+    ],
+    "culture by period": [
+      "cultural history by period",
+      "internet culture by year"
+    ],
+    "cultures": [
+      "categories by culture",
+      "subcultures"
+    ],
+    "popular culture": [
+      "popular culture by country",
+      "topics in popular culture"
+    ],
+    "cultural lists": [
+      "cultural lists by country",
+      "animal rights related lists"
+    ],
+    "cultural depictions": [
+      "cultural depictions of people by occupation",
+      "cultural depictions of people by ethnicity"
+    ],
+    "topics in culture": [
+      "topics in the arts",
+      "fiction by topic"
+    ],
+    "artificial objects": [
+      "3d printed objects",
+      "works of art"
+    ],
+    "the arts": [
+      "arts by location",
+      "arts by period"
+    ],
+    "awards for contributions to culture": [
+      "critic awards",
+      "irreligion related awards"
+    ],
+    "clothing": [
+      "clothing by century",
+      "clothing by country"
+    ],
+    "collectivism": [
+      "collectives",
+      "collectivist anarchism"
+    ],
+    "consensus reality": [
+      "social constructionism",
+      "cultural conventions"
+    ],
+    "counterculture": [
+      "counterculture of the 19th century",
+      "counterculture of the 20th century"
+    ],
+    "cultural activism": [
+      "cultural activists",
+      "culture jamming"
+    ],
+    "cultural concepts": [
+      "cultural anthropology",
+      "art concepts"
+    ],
+    "cultural trends": [
+      "fads",
+      "fashion"
+    ],
+    "culture and economy": [
+      "cultural economics",
+      "economy and religion"
+    ],
+    "cultural education": [
+      "architectural education",
+      "creative writing programs"
+    ],
+    "encyclopedias of culture and ethnicity": [
+      "encyclopedias of religion"
+    ],
+    "culture and the environment": [
+      "climate change mass media",
+      "environmental musical artists"
+    ],
+    "essays about culture": [
+      "essays about chess",
+      "christmas essays"
+    ],
+    "cultural events": [
+      "cultural events by city",
+      "cultural events by country"
+    ],
+    "cultural exchange": [
+      "cultural diplomacy",
+      "bilateral cultural relations"
+    ],
+    "family": [
+      "family by continent",
+      "family by country"
+    ],
+    "food and drink": [
+      "drinks",
+      "foods"
+    ],
+    "gambling": [
+      "works about gambling",
+      "casinos"
+    ],
+    "gardening": [
+      "gardening by country",
+      "gardening by continent"
+    ],
+    "cultural generations": [
+      "baby boomers",
+      "generation alpha"
+    ],
+    "art and culture law": [
+      "copyrightability case law",
+      "art and culture treaties"
+    ],
+    "luxury": [
+      "luxury brands",
+      "luxury hotels"
+    ],
+    "cultural mass media": [
+      "cultural journals",
+      "cultural magazines"
+    ],
+    "cultural organizations": [
+      "cultural organizations by continent",
+      "cultural organizations by country"
+    ],
+    "philosophy of culture": [
+      "philosophers of culture"
+    ],
+    "cultural policy": [
+      "cultural policies of the european union"
+    ],
+    "religion": [
+      "religion by location",
+      "religion by topic"
+    ],
+    "ritual": [
+      "rituals",
+      "academic studies of ritual and magic"
+    ],
+    "science and culture": [
+      "science and technology awards",
+      "biology and culture"
+    ],
+    "series": [
+      "lists of media series",
+      "films based on multiple works of a series"
+    ],
+    "sharing": [
+      "free goods and services",
+      "knowledge sharing"
+    ],
+    "sociology of culture": [
+      "anthropological categories of peoples",
+      "bourgeoisie"
+    ],
+    "sports": [
+      "sports by continent of origin",
+      "sports by country of origin"
+    ],
+    "cultural studies": [
+      "cultural academics",
+      "admiration of foreign cultures"
+    ],
+    "cultural symbols": [
+      "coats of arms",
+      "color symbols"
+    ],
+    "venues": [
+      "venues by type",
+      "euronext national listing venues"
+    ]
+  },
+  "Politics & News": {
+    "politics by issue": [
+      "political issues by country",
+      "political movements by issue"
+    ],
+    "politics by organization": [
+      "politics of the european union",
+      "politics of nato"
+    ],
+    "politics by ethnicity": [
+      "ethnic political parties",
+      "people by ethnicity and political orientation"
+    ],
+    "politics by location": [
+      "politics by city",
+      "politics by continent"
+    ],
+    "politics by period": [
+      "politics by century",
+      "politics by decade"
+    ],
+    "politics by war": [
+      "diplomacy by war",
+      "propaganda by war"
+    ],
+    "policy": [
+      "policy by country",
+      "think tanks"
+    ],
+    "works about politics": [
+      "fiction about politics",
+      "political television episodes"
+    ],
+    "politics awards": [
+      "political book awards",
+      "governance and civic leadership awards"
+    ],
+    "civic and political organizations": [
+      "civic and political organizations by country",
+      "civic organizations"
+    ],
+    "clothing in politics": [
+      "costume in the french revolution",
+      "political masks"
+    ],
+    "political communication": [
+      "campaigning",
+      "political campaigning"
+    ],
+    "comparative politics": [
+      "democratization",
+      "exceptionalism"
+    ],
+    "political concepts": [
+      "human rights concepts",
+      "authority"
+    ],
+    "political consulting": [
+      "political consulting firms",
+      "political consultants"
+    ],
+    "political controversies": [
+      "political controversies by country",
+      "political controversies in africa"
+    ],
+    "cultural politics": [
+      "active citizenship",
+      "books about cultural politics"
+    ],
+    "politics in culture": [
+      "politics in anime and manga",
+      "political art"
+    ],
+    "election campaigning": [
+      "election campaigns",
+      "election campaign law"
+    ],
+    "political events": [
+      "political events by continent",
+      "political events by country"
+    ],
+    "governance": [
+      "government",
+      "corporate governance"
+    ],
+    "political history": [
+      "political history by city",
+      "political history by country"
+    ],
+    "jewish political status": [
+      "court jews",
+      "disabilities jewish"
+    ],
+    "political law": [
+      "parliamentary procedure",
+      "administrative law"
+    ],
+    "politically motivated migrations": [
+      "aliyah",
+      "american colonization movement"
+    ],
+    "numbering in politics": [
+      "vote counting"
+    ],
+    "ongoing political events": [
+      "current elections"
+    ],
+    "political organizations": [
+      "political organizations by ideology",
+      "political organizations by continent"
+    ],
+    "political people": [
+      "members of political organizations",
+      "political people by continent"
+    ],
+    "political philosophy": [
+      "political philosophers",
+      "political philosophy literature"
+    ],
+    "political repression": [
+      "political repression by country",
+      "censorship"
+    ],
+    "political power": [
+      "books about political power",
+      "changes in political power"
+    ],
+    "political psychology": [
+      "political psychologists"
+    ],
+    "public opinion": [
+      "mass media events",
+      "polling"
+    ],
+    "reform": [
+      "reform by continent",
+      "reform by country"
+    ],
+    "political schisms": [
+      "african national congress breakaway groups",
+      "all india muslim league breakaway groups"
+    ],
+    "political science": [
+      "political science by continent",
+      "political science by country"
+    ],
+    "social issues": [
+      "social issues by country",
+      "social issues by continent"
+    ],
+    "social policy": [
+      "academics of social policy",
+      "social conservatism"
+    ],
+    "political software": [
+      "election technology software",
+      "political databases"
+    ],
+    "political symbols": [
+      "political symbols by ideology",
+      "ceremonial maces"
+    ],
+    "political timelines": [
+      "political timelines by year",
+      "animal rights timelines"
+    ],
+    "political titles": [
+      "chancellors government",
+      "diplomatic ranks"
+    ],
+    "veto": [
+      "vetoed united nations security council resolutions",
+      "united states vetoed federal legislation"
+    ],
+    "politics stubs": [
+      "activism stubs",
+      "political book stubs"
+    ],
+    "news media by continent": [
+      "news magazines by continent",
+      "newspapers by continent"
+    ],
+    "news media by country": [
+      "news agencies by country",
+      "newspapers by country"
+    ],
+    "journalism controversies by outlet": [
+      "bbc controversies",
+      "fox news criticisms and controversies"
+    ],
+    "news editors": [
+      "newspaper editors"
+    ],
+    "news agencies": [
+      "news agency founders",
+      "arab news agencies"
+    ],
+    "media coverage and representation": [
+      "media bias",
+      "media coverage of conflicts"
+    ],
+    "news magazines": [
+      "news magazines by country",
+      "works originally published in news magazines"
+    ],
+    "news media manipulation": [
+      "catch and kill",
+      "fake news"
+    ],
+    "media cooperatives": [
+      "media cooperatives in canada"
+    ],
+    "multilingual news services": [
+      "al jazeera",
+      "bbc news"
+    ],
+    "newsletters": [
+      "newsletters by discipline",
+      "newsletter publishing companies"
+    ],
+    "newspapers": [
+      "national newspapers by country",
+      "newspaper people by newspaper"
+    ],
+    "newsreels": [
+      "newsreels published in korea",
+      "paramount news"
+    ],
+    "radio news": [
+      "radio journalists",
+      "news radio programs"
+    ],
+    "television news": [
+      "television news by continent",
+      "television news sitcoms"
+    ],
+    "news websites": [
+      "news websites by continent",
+      "news websites by country"
+    ]
+  },
+  "Finance & Business": {
+    "finance by country": [
+      "financial districts by country",
+      "education finance by country"
+    ],
+    "finance by city": [
+      "financial services companies by city",
+      "finance in hong kong"
+    ],
+    "finance by continent": [
+      "financial services by continent",
+      "stock exchanges by continent"
+    ],
+    "fields of finance": [
+      "financial economics",
+      "international finance"
+    ],
+    "finance by subject": [
+      "budgets",
+      "capital economics"
+    ],
+    "finance lists": [
+      "banking related lists",
+      "crowdfunding lists"
+    ],
+    "financial data analysis": [
+      "analytics",
+      "business intelligence"
+    ],
+    "decentralized finance": [
+      "decentralized cryptocurrency exchanges",
+      "stablecoins"
+    ],
+    "financial districts": [
+      "ikoyi"
+    ],
+    "history of finance": [
+      "financial history by country",
+      "history of banking"
+    ],
+    "financial law": [
+      "corporations",
+      "derivatives finance"
+    ],
+    "ministries of finance": [
+      "subnational finance ministries",
+      "ministry of finance bangladesh"
+    ],
+    "finance occupations": [
+      "people in finance by occupation",
+      "financial services occupations"
+    ],
+    "financial problems": [
+      "corruption",
+      "financial crimes"
+    ],
+    "financial ratios": [
+      "debt to gdp ratio",
+      "yield finance"
+    ],
+    "financial risk": [
+      "credit risk",
+      "insurance"
+    ],
+    "financial services": [
+      "financial services by country",
+      "financial services brands"
+    ],
+    "financial systems": [
+      "financial metadata",
+      "bond market"
+    ],
+    "works about finance": [
+      "works about algorithmic trading",
+      "finance books"
+    ],
+    "finance stubs": [
+      "accounting stubs",
+      "financial services company stubs"
+    ],
+    "types of business entity": [
+      "types of business entity by country",
+      "companies by type"
+    ],
+    "business by continent": [
+      "privatization by continent",
+      "business organizations by continent"
+    ],
+    "business by country": [
+      "employment by country",
+      "entrepreneurship by country"
+    ],
+    "companies": [
+      "companies by affiliation",
+      "companies by city"
+    ],
+    "employment": [
+      "alternative employment forms",
+      "employment classifications"
+    ],
+    "management": [
+      "managers",
+      "management by type"
+    ],
+    "works about business": [
+      "business books",
+      "business films"
+    ],
+    "people involved in business": [
+      "businesspeople",
+      "business commentators"
+    ],
+    "business images": [
+      "album covers",
+      "cereal box covers"
+    ],
+    "business computing": [
+      "computer workstations",
+      "customer relationship management"
+    ],
+    "business culture": [
+      "companies in sport",
+      "emirati business culture"
+    ],
+    "business districts": [
+      "central business districts",
+      "high technology business districts"
+    ],
+    "business documents": [
+      "accounting source documents",
+      "international trade documents"
+    ],
+    "business economics": [
+      "accounting",
+      "industrial organization"
+    ],
+    "business education": [
+      "business education in germany",
+      "business education in ireland"
+    ],
+    "business ethics": [
+      "anti corporate activism",
+      "business ethics cases"
+    ],
+    "business events": [
+      "business and industry awards",
+      "business conferences"
+    ],
+    "history of business": [
+      "business and industry archives",
+      "business historians"
+    ],
+    "international business": [
+      "expatriate businesspeople",
+      "export"
+    ],
+    "business journalism": [
+      "business journalism by country",
+      "business and financial journalists"
+    ],
+    "business law": [
+      "business law by country",
+      "agency law"
+    ],
+    "business management": [
+      "business process management",
+      "management frameworks"
+    ],
+    "business occupations": [
+      "accountancy occupations",
+      "consulting occupations"
+    ],
+    "business organizations": [
+      "business organizations by city",
+      "business organizations by country"
+    ],
+    "business ownership": [
+      "amusement park owners",
+      "art gallery owners"
+    ],
+    "business processes": [
+      "industrial processes",
+      "market research"
+    ],
+    "quotations from business": [
+      "advertising slogans"
+    ],
+    "sports business": [
+      "sports brands",
+      "sports broadcasting contracts"
+    ],
+    "business terms": [
+      "business terms by country",
+      "business terms by subject"
+    ],
+    "business travel": [
+      "business aircraft",
+      "traveling teams"
+    ],
+    "business of visual arts": [
+      "art auction",
+      "conservation and restoration companies"
+    ],
+    "workplace": [
+      "works set in workplace",
+      "workplace harassment and bullying"
+    ],
+    "business stubs": [
+      "business biography stubs",
+      "business book stubs"
+    ]
+  },
+  "Nature & Animals": {
+    "natural sciences": [
+      "natural scientists",
+      "earth sciences"
+    ],
+    "natural environment": [
+      "environment by century",
+      "environment by decade"
+    ],
+    "natural events": [
+      "natural events by period",
+      "astronomical events"
+    ],
+    "evolution": [
+      "biological evolution",
+      "evolutionary computation"
+    ],
+    "natural hazards": [
+      "natural hazards by country",
+      "biological hazards"
+    ],
+    "images of nature": [
+      "images of animals",
+      "space images"
+    ],
+    "life": [
+      "life sciences",
+      "organisms"
+    ],
+    "natural materials": [
+      "amber",
+      "animal products"
+    ],
+    "matter": [
+      "vacuum",
+      "materialism"
+    ],
+    "natural monuments": [
+      "iucn category iii",
+      "natural monuments by country"
+    ],
+    "phenomena": [
+      "autonomous sensory meridian response",
+      "earliest phenomena"
+    ],
+    "natural products": [
+      "natural products by elemental composition",
+      "alkaloids"
+    ],
+    "sky": [
+      "atmosphere of earth",
+      "clouds fog and precipitation"
+    ],
+    "universe": [
+      "cosmology",
+      "energy physics"
+    ],
+    "vacuum": [
+      "vacuum flasks",
+      "vacuum gauges"
+    ],
+    "animals by conservation status": [
+      "fauna of africa by conservation status",
+      "fauna of asia by conservation status"
+    ],
+    "animals by year of formal description": [
+      "animals by taxon and year of formal description",
+      "animals described in the 18th century"
+    ],
+    "behavior by type of animal": [
+      "mammal behavior",
+      "arthropod behavior"
+    ],
+    "animals by adaptation": [
+      "invertebrates by adaptation",
+      "birds by adaptation"
+    ],
+    "animals by common name": [
+      "birds by common name",
+      "frogs"
+    ],
+    "animals by habitat": [
+      "desert fauna",
+      "fish by habitat"
+    ],
+    "animals by location": [
+      "fauna by biogeographic realm",
+      "fauna by continent"
+    ],
+    "amphibians": [
+      "amphibians by location",
+      "herpetology"
+    ],
+    "birds": [
+      "birds by age",
+      "birds by classification"
+    ],
+    "fish": [
+      "fish by year of formal description",
+      "fish by adaptation"
+    ],
+    "insects": [
+      "insects by location",
+      "insects by year of formal description"
+    ],
+    "mammals": [
+      "mammals by year of formal description",
+      "extinct mammals"
+    ],
+    "reptiles": [
+      "reptiles by year of formal description",
+      "reptiles by location"
+    ],
+    "invertebrates": [
+      "invertebrates by location",
+      "invertebrates and humans"
+    ],
+    "vertebrates": [
+      "vertebrates by year of formal description",
+      "extinct vertebrates"
+    ],
+    "individual animals": [
+      "individual animals by country",
+      "individual animals by period"
+    ],
+    "lists of animals": [
+      "lists of animals by year of formal description",
+      "lists of animals by location"
+    ],
+    "works about animals": [
+      "works about apes",
+      "works about birds"
+    ],
+    "animal writers": [
+      "animal care and training writers",
+      "animal cognition writers"
+    ],
+    "animal cognition": [
+      "animal communication",
+      "animal emotions"
+    ],
+    "animal common names": [
+      "algae eaters",
+      "amphibian common names"
+    ],
+    "animal equipment": [
+      "entomology equipment",
+      "horse ornamentation"
+    ],
+    "evolution of animals": [
+      "animals by adaptation",
+      "evolution of protostomes"
+    ],
+    "animal health": [
+      "animal health organizations",
+      "animal death"
+    ],
+    "hybrid animals": [
+      "amphibia hybrids",
+      "bird hybrids"
+    ],
+    "animal locomotion": [
+      "animal flight",
+      "aquatic locomotion"
+    ],
+    "nocturnal animals": [
+      "bats",
+      "owls"
+    ],
+    "animal nutrition": [
+      "animal nutritionists",
+      "animal feed"
+    ],
+    "animal physiology": [
+      "animal anatomy",
+      "animal neurophysiology"
+    ],
+    "robotic animals": [
+      "fictional robotic animals",
+      "robotic dinosaurs"
+    ],
+    "set index articles on animals": [
+      "set index articles on animal common names",
+      "disused trilobite generic names"
+    ],
+    "animal sexuality": [
+      "animal breeding",
+      "avian sexuality"
+    ],
+    "sponges": [
+      "sponges by location",
+      "sponges by year of formal description"
+    ],
+    "animal taxa": [
+      "animal taxa by rank",
+      "animal taxa by author"
+    ],
+    "vendobionta": [
+      "petalonamae"
+    ],
+    "visual arts by animals": [
+      "art by primates"
+    ],
+    "wildlife": [
+      "wildlife by country",
+      "wildlife by region"
+    ],
+    "animal redirects": [
+      "redirects from animals",
+      "redirects to animals"
+    ],
+    "images of animals": [
+      "arthropod images",
+      "chordate images"
+    ],
+    "animal stubs": [
+      "animal rights stubs",
+      "chordate stubs"
+    ]
+  },
+  "DIY & How-To": {
+    "composting": [
+      "home composting",
+      "industrial composting"
+    ],
+    "kit houses": [
+      "sears modern homes"
+    ],
+    "kit vehicles": [
+      "kit cars",
+      "homebuilt aircraft"
+    ]
+  },
+  "Comedy & Memes": {
+    "comedy by century": [
+      "19th century in comedy",
+      "20th century in comedy"
+    ],
+    "comedy by country": [
+      "comedians by nationality",
+      "satire by country"
+    ],
+    "comedy by decade": [
+      "1890s in comedy",
+      "1900s in comedy"
+    ],
+    "comedy genres": [
+      "satire genres",
+      "comedy films by genre"
+    ],
+    "comedy by medium": [
+      "parody by medium",
+      "satire by medium"
+    ],
+    "comedians": [
+      "comedians by century",
+      "comedians by ethnicity"
+    ],
+    "comedy writers": [
+      "comedy writers by nationality",
+      "jewish comedy writers"
+    ],
+    "comedy catchphrases": [
+      "saturday night live catchphrases"
+    ],
+    "comedy characters": [
+      "comedy characters by medium",
+      "comedy film characters"
+    ],
+    "clowning": [
+      "clowns",
+      "drag entertainment"
+    ],
+    "comedy events": [
+      "comedy and humor awards",
+      "ironic and humorous awards"
+    ],
+    "comedy franchises": [
+      "comedy film franchises",
+      "mucha lucha"
+    ],
+    "pantomime": [
+      "pantomime comics",
+      "pantomime dames"
+    ],
+    "running gags": [
+      "unseen characters"
+    ],
+    "silliness": [
+      "silly symphonies"
+    ],
+    "student comedy": [
+      "australian student comedy",
+      "student comedy troupes"
+    ],
+    "comedy tours": [
+      "2010s comedy tours"
+    ],
+    "comedy venues": [
+      "comedy clubs in australia",
+      "comedy clubs in canada"
+    ],
+    "comedy stubs": [
+      "comedy album stubs",
+      "comedy book stubs"
+    ],
+    "internet memes by country": [
+      "internet memes by topic and country",
+      "internet memes introduced from bangladesh"
+    ],
+    "internet memes by topic": [
+      "internet memes about animals",
+      "film and television memes"
+    ],
+    "internet memes by decade of introduction": [
+      "internet memes introduced in the 1980s",
+      "internet memes introduced in the 1990s"
+    ],
+    "internet memes by year of introduction": [
+      "internet memes introduced in 1993",
+      "internet memes introduced in 1994"
+    ],
+    "4chan phenomena": [
+      "anonymous hacker group",
+      "the backrooms"
+    ],
+    "internet aesthetics": [
+      "vaporwave"
+    ],
+    "internet challenges": [
+      "viral dance challenges"
+    ],
+    "internet meme characters": [
+      "internet meme character redirects to lists",
+      "slender man"
+    ],
+    "creepypasta": [
+      "analog horror",
+      "scp foundation"
+    ],
+    "viral videos": [
+      "viral videos by decade",
+      "viral music videos"
+    ]
+  },
+  "Motivation & Self-Help": {
+    "career development": [
+      "career advice services",
+      "career development in the united kingdom"
+    ],
+    "christian personal development": [
+      "spiritual gifts"
+    ],
+    "counseling": [
+      "advisors",
+      "career counselors"
+    ],
+    "happiness": [
+      "euphoriants",
+      "happy hormones"
+    ],
+    "life coaching": [
+      "life coaches"
+    ],
+    "personal finance": [
+      "banking",
+      "bankruptcy"
+    ],
+    "positive psychology": [
+      "gratitude",
+      "positive psychology journals"
+    ],
+    "sports development": [
+      "sports foundations"
+    ],
+    "personal development television series": [
+      "cardcaptor sakura",
+      "coronation street"
+    ],
+    "virtue ethics": [
+      "virtue ethicists"
+    ]
+  },
+  "Mystery & Horror": {
+    "mystery fiction by decade": [
+      "mystery novels by decade",
+      "mystery television series by decade"
+    ],
+    "mystery writers": [
+      "mystery writers by nationality",
+      "women mystery writers"
+    ],
+    "american mystery fiction": [
+      "american mystery writers",
+      "american mystery films"
+    ],
+    "mystery animation": [
+      "animated mystery films",
+      "animated mystery television series"
+    ],
+    "mystery anime and manga": [
+      "le chevalier d eon"
+    ],
+    "mystery and detective fiction awards": [
+      "agatha award winners",
+      "anthony awards"
+    ],
+    "british mystery fiction": [
+      "british mystery films",
+      "british mystery novels"
+    ],
+    "mystery characters": [
+      "fictional detectives",
+      "characters of the golden age of detective fiction"
+    ],
+    "mystery comics": [
+      "mystery anime and manga"
+    ],
+    "detective fiction": [
+      "detective anime and manga",
+      "sexton blake"
+    ],
+    "mystery films": [
+      "mystery films by century",
+      "mystery films by country"
+    ],
+    "german mystery fiction": [
+      "german mystery television series"
+    ],
+    "historical mystery": [
+      "historical mystery films",
+      "historical mystery novels"
+    ],
+    "legal thrillers": [
+      "legal thriller films",
+      "legal thriller novels"
+    ],
+    "mystery fiction magazines": [
+      "works originally published in mystery fiction magazines",
+      "mystery fiction digests"
+    ],
+    "mystery games": [
+      "murder and mystery board games",
+      "mystery video games"
+    ],
+    "mystery novels": [
+      "mystery novels by nationality",
+      "mystery novels by writer"
+    ],
+    "occult detective fiction": [
+      "fictional paranormal investigators",
+      "occult detective anime and manga"
+    ],
+    "police procedurals": [
+      "police procedural films",
+      "police procedural television series"
+    ],
+    "mystery short stories": [
+      "mystery short story collections",
+      "children s mystery short stories"
+    ],
+    "speculative crime and thriller fiction": [
+      "speculative crime and thriller fiction novels",
+      "speculative crime and thriller fiction television series"
+    ],
+    "mystery television series": [
+      "mystery television series by country",
+      "children s mystery television series"
+    ],
+    "mystery web series": [
+      "mystery drama web series"
+    ],
+    "mystery fiction stubs": [
+      "mystery film stubs",
+      "mystery novel stubs"
+    ],
+    "mystery templates": [
+      "mystery navigational boxes",
+      "mystery stub templates"
+    ]
+  },
+  "Podcasts & Talk": {
+    "podcasts by country": [
+      "american podcasts",
+      "australian podcasts"
+    ],
+    "podcasts by format": [
+      "actual play podcasts",
+      "audio podcasts"
+    ],
+    "podcasts by genre": [
+      "podcasters by genre",
+      "advice podcasts"
+    ],
+    "podcast debuts by year": [
+      "2000 podcast debuts",
+      "2004 podcast debuts"
+    ],
+    "podcast endings by year": [
+      "2007 podcast endings",
+      "2008 podcast endings"
+    ],
+    "podcasts adapted for other media": [
+      "podcasts adapted into television shows"
+    ],
+    "podcasts by company": [
+      "audible podcasts",
+      "bbc podcasts"
+    ],
+    "talk radio hosts": [
+      "talk radio hosts by nationality"
+    ],
+    "political talk radio": [
+      "conservative talk radio",
+      "progressive talk radio"
+    ],
+    "talk radio programs": [
+      "american talk radio programs",
+      "australian talk radio programs"
+    ],
+    "talk radio stations": [
+      "business talk radio stations",
+      "news and talk radio stations"
+    ]
+  },
+  "Relationships & Community": {
+    "collectives": [
+      "cooperatives",
+      "anarchist collectives"
+    ],
+    "communities": [
+      "communities by ethnic group",
+      "communities by industry"
+    ],
+    "community building": [
+      "civic centers",
+      "communitarianism"
+    ],
+    "community development": [
+      "business improvement districts",
+      "civil crime prevention"
+    ],
+    "community networks": [
+      "wireless community networks"
+    ],
+    "community radio": [
+      "community radio by country",
+      "community radio organizations"
+    ],
+    "types of communities": [
+      "counterculture communities",
+      "intentional communities"
+    ]
+  },
+  "Spirituality & Philosophy": {
+    "conceptions of self": [
+      "gender identity"
+    ],
+    "spiritual concepts": [
+      "synchronicity"
+    ],
+    "esotericism": [
+      "eastern esotericism",
+      "western esotericism"
+    ],
+    "feminism and spirituality": [
+      "feminists by religion",
+      "buddhist feminism"
+    ],
+    "indigenous spirituality": [
+      "austronesian spirituality",
+      "druidry"
+    ],
+    "spiritual media": [
+      "films about spirituality",
+      "literature about spirituality"
+    ],
+    "mysticism": [
+      "mystics",
+      "mysticism scholars"
+    ],
+    "spiritual organizations": [
+      "magical organizations",
+      "modern pagan organizations"
+    ],
+    "spiritual philosophy": [
+      "feminist spirituality",
+      "nonduality"
+    ],
+    "spiritual practice": [
+      "spiritual activism",
+      "fasting"
+    ],
+    "religion": [
+      "religious faiths traditions and movements",
+      "intersex topics in religion and mythology"
+    ],
+    "religious spirituality": [
+      "buddhist devotion",
+      "catholic spirituality"
+    ],
+    "sacred natural sites": [
+      "sacred caves",
+      "sacred groves"
+    ],
+    "spirits": [
+      "female spirits",
+      "spirit possession"
+    ],
+    "spiritual teachers": [
+      "spiritual teachers by nationality",
+      "acharyas"
+    ],
+    "virtue": [
+      "virtue ethics",
+      "virtue names"
+    ],
+    "spiritual writers": [
+      "spiritual writers by nationality",
+      "astrological writers"
+    ],
+    "spirituality stubs": [
+      "astrology stubs",
+      "occult stubs"
+    ],
+    "philosophers": [
+      "philosophers by continent",
+      "philosophers by field"
+    ],
+    "philosophical literature": [
+      "philosophical literature by period",
+      "philosophical literature by tradition"
+    ],
+    "works about philosophy": [
+      "lists related to works about philosophy",
+      "works about philosophers"
+    ],
+    "branches of philosophy": [
+      "philosophical concepts by field",
+      "philosophical literature by field"
+    ],
+    "philosophical concepts": [
+      "ancient greek philosophical concepts",
+      "concepts in chinese philosophy"
+    ],
+    "philosophy education": [
+      "philosophers by academic institution",
+      "philosophy schools"
+    ],
+    "history of philosophy": [
+      "philosophy by period",
+      "works about the history of philosophy"
+    ],
+    "philosophy organizations": [
+      "philosophical societies",
+      "philosophy awards"
+    ],
+    "philosophy by region": [
+      "philosophy by continent",
+      "philosophy by country"
+    ],
+    "philosophical schools and traditions": [
+      "epistemological schools and traditions",
+      "ethical schools and movements"
+    ],
+    "philosophical theories": [
+      "theories in ancient greek philosophy",
+      "theories of aesthetics"
+    ],
+    "women and philosophy": [
+      "feminist philosophy",
+      "women philosophers"
+    ],
+    "philosophy stubs": [
+      "aesthetics stubs",
+      "criticism stubs"
+    ]
+  }
 }

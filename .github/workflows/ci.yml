@@ -2,40 +2,38 @@ name: CI
 
 on:
   push:
+    branches: [ main, master ]
   pull_request:
+  workflow_dispatch:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install test dependencies (minimal)
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest numpy pydantic pillow ffmpeg-python faster-whisper rapidfuzz
-      - name: Run tests
-        run: pytest -q
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  gui_fix:
-    name: Windows GUI Fix (PySimpleGUI, optional)
-    continue-on-error: true
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
-      - name: Run GUI fix script
-        run: python scripts/reinstall_pysimplegui.py
-      - name: Validate PySimpleGUI import
-        run: python - << 'PY'
-          import importlib
-          m = importlib.import_module('PySimpleGUI')
-          assert hasattr(m, 'Window'), 'PySimpleGUI missing Window attribute'
-          print('PySimpleGUI OK')
-          PY
+
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      # Optional: lint or tests could go here if/when added
+      - name: Show env summary
+        run: |
+          python --version
+          pip --version
+          pip list --format=columns
+

@@ -95,6 +95,35 @@ MACROS: List[str] = [
     "Spirituality & Philosophy",
 ]
 
+# Map friendly macro names to Wikipedia category topics to broaden coverage
+MACRO_WIKI_TOPICS: Dict[str, List[str]] = {
+    "Gaming": ["Gaming", "Video games"],
+    "Music": ["Music"],
+    "Sports": ["Sports"],
+    "Movies & TV": ["Film", "Television"],
+    "Anime & Comics": ["Anime", "Manga", "Comics"],
+    "Technology & Gadgets": ["Technology", "Electronics"],
+    "Science & Education": ["Science", "Education"],
+    "Art & Design": ["Art", "Design"],
+    "Fashion & Beauty": ["Fashion", "Beauty"],
+    "Food & Cooking": ["Food", "Cooking"],
+    "Travel & Places": ["Travel", "Geography"],
+    "Cars & Vehicles": ["Vehicles", "Automobiles"],
+    "Health & Fitness": ["Health", "Physical fitness"],
+    "Lifestyle & Routines": ["Lifestyle"],
+    "History & Culture": ["History", "Culture"],
+    "Politics & News": ["Politics", "News media"],
+    "Finance & Business": ["Finance", "Business"],
+    "Nature & Animals": ["Nature", "Animals"],
+    "DIY & How-To": ["Do it yourself"],
+    "Comedy & Memes": ["Comedy", "Internet memes"],
+    "Motivation & Self-Help": ["Self-help", "Personal development"],
+    "Mystery & Horror": ["Horror", "Mystery fiction"],
+    "Podcasts & Talk": ["Podcasts", "Talk radio"],
+    "Relationships & Community": ["Relationships", "Community"],
+    "Spirituality & Philosophy": ["Spirituality", "Philosophy"],
+}
+
 
 def _dedup_keep_order(items: Iterable[str]) -> List[str]:
     out: List[str] = []
@@ -119,7 +148,12 @@ def _fetch_wikipedia_subcats(topic: str, max_items: int = 10) -> List[str]:
             + up.quote(title)
             + "&cmtype=subcat&cmlimit=50&format=json"
         )
-        with ur.urlopen(url, timeout=6) as resp:
+        # Wikipedia requires a descriptive User-Agent per policy
+        headers = {
+            "User-Agent": "Knot-Labs Category Builder/1.0 (+https://example.com; support@knotlabs.local)",
+        }
+        req = ur.Request(url, headers=headers)
+        with ur.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         items = [m.get('title','') for m in (data.get('query',{}).get('categorymembers') or [])]
         cleaned = []
@@ -198,6 +232,78 @@ def build_tree(per_macro_mesos: int = 3, per_meso_micros: int = 3) -> Dict[str, 
     return tree
 
 
+def build_tree_by_count(target_micros: int) -> Dict[str, Dict[str, List[str]]]:
+    """Build a hierarchical tree sourced from Wikipedia, selecting up to target micro categories.
+
+    Strategy:
+    - Fetch mesos per macro via Wikipedia (fallback to known values).
+    - Fetch micros per meso via Wikipedia (fallback where needed).
+    - Round-robin across (macro, meso) buckets to pick unique micros until target is reached.
+    - Return only the selected portions as a tree.
+    """
+    # Gather mesos per macro
+    macro_to_mesos: Dict[str, List[str]] = {}
+    for macro in MACROS:
+        topics = MACRO_WIKI_TOPICS.get(macro, [macro])
+        meso_accum: List[str] = []
+        for t in topics:
+            meso_accum.extend(_fetch_wikipedia_subcats(t, max_items=50))
+        if not meso_accum:
+            meso_accum = FALLBACK_MESO.get(macro, [])
+        mesos = _dedup_keep_order(meso_accum)
+        macro_to_mesos[macro] = mesos
+
+    # Gather micros per (macro, meso)
+    pool: Dict[Tuple[str, str], List[str]] = {}
+    for macro, mesos in macro_to_mesos.items():
+        for meso in mesos:
+            micros = _dedup_keep_order(_fetch_wikipedia_subcats(meso, max_items=50) or _FALLBACK_MICRO_N.get(normalize(meso), []))
+            # Filter out obvious self/parent duplicates
+            micros = [mi for mi in micros if normalize(mi) not in {normalize(meso), normalize(macro)}]
+            pool[(macro, meso)] = micros
+
+    # Round-robin selection
+    selected_tree: Dict[str, Dict[str, List[str]]] = {m: {} for m in MACROS}
+    used: Set[str] = set()
+    buckets: List[Tuple[str, str]] = [k for k, v in pool.items() if v]
+    idx: Dict[Tuple[str, str], int] = {k: 0 for k in buckets}
+
+    while len(used) < target_micros and buckets:
+        progressed = False
+        new_buckets: List[Tuple[str, str]] = []
+        for k in buckets:
+            macro, meso = k
+            arr = pool[k]
+            i = idx[k]
+            # advance to next unused micro
+            while i < len(arr) and normalize(arr[i]) in used:
+                i += 1
+            if i < len(arr):
+                mi = normalize(arr[i])
+                used.add(mi)
+                idx[k] = i + 1
+                if meso not in selected_tree[macro]:
+                    selected_tree[macro][meso] = []
+                selected_tree[macro][meso].append(mi)
+                progressed = True
+                if len(used) >= target_micros:
+                    break
+                # keep this bucket for future rounds
+                new_buckets.append(k)
+            else:
+                # bucket exhausted; drop it
+                pass
+        if not progressed:
+            break
+        buckets = new_buckets or buckets  # if all buckets appended, continue
+    # Prune empty macros
+    selected_tree = {ma: me for ma, me in selected_tree.items() if me}
+    # If still empty, fall back to minimal tree
+    if not selected_tree:
+        return build_tree()
+    return selected_tree
+
+
 def write_master_from_tree(tree: Dict[str, Dict[str, List[str]]], out_path: str) -> int:
     """Write mastercategories.txt lines from a tree. Returns number of lines written."""
     lines: List[str] = []
@@ -227,9 +333,13 @@ def build_tree_and_write(
     tree_out: Optional[str] = None,
     mesos: int = 3,
     micros: int = 3,
+    total: Optional[int] = None,
 ) -> Dict[str, int]:
     """Programmatic entry to build the hierarchical tree and write outputs.
 
+    - If total is provided (>0), selects up to that many micro categories via
+      Wikipedia-driven round-robin across macros/mesos.
+    - Otherwise, uses fixed counts per macro/meso as provided.
     - Writes mastercategories.txt (micro prompts) and master_tree.json (hierarchy)
     - Returns stats dict
     """
@@ -243,7 +353,10 @@ def build_tree_and_write(
         tree_out = os.path.join(root_dir, "master_tree.json")
 
     t0 = time.time()
-    tree = build_tree(per_macro_mesos=int(mesos), per_meso_micros=int(micros))
+    if total is not None and int(total) > 0:
+        tree = build_tree_by_count(int(total))
+    else:
+        tree = build_tree(per_macro_mesos=int(mesos), per_meso_micros=int(micros))
     n = write_master_from_tree(tree, out_path)
     with open(tree_out, 'w', encoding='utf-8') as f:
         json.dump(tree, f, indent=2, ensure_ascii=False)
@@ -425,27 +538,7 @@ def build_candidates() -> Dict[str, List[str]]:
         "palaces", "monuments", "landmarks", "national parks",
     ]
 
-    # Add a diverse set of city and country names to push candidate count > 800
-    cities = [
-        "new york city", "los angeles", "chicago", "houston", "miami",
-        "toronto", "vancouver", "mexico city", "sao paulo", "rio de janeiro",
-        "buenos aires", "lima", "bogota", "santiago", "london", "manchester",
-        "birmingham", "paris", "marseille", "berlin", "munich", "frankfurt",
-        "hamburg", "rome", "milan", "naples", "madrid", "barcelona",
-        "valencia", "lisbon", "porto", "amsterdam", "rotterdam", "brussels",
-        "vienna", "zurich", "geneva", "stockholm", "oslo", "copenhagen",
-        "helsinki", "prague", "warsaw", "budapest", "athens", "istanbul",
-        "ankara", "moscow", "st petersburg", "kyiv", "tel aviv", "jerusalem",
-        "cairo", "alexandria", "lagos", "nairobi", "addis ababa", "johannesburg",
-        "capetown", "casablanca", "marrakesh", "algiers", "tunis",
-        "doha", "dubai", "abu dhabi", "riyadh", "jeddah", "tehran",
-        "karachi", "lahore", "mumbai", "delhi", "bangalore", "chennai",
-        "kolkata", "dhaka", "jakarta", "bangkok", "kuala lumpur", "singapore",
-        "manila", "hanoi", "ho chi minh city", "phnom penh", "vientiane",
-        "hong kong", "taipei", "tokyo", "osaka", "kyoto", "seoul",
-        "sapporo", "beijing", "shanghai", "guangzhou", "shenzhen", "chengdu",
-        "wuhan", "xi an", "sydney", "melbourne", "brisbane", "auckland",
-    ]
+    # Cities removed by request; we avoid city lists to reduce proper-noun bias.
 
     events = [
         "weddings", "birthdays", "funerals", "festivals", "concerts",
@@ -497,21 +590,11 @@ def build_candidates() -> Dict[str, List[str]]:
         "debates", "roundtables", "panel discussions", "lectures", "lessons",
     ]
 
-    adjectives = [
-        "ancient", "modern", "rustic", "futuristic", "minimalist",
-        "ornate", "metallic", "wooden", "colorful", "translucent",
-    ]
-    base_objects = [
-        "bridge", "building", "car", "castle", "ship", "village",
-        "garden", "robot", "statue", "festival", "library", "market",
-        "museum", "park", "tower", "train", "computer", "phone",
-        "instrument", "vehicle",
-    ]
-    styled_objects = [f"{adj} {obj}" for adj in adjectives for obj in base_objects]
+    # Adjectives and adjective-styled objects removed by request.
 
     # Expand places by appending the word 'city' to city names to avoid conflict
     # with other contexts and to increase candidates.
-    places = places_core + [f"{c} city" for c in cities]
+    places = places_core
 
     # Ensure each list is reasonably sized; total across domains should exceed 1000
     domain_map: Dict[str, List[str]] = {
@@ -533,7 +616,6 @@ def build_candidates() -> Dict[str, List[str]]:
         "PLACES": places,
         "EVENTS": events,
         "OBJECTS": objects,
-        "STYLED_OBJECTS": styled_objects,
         "WEATHER": weather,
         "EMOTIONS": emotions,
         "CULTURE": culture,
@@ -549,8 +631,7 @@ def guarantee_essentials(domains: Dict[str, List[str]]) -> Set[Tuple[str, str]]:
         ("SPORTS", "american football"),
         ("ANIMALS", "cats"),
         ("ANIMALS", "dogs"),
-        ("PLACES", "new york city city"),  # normalized target in PLACES list
-        ("PLACES", "tokyo city"),
+        # Removed city essentials per request
         ("FOOD", "pizza"),
         ("FOOD", "sushi"),
         ("FORMATS", "tutorials"),
@@ -688,7 +769,7 @@ def build_and_write(out_path: str | None = None, target_count: int = TARGET_COUN
 def main() -> None:
     p = argparse.ArgumentParser(description="Build Mesh/mastercategories.txt (1000 micro labels) or hierarchical tree")
     p.add_argument("--output", default=None, help="Output path for mastercategories.txt (default Mesh/mastercategories.txt)")
-    p.add_argument("--count", type=int, default=TARGET_COUNT, help="Target count (flat mode; default 1000)")
+    p.add_argument("--count", type=int, default=TARGET_COUNT, help="Target count (flat mode) or total micro labels in tree mode")
     # Hierarchical options
     p.add_argument("--use-tree", action="store_true", help="Build using hierarchical macro/meso/micro tree and also write master_tree.json")
     p.add_argument("--tree-out", default=None, help="Path for master_tree.json (default Mesh/master_tree.json)")
@@ -697,7 +778,7 @@ def main() -> None:
     args = p.parse_args()
 
     if args.use_tree:
-        stats = build_tree_and_write(out_path=args.output, tree_out=args.tree_out, mesos=args.mesos, micros=args.micros)
+        stats = build_tree_and_write(out_path=args.output, tree_out=args.tree_out, mesos=args.mesos, micros=args.micros, total=args.count)
         out_path = args.output or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "mastercategories.txt")
         tree_out = args.tree_out or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "master_tree.json")
         print(f"Final (tree micros): {stats['final']}")
