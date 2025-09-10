@@ -22,7 +22,21 @@ Notes:
   - Precompute label embeddings once with tools/embed_labels.py for best startup time.
 """
 
+import argparse
+import os
 import warnings
+from typing import List, Dict, Optional, Tuple
+import numpy as np
+import torch
+import concurrent.futures
+
+from .fusion.label_loader import load_master_labels, select_labels
+from .video_clip import classify_video_clip, _labels_look_like_prompts
+from .image_clip import classify_image_clip
+from .clip_utils import clip, get_clip_model
+from .utils import min_max_norm, normalize_tensor
+
+os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
 warnings.filterwarnings(
     "ignore",
     message="pkg_resources is deprecated",
@@ -34,19 +48,7 @@ warnings.filterwarnings(
     category=RuntimeWarning,
     module="veil.audio_whisper",
 )
-
-import argparse
-import os
-from typing import List, Dict, Optional, Tuple
-import numpy as np
-import torch
-import concurrent.futures
-
-from .fusion.label_loader import load_master_labels, select_labels
-from .video_clip import classify_video_clip, _labels_look_like_prompts
-from .image_clip import classify_image_clip
-from .clip_utils import clip, get_clip_model
-from .utils import min_max_norm, normalize_tensor
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="tensorflow")
 
 
 def _parse_bool(s: str) -> bool:
@@ -83,8 +85,8 @@ def _strip_prompt_prefix(label: str, mode: str) -> str:
       - "a video about trains" -> "trains"
       - "a photo of train stations" -> "train stations"
     """
-    l = label.strip()
-    low = l.lower()
+    label_clean = label.strip()
+    low = label_clean.lower()
     prefixes = (
         ("video", [
             "a video of ",
@@ -101,8 +103,8 @@ def _strip_prompt_prefix(label: str, mode: str) -> str:
         if mode == m:
             for p in pres:
                 if low.startswith(p):
-                    return l[len(p):].strip()
-    return l
+                    return label_clean[len(p):].strip()
+    return label_clean
 
 # Optional ANN helpers (shared with API)
 try:
@@ -214,14 +216,26 @@ def main() -> None:
     ann_index = None
     if use_ann and ensure_index is not None and _embed_video_api is not None:
         try:
-            idx = ensure_index(args.master_labels_file, out_dir="indexes", model_name=args.model, mode=("video" if args.mode == "video" else "image"))
+            idx = ensure_index(
+                args.master_labels_file,
+                out_dir="indexes",
+                model_name=args.model,
+                mode=("video" if args.mode == "video" else "image"),
+            )
             E_np = idx.get("emb")
             ann_labels = idx.get("labels")
             ann_index = idx.get("index")
-            if isinstance(E_np, np.ndarray):
-                label_emb = torch.from_numpy(E_np)
-                if isinstance(ann_labels, list) and len(ann_labels) == len(labels):
+            if isinstance(E_np, np.ndarray) and isinstance(ann_labels, list):
+                if len(ann_labels) == len(labels):
+                    label_emb = torch.from_numpy(E_np)
                     labels = ann_labels
+                else:
+                    warnings.warn(
+                        "ANN label count mismatch; rebuilding label embeddings",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+                    raise ValueError("ANN label length mismatch")
             else:
                 raise RuntimeError("Invalid ANN embeddings")
         except Exception:
@@ -229,7 +243,10 @@ def main() -> None:
             ann_labels = None
             ann_index = None
             # Fallback to local build
-            base_labels = [_strip_prompt_prefix(l, "video" if args.mode == "video" else "photo") for l in labels]
+            base_labels = [
+                _strip_prompt_prefix(lbl, "video" if args.mode == "video" else "photo")
+                for lbl in labels
+            ]
             rep_prompts = [
                 ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
                 for c in base_labels
@@ -241,7 +258,10 @@ def main() -> None:
                 label_emb, _ = _build_label_embeddings(base_labels, args.mode, args.model, device)
                 _LABEL_CACHE[ck] = label_emb
     else:
-        base_labels = [_strip_prompt_prefix(l, "video" if args.mode == "video" else "photo") for l in labels]
+        base_labels = [
+            _strip_prompt_prefix(lbl, "video" if args.mode == "video" else "photo")
+            for lbl in labels
+        ]
         rep_prompts = [
             ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
             for c in base_labels
@@ -257,11 +277,15 @@ def main() -> None:
 
     def _video_task():
         if args.mode == "video" and use_ann and E_np is not None and _embed_video_api is not None:
-            frames_emb, pooled = _embed_video_api(args.video, model_name=args.model, frames=args.frames, device='cpu')
+            frames_emb, pooled = _embed_video_api(
+                args.video, model_name=args.model, frames=args.frames, device="cpu"
+            )
             Sv = (pooled @ E_np.T)[0]
             try:
                 if ann_search is not None:
-                    top = ann_search(E_np, labels, pooled, k=max(args.topk, args.ann_k), index=ann_index)
+                    top = ann_search(
+                        E_np, labels, pooled, k=max(args.topk, args.ann_k), index=ann_index
+                    )
                     top_idx = [t[2] for t in top]
                 else:
                     top_idx = []
@@ -273,7 +297,20 @@ def main() -> None:
                     Sv = Sv_rer
             except Exception:
                 pass
-            return {"categories": labels, "scores": Sv, "frame_count": frames_emb.shape[0] if hasattr(frames_emb, 'shape') else len(frames_emb)}
+            if Sv.shape[0] != len(labels):
+                warnings.warn(
+                    "Score vector length mismatch with labels; resetting to zeros",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                Sv = np.zeros(len(labels), dtype=np.float32)
+            return {
+                "categories": labels,
+                "scores": Sv,
+                "frame_count": frames_emb.shape[0]
+                if hasattr(frames_emb, "shape")
+                else len(frames_emb),
+            }
         if args.mode == "video":
             return classify_video_clip(
                 args.video,
