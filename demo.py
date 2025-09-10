@@ -6,11 +6,10 @@ import os
 import subprocess
 import sys
 import time
-from typing import Dict, List, Optional, Tuple
+import logging
+from typing import Dict, List, Optional, Tuple, Callable, Union
 from Mesh.tools.gen_videos import make_post, save_post  # type: ignore
-from Mesh.category import make_category_from_micro, ensure_category, make_category_with_limits
-from Mesh.tools.gen_videos import make_post, save_post  # type: ignore
-from Mesh.category import make_category_from_micro, ensure_category
+from Mesh.category import ensure_category, make_category_with_limits
 
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -96,8 +95,12 @@ def create_test_user(username: Optional[str] = None, gender: Optional[str] = Non
     return user
 
 
-def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
-    # Call Veil CLI and parse Predictions line.
+def _run_veil_and_get_categories(
+    media_path: str,
+    topk: int = 14,
+    cancel_check: Optional[Callable[[], bool]] = None,
+) -> Union[List[str], Dict[str, str]]:
+    """Run Veil classification and return categories or an error dict."""
     cmd = [
         sys.executable,
         "-m",
@@ -112,39 +115,58 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
         str(topk),
     ]
     env = os.environ.copy()
-    # Run Veil with a timeout to avoid hanging jobs
     try:
-        timeout_s = int(os.environ.get("KNOT_VEIL_TIMEOUT_SEC", "180"))
+        timeout_s = int(os.environ.get("KNOT_VEIL_TIMEOUT_SEC", "360"))
     except Exception:
-        timeout_s = 180
+        timeout_s = 360
+    start = time.time()
     try:
-        try:
-            res = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True,
-                env=env,
-                cwd=ROOT,
-                timeout=timeout_s,
-            )
-        except TypeError:
-            # Some test doubles may not accept 'timeout' kwarg; retry without it
-            res = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True,
-                env=env,
-                cwd=ROOT,
-            )
-        out = (res.stdout or "") + "\n" + (res.stderr or "")
-    except subprocess.TimeoutExpired:
-        out = ""
-        print(f"Veil classification timed out after {timeout_s}s; using fallback labels.")
-    except subprocess.CalledProcessError as e:
-        out = (e.stdout or "") + "\n" + (e.stderr or "")
-        print("Veil classification failed; attempting fallback.")
+                proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+            cwd=ROOT,
+        )
+    except Exception as e:
+        logging.error({"event": "veil_spawn_failed", "error": str(e)})
+        return {"error": "spawn_failed"}
+    out = ""
+    err = ""
+    try:
+        while True:
+            if cancel_check and cancel_check():
+                logging.info({"event": "veil_cancelled"})
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+                return {"error": "cancelled"}
+            if proc.poll() is not None:
+                out, err = proc.communicate()
+                break
+            if time.time() - start > timeout_s:
+                logging.info({"event": "veil_timeout", "timeout_s": timeout_s})
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+                return {"error": "timeout"}
+            time.sleep(0.1)
+    except Exception as e:
+        logging.error({"event": "veil_run_error", "error": str(e)})
+        proc.kill()
+        return {"error": "exception"}
+
+    if proc.returncode != 0:
+        logging.info({"event": "veil_failed", "code": proc.returncode})
+        return {"error": "failed"}
+
     def _to_category(label: str) -> str:
         l = label.strip()
         lowers = l.lower()
@@ -161,8 +183,9 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
                 return l[len(p):].strip()
         return l
 
+    combined = (out or "") + "\n" + (err or "")
     cats: List[str] = []
-    for line in out.splitlines():
+    for line in combined.splitlines():
         line = line.strip()
         if line.startswith("Predictions: "):
             payload = line[len("Predictions: "):].strip()
@@ -186,7 +209,7 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
                 if c not in cats:
                     cats.append(c)
         except Exception:
-            print("Warning: Veil produced insufficient predictions and fallback failed.")
+            logging.warning({"event": "veil_fallback_failed"})
     return cats[:topk]
 
 

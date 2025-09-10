@@ -3,56 +3,75 @@ from __future__ import annotations
 import threading
 import queue
 from typing import Dict, Any, Optional
+import os
+import time as _time
 
 
 class JobQueue:
-    def __init__(self) -> None:
+    def __init__(self, result_ttl: Optional[float] = None) -> None:
         self.q: "queue.Queue[Dict[str, Any]]" = queue.Queue()
         self.results: Dict[str, Any] = {}
         self._worker: Optional[threading.Thread] = None
         self._stop = threading.Event()
         self._cancelled: set[str] = set()
         self._current: Optional[str] = None
+        self._result_ttl = (
+            result_ttl if result_ttl is not None else float(os.environ.get("JOB_RESULT_TTL", "3600"))
+        )
+
+    def _cleanup_results(self) -> None:
+        now = _time.time()
+        to_del = [
+            k
+            for k, v in self.results.items()
+            if v.get("finished_at") and now - v["finished_at"] > self._result_ttl
+        ]
+        for k in to_del:
+            self.results.pop(k, None)
 
     def start(self, handler) -> None:
         if self._worker and self._worker.is_alive():
             return
         def run():
             while not self._stop.is_set():
+                self._cleanup_results()
                 try:
                     job = self.q.get(timeout=0.25)
                 except queue.Empty:
                     continue
                 job_id = job.get('id')
                 try:
-                    import time as _t
                     # Skip cancelled jobs
                     if job_id in self._cancelled:
                         self.results[job_id] = {
                             'status': 'cancelled',
-                            'finished_at': _t.time(),
+                            'finished_at': _time.time(),
                             'type': job.get('type'),
                         }
                         continue
                     self._current = job_id
                     self.results[job_id] = {
                         'status': 'running',
-                        'started_at': _t.time(),
+                        'started_at': _time.time(),
                         'type': job.get('type'),
                     }
                     res = handler(job)
+                    status = 'done'
+                    result_payload: Any = res
+                    if isinstance(res, dict) and res.get('status') == 'cancelled':
+                        status = 'cancelled'
+                        result_payload = None
                     self.results[job_id] = {
-                        'status': 'done',
-                        'result': res,
-                        'finished_at': _t.time(),
+                        'status': status,
+                        'result': result_payload,
+                        'finished_at': _time.time(),
                         'type': job.get('type'),
                     }
                 except Exception as e:
-                    import time as _t
                     self.results[job_id] = {
                         'status': 'error',
                         'error': str(e),
-                        'finished_at': _t.time(),
+                        'finished_at': _time.time(),
                         'type': job.get('type'),
                     }
                 finally:

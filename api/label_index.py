@@ -32,9 +32,8 @@ def _read_labels(master_path: str, mode: str = "video") -> List[str]:
                 parts = [p.strip() for p in s.split("|", 1)]
                 labels.append(parts[0] if mode == "video" else parts[-1])
             else:
-                # plain category
-                labels.append(("a video of {}" if mode == "video" else "a photo of {}"))
-                labels[-1] = labels[-1].format(s)
+                # plain category -> convert to CLIP-style prompt
+                labels.append(f"a video of {s}" if mode == "video" else f"a photo of {s}")
     return labels
 
 

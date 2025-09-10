@@ -295,11 +295,35 @@ def _shutdown():
 
 def _handle_job(job: Dict[str, Any]) -> Any:
     if job.get('type') == 'classify_post':
-        # Run Veil classification and update post categories
         from demo import _run_veil_and_get_categories, _load_json, _save_json
         post_path = job['post_path']
         media_path = job['media_path']
-        cats = _run_veil_and_get_categories(media_path, topk=14)
+        
+        if job_queue.is_cancelled(job['id']):
+            if JOBS_COUNT:
+                JOBS_COUNT.labels(type='classify_post', status='cancelled').inc()
+            return {'status': 'cancelled'}
+
+        def is_cancelled() -> bool:
+            return job_queue.is_cancelled(job['id'])
+
+        res = _run_veil_and_get_categories(media_path, topk=14, cancel_check=is_cancelled)
+
+        if isinstance(res, dict) and res.get('error'):
+            if res['error'] == 'cancelled':
+                if JOBS_COUNT:
+                    JOBS_COUNT.labels(type='classify_post', status='cancelled').inc()
+                return {'status': 'cancelled'}
+            if JOBS_COUNT:
+                JOBS_COUNT.labels(type='classify_post', status='error').inc()
+            raise RuntimeError(res['error'])
+
+        if job_queue.is_cancelled(job['id']):
+            if JOBS_COUNT:
+                JOBS_COUNT.labels(type='classify_post', status='cancelled').inc()
+            return {'status': 'cancelled'}
+
+        cats = res
         post = _load_json(post_path)
         post['Category'] = make_category_from_micro(cats)
         _save_json(post_path, post)

@@ -46,12 +46,89 @@ def test_to_category_parser_and_fallback(tmp_path, monkeypatch):
             self.stdout = text
             self.stderr = ''
 
-    def fake_run(cmd, capture_output, text, check, env, cwd=None, timeout=None):
-        assert cwd is not None  # ensure demo passes working directory
-        return FakeRes('Predictions: a video about birds, a photo of foxes')
+    class FakeProc:
+        def __init__(self, text):
+            self._text = text
+            self.returncode = 0
 
-    monkeypatch.setattr(demo.subprocess, 'run', fake_run)
+        def poll(self):
+            return 0
+
+        def communicate(self):
+            return self._text, ''
+
+        def wait(self, timeout=None):
+            return 0
+
+        def terminate(self):
+            pass
+
+        def kill(self):
+            pass
+
+    def fake_popen(cmd, stdout, stderr, text, env, cwd=None):
+        assert cwd is not None  # ensure demo passes working directory
+        return FakeProc('Predictions: a video about birds, a photo of foxes')
+
+    monkeypatch.setattr(demo.subprocess, 'Popen', fake_popen)
     cats = demo._run_veil_and_get_categories('dummy.mp4', topk=5)
     # Should strip prompts and fill to 5 unique entries
     assert 'birds' in cats and 'foxes' in cats
     assert len(cats) == 5
+
+    def test_run_veil_cancelled(monkeypatch):
+    class FakeProc:
+        def __init__(self):
+            self.returncode = 0
+
+        def poll(self):
+            return None
+
+        def communicate(self):
+            return '', ''
+
+        def wait(self, timeout=None):
+            return 0
+
+        def terminate(self):
+            pass
+
+        def kill(self):
+            pass
+
+    def fake_popen(cmd, stdout, stderr, text, env, cwd=None):
+        return FakeProc()
+
+    monkeypatch.setattr(demo.subprocess, 'Popen', fake_popen)
+
+    def cancel_check():
+        return True
+
+    res = demo._run_veil_and_get_categories('dummy.mp4', cancel_check=cancel_check)
+    assert res == {'error': 'cancelled'}
+
+
+def test_run_veil_timeout(monkeypatch):
+    class FakeProc:
+        def __init__(self):
+            self.returncode = 0
+
+        def poll(self):
+            return None
+
+        def communicate(self):
+            return '', ''
+
+        def wait(self, timeout=None):
+            return 0
+
+        def terminate(self):
+            pass
+
+        def kill(self):
+            pass
+
+    monkeypatch.setattr(demo.subprocess, 'Popen', lambda *a, **k: FakeProc())
+    monkeypatch.setenv('KNOT_VEIL_TIMEOUT_SEC', '0')
+    res = demo._run_veil_and_get_categories('dummy.mp4')
+    assert res == {'error': 'timeout'}
