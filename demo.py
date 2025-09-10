@@ -114,7 +114,8 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
         "--ann_agg","mean",
         "--use_whisper","true",
         "--w_video","0.7",
-        "--w_audio","0.3",
+        "--w_speech","0.2",
+        "--w_audio","0.1",
         "--topk",
         str(topk),
     ]
