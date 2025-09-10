@@ -13,7 +13,7 @@ Example:
     --master_labels_file Mesh/mastercategories.txt \
     --use_ann true --ann_k 64 --ann_agg mean \
     --use_whisper true --whisper_model base \
-    --w_video 0.7 --w_audio 0.3 \
+    --w_video 0.7 --w_speech 0.2 --w_audio 0.1 \
     --threshold 0.25
 
 Notes:
@@ -171,23 +171,23 @@ def main() -> None:
     p.add_argument("--image")
     p.add_argument("--master_labels_file", default="Mesh/mastercategories.txt")
     p.add_argument("--model", default="ViT-B/32")
-    p.add_argument("--frames", type=int, default=16)
+    p.add_argument("--frames", type=int, default=8)
     p.add_argument("--topk", type=int, default=5)
     p.add_argument("--threshold", type=float)
 
     # Speech / audio
-    p.add_argument("--use_whisper", default="false")
+    p.add_argument("--use_whisper", default="true")
     p.add_argument("--whisper_model", default="base")
     p.add_argument("--print_event_matches", action="store_true")
 
     # Weights
     p.add_argument("--w_video", type=float, default=0.7)
-    p.add_argument("--w_speech", type=float, default=0.0)
-    p.add_argument("--w_audio", type=float, default=0.3)
+    p.add_argument("--w_speech", type=float, default=0.2)
+    p.add_argument("--w_audio", type=float, default=0.1)
 
     # ANN controls
     p.add_argument("--use_ann", default="true")
-    p.add_argument("--ann_k", type=int, default=64)
+    p.add_argument("--ann_k", type=int, default=32)
     p.add_argument("--ann_agg", choices=["mean","max","softmax"], default="mean")
 
     args = p.parse_args()
