@@ -46,7 +46,8 @@ def test_to_category_parser_and_fallback(tmp_path, monkeypatch):
             self.stdout = text
             self.stderr = ''
 
-    def fake_run(cmd, capture_output, text, check, env):
+    def fake_run(cmd, capture_output, text, check, env, cwd=None, timeout=None):
+        assert cwd is not None  # ensure demo passes working directory
         return FakeRes('Predictions: a video about birds, a photo of foxes')
 
     monkeypatch.setattr(demo.subprocess, 'run', fake_run)

@@ -125,6 +125,7 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
                 text=True,
                 check=True,
                 env=env,
+                cwd=ROOT,
                 timeout=timeout_s,
             )
         except TypeError:
@@ -135,6 +136,7 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
                 text=True,
                 check=True,
                 env=env,
+                cwd=ROOT,
             )
         out = (res.stdout or "") + "\n" + (res.stderr or "")
     except subprocess.TimeoutExpired:
