@@ -25,7 +25,7 @@ def test_strip_prompt_prefix_and_fuse_scores() -> None:
     v = np.array([0.2, 0.8, 0.4], dtype=np.float32)
     s = np.array([0.5, 0.5, 0.5], dtype=np.float32)
     e = np.array([0.1, 0.3, 0.9], dtype=np.float32)
-    out = vr.fuse_scores(v, s, e, w_video=0.7, w_speech=0.2, w_audio=0.1)
+    out = vr.fuse_scores(v, s, e, w_video=0.7, w_speech=0.0, w_audio=0.3)
     # Should have same shape and higher weight on visual dimension
     assert out.shape == v.shape
     # Visual top index should dominate

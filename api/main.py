@@ -48,10 +48,6 @@ POSTS_DIR = os.path.join(MESH_DIR, 'Posts')
 MASTER_PATH = os.path.join(MESH_DIR, 'mastercategories.txt')
 UPLOADS_DIR = os.path.join(MESH_DIR, 'Uploads')
 
-# Ensure Veil/src is importable for YAMNet mapping
-_veil_src = os.path.join(ROOT, 'Veil', 'src')
-if os.path.isdir(_veil_src) and _veil_src not in sys.path:
-    sys.path.insert(0, _veil_src)
 
 app = FastAPI(title="Knot-Labs API")
 
@@ -303,7 +299,7 @@ def _handle_job(job: Dict[str, Any]) -> Any:
         from demo import _run_veil_and_get_categories, _load_json, _save_json
         post_path = job['post_path']
         media_path = job['media_path']
-        cats = _run_veil_and_get_categories(media_path, topk=26)
+        cats = _run_veil_and_get_categories(media_path, topk=14)
         post = _load_json(post_path)
         post['Category'] = make_category_from_micro(cats)
         _save_json(post_path, post)
@@ -670,7 +666,7 @@ def api_health_mongo():
 
 
 @app.get('/classify/ann')
-def api_classify_ann(request: Request, video_path: str, k: int = 10, frames: int = 8, model: str = 'ViT-B/32', stage2: bool = True, use_audio: bool = False, w_video: float = 1.0, w_audio: float = 0.0, agg: str = 'mean'):
+def api_classify_ann(request: Request, video_path: str, k: int = 10, frames: int = 8, model: str = 'ViT-B/32', stage2: bool = True, use_audio: bool = False, w_video: float = 0.7, w_audio: float = 0.3, agg: str = 'mean'):
     _check_rate(request)
     master = MASTER_PATH
     idx = ensure_index(master, out_dir=os.path.join(ROOT, 'indexes'), model_name=model, mode='video')

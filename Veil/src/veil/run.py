@@ -13,7 +13,7 @@ Example:
     --master_labels_file Mesh/mastercategories.txt \
     --use_ann true --ann_k 64 --ann_agg mean \
     --use_whisper true --whisper_model base \
-    --w_video 0.7 --w_speech 0.2 --w_audio 0.1 \
+    --w_video 0.7 --w_audio 0.3 \
     --threshold 0.25
 
 Notes:
@@ -182,8 +182,8 @@ def main() -> None:
 
     # Weights
     p.add_argument("--w_video", type=float, default=0.7)
-    p.add_argument("--w_speech", type=float, default=0.2)
-    p.add_argument("--w_audio", type=float, default=0.1)
+    p.add_argument("--w_speech", type=float, default=0.0)
+    p.add_argument("--w_audio", type=float, default=0.3)
 
     # ANN controls
     p.add_argument("--use_ann", default="true")

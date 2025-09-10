@@ -96,7 +96,7 @@ def create_test_user(username: Optional[str] = None, gender: Optional[str] = Non
     return user
 
 
-def _run_veil_and_get_categories(media_path: str, topk: int = 26) -> List[str]:
+def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
     # Call Veil CLI and parse Predictions line.
     cmd = [
         sys.executable,
@@ -114,8 +114,7 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 26) -> List[str]:
         "--ann_agg","mean",
         "--use_whisper","true",
         "--w_video","0.7",
-        "--w_speech","0.2",
-        "--w_audio","0.1",
+        "--w_audio","0.3",
         "--topk",
         str(topk),
     ]
@@ -223,8 +222,8 @@ def post_and_classify(creator_identifier: Optional[str] = None, media_path: Opti
         pass
     print(f"Created post at {post_path}. Running Veil classification...")
     cats = _run_veil_and_get_categories(media)
-    # Limit Veil classification buckets to macro=2, meso=4, micro=6
-    post["Category"] = make_category_with_limits(cats[:26], macro_n=2, meso_n=4, micro_n=6)
+    # Limit Veil classification buckets to macro=2, meso=4, micro=8
+    post["Category"] = make_category_with_limits(cats[:14], macro_n=2, meso_n=4, micro_n=8)
     _save_json(post_path, post)
     print(f"Updated post category: {post['Category']}")
     return post

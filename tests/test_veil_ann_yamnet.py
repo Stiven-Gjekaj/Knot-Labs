@@ -109,9 +109,9 @@ def test_veil_run_ann_and_yamnet_path(tmp_path, monkeypatch, capsys):
         "--ann_k", "2",
         "--ann_agg", "mean",
         "--use_whisper", "false",
-        "--w_video", "0.9",
+        "--w_video", "0.7",
         "--w_speech", "0.0",
-        "--w_audio", "0.1",
+        "--w_audio", "0.3",
         "--topk", "2",
     ]
     monkeypatch.setattr(sys, "argv", argv)

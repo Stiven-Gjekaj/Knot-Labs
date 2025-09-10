@@ -44,8 +44,7 @@ Everything is Python. One requirements file: `requirements.txt`.
 
 - Veil fusion (ANN + YAMNet)
 
-  - Ensure `Veil/src` is on `PYTHONPATH` when using `-m veil.run`.
-  - `python -m Veil\src\veil\run.py --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt --use_ann true --ann_k 64 --ann_agg mean --use_whisper true --whisper_model base --w_video 0.7 --w_speech 0.2 --w_audio 0.1 --topk 10`
+  - `python -m veil.run --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt --use_ann true --ann_k 64 --ann_agg mean --use_whisper true --whisper_model base --w_video 0.7 --w_audio 0.3 --topk 10`
   - Uses FAISS for ANN when available; falls back to dot product.
   - Audio scoring uses YAMNet by default when `--w_audio > 0`; otherwise audio scores are zeros.
   - Precompute label embeddings once: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
@@ -75,7 +74,7 @@ Everything is Python. One requirements file: `requirements.txt`.
     - `POST /upload` (save media under `Mesh/Uploads`)
     - `GET /uploads/{filename}` (optional; serve uploaded file when enabled)
     - `GET /ping` (simple connectivity check)
-    - `GET /classify/ann?video_path=/abs/path.mp4&k=10&frames=8&model=ViT-B/32&stage2=true&use_audio=false&w_video=1.0&w_audio=0.0` (fast ANN label matching with optional audio fusion)
+    - `GET /classify/ann?video_path=/abs/path.mp4&k=10&frames=8&model=ViT-B/32&stage2=true&use_audio=true&w_video=0.7&w_audio=0.3` (fast ANN label matching with optional audio fusion)
     - `GET /ui` (simple web UI)
   - Optional auth: set `KNOT_API_KEY` to require `X-API-Key` on write endpoints. All endpoints have basic in-memory rate limiting.
 
@@ -124,11 +123,11 @@ Notes
 Posts carry a structured Category object (multi-level, multi-valued):
 
 - Default bucketing (compatibility across code/tests):
-  - macro: top-level labels (list[str], up to 3)
-  - meso: mid-level labels (list[str], up to 8)
-  - micro: fine-grained labels (list[str], up to 15)
+  - macro: top-level labels (list[str], up to 2)
+  - meso: mid-level labels (list[str], up to 4)
+  - micro: fine-grained labels (list[str], up to 8)
 
-Veil demo path: The demo classification path constrains buckets tighter (macro=2, meso=4, micro=6) when writing Category, which improves focus and speeds follow‑on ranking. The generic helpers still produce 3/8/15 unless you opt into the limited helper.
+Veil demo path uses the same limits (macro=2, meso=4, micro=8) when writing Category, which improves focus and speeds follow‑on ranking.
 
 Example:
 
@@ -154,7 +153,7 @@ Example:
 
 ## Components
 
-- Veil: loads labels from the master file; classifies media and returns label scores. See `Veil/src/veil`.
+- Veil: loads labels from the master file; classifies media and returns label scores. See `veil/`.
 - Mesh: JSON-backed Users/Posts (see `Mesh/tools/*`, `Mesh/category.py`, `Mesh/analytics.py`).
 - Drift: ranks candidates; mapping via `Mesh/drift_adapter.py`.
 - Scribe: builds an index from post descriptions + category tokens; backends: BoW TF-IDF (default) or Sentence-Transformers.
@@ -289,8 +288,8 @@ Tip: an example `.env` is included at the repo root. Start the API via the run s
 
 - ModuleNotFoundError: `veil.run` when invoking `python -m veil.run`:
 
-  - Cause: `veil` lives under `Veil/src` and is not installed as a package.
-  - Fix: add `Veil/src` to `PYTHONPATH` before running. PowerShell: `$env:PYTHONPATH = (Resolve-Path 'Veil/src').Path + ';' + $env:PYTHONPATH`; bash/zsh: `export PYTHONPATH=Veil/src:$PYTHONPATH`.
+  - Cause: running outside the project root or missing editable install.
+  - Fix: run commands from the repo root or install with `pip install -e .`.
 
 - torchvision TypeError in classify-ann (resize expects PIL/Tensor):
 

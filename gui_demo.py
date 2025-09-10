@@ -144,8 +144,8 @@ class App:
         ttk.Label(f_post, text="Use Audio (YAMNet)").grid(row=6, column=0, padx=5, pady=5, sticky="e")
         ttk.Checkbutton(f_post, variable=self.use_audio).grid(row=6, column=1, padx=5, pady=5, sticky="w")
         ttk.Label(f_post, text="Weights v/a").grid(row=6, column=2, padx=5, pady=5, sticky="e")
-        self.w_video = ttk.Entry(f_post, width=6); self.w_video.insert(0, "0.9")
-        self.w_audio = ttk.Entry(f_post, width=6); self.w_audio.insert(0, "0.1")
+        self.w_video = ttk.Entry(f_post, width=6); self.w_video.insert(0, "0.7")
+        self.w_audio = ttk.Entry(f_post, width=6); self.w_audio.insert(0, "0.3")
         self.w_video.grid(row=6, column=3, padx=2, pady=5, sticky="w")
         self.w_audio.grid(row=6, column=4, padx=2, pady=5, sticky="w")
         ttk.Button(f_post, text="Classify (ANN)", command=self.on_classify_ann).grid(row=7, column=0, padx=5, pady=5, sticky="w")
@@ -379,9 +379,9 @@ class App:
                         mn, mx = float(x.min(initial=0.0)), float(x.max(initial=0.0))
                         return (x - mn) / (mx - mn + 1e-9)
                     try:
-                        wv = float(self.w_video.get().strip() or '0.9'); wa = float(self.w_audio.get().strip() or '0.1')
+                        wv = float(self.w_video.get().strip() or '0.7'); wa = float(self.w_audio.get().strip() or '0.3')
                     except Exception:
-                        wv, wa = 0.9, 0.1
+                        wv, wa = 0.7, 0.3
                     fused = wv * _mm(Sv) + wa * _mm(Sa)
                     order = _np.argsort(fused)[::-1][: int(k)]
                     top = [(labels[i], float(fused[i]), int(i)) for i in order]
