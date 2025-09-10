@@ -14,3 +14,30 @@ ignore_missing_imports = true
 warn_unused_ignores = true
 strict_optional = false
 
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "knot-labs"
+version = "0.1.0"
+description = "Knot Labs project"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic>=1.10",
+]
+
+[tool.setuptools]
+packages = [
+    "api",
+    "Mesh",
+    "Veil",
+    "Drift",
+    "Scribe",
+    "indexes",
+    "veil",
+]
+
