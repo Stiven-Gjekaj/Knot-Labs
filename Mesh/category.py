@@ -6,9 +6,9 @@ from typing import Dict, List, Any
 def make_category_from_micro(micro: List[str]) -> Dict:
     """Build a Category object with multiple levels from a list of labels.
 
-    - macro: first 3 unique labels (list[str])
-    - meso: next 8 unique labels (list[str])
-    - micro: next 15 unique labels (list[str])
+    - macro: first 2 unique labels (list[str])
+    - meso: next 4 unique labels (list[str])
+    - micro: next 8 unique labels (list[str])
 
     Falls back to 'uncategorized' if empty.
     """
@@ -22,15 +22,15 @@ def make_category_from_micro(micro: List[str]) -> Dict:
             uniq.append(s)
             seen.add(s)
     # slice into macro/meso/micro buckets
-    macro = uniq[:3] if uniq else ["uncategorized"]
-    rest_after_macro = uniq[3:]
-    meso = rest_after_macro[:8] if rest_after_macro else macro
-    rest_after_meso = rest_after_macro[8:]
-    micro_labels = rest_after_meso[:15] if rest_after_meso else []
+    macro = uniq[:2] if uniq else ["uncategorized"]
+    rest_after_macro = uniq[2:]
+    meso = rest_after_macro[:4] if rest_after_macro else macro
+    rest_after_meso = rest_after_macro[4:]
+    micro_labels = rest_after_meso[:8] if rest_after_meso else []
     return {"macro": macro, "meso": meso, "micro": micro_labels}
 
 
-def make_category_with_limits(micro: List[str], macro_n: int = 3, meso_n: int = 8, micro_n: int = 15) -> Dict:
+def make_category_with_limits(micro: List[str], macro_n: int = 2, meso_n: int = 4, micro_n: int = 8) -> Dict:
     """Build a Category object with specific bucket sizes.
 
     This does not affect the default behavior of make_category_from_micro used by tests.

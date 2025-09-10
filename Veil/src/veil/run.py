@@ -171,12 +171,12 @@ def main() -> None:
     p.add_argument("--image")
     p.add_argument("--master_labels_file", default="Mesh/mastercategories.txt")
     p.add_argument("--model", default="ViT-B/32")
-    p.add_argument("--frames", type=int, default=16)
+    p.add_argument("--frames", type=int, default=8)
     p.add_argument("--topk", type=int, default=5)
     p.add_argument("--threshold", type=float)
 
     # Speech / audio
-    p.add_argument("--use_whisper", default="false")
+    p.add_argument("--use_whisper", default="true")
     p.add_argument("--whisper_model", default="base")
     p.add_argument("--print_event_matches", action="store_true")
 
@@ -187,7 +187,7 @@ def main() -> None:
 
     # ANN controls
     p.add_argument("--use_ann", default="true")
-    p.add_argument("--ann_k", type=int, default=64)
+    p.add_argument("--ann_k", type=int, default=32)
     p.add_argument("--ann_agg", choices=["mean","max","softmax"], default="mean")
 
     args = p.parse_args()

@@ -6,8 +6,8 @@ from Mesh.category import make_category_from_micro, ensure_category, category_te
 def test_make_and_ensure_category_from_micro():
     cat = make_category_from_micro(["animals", "pets", "cats", "kittens"])
     assert isinstance(cat["macro"], list)
-    assert cat["macro"][:3] == ["animals", "pets", "cats"]
-    assert isinstance(cat["meso"], list) and cat["meso"] == ["kittens"]
+    assert cat["macro"][:2] == ["animals", "pets"]
+    assert isinstance(cat["meso"], list) and cat["meso"] == ["cats", "kittens"]
     assert isinstance(cat["micro"], list)
     # ensure_category should be idempotent for dict Category
     post = {"Category": cat}
@@ -18,8 +18,8 @@ def test_make_and_ensure_category_from_micro():
 def test_ensure_category_from_legacy_list():
     post = {"Categories": ["animals", "pets", "cats"]}
     out = ensure_category(post)
-    assert isinstance(out["macro"], list) and out["macro"][:3] == ["animals", "pets", "cats"]
-    # meso will be empty since only 3 inputs
+    assert isinstance(out["macro"], list) and out["macro"][:2] == ["animals", "pets"]
+    # meso will contain the remaining label since only 3 inputs
     assert isinstance(out["meso"], list)
 
 

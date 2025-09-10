@@ -17,9 +17,9 @@ def test_make_video_and_save(tmp_path):
     assert post['creator'] == 'creator123'
     assert 'Category' in post and isinstance(post['Category'], dict)
     cat = post['Category']
-    assert isinstance(cat.get('macro'), list) and len(cat['macro']) <= 3
-    assert isinstance(cat.get('meso'), list) and len(cat['meso']) <= 8
-    assert isinstance(cat.get('micro'), list) and len(cat['micro']) <= 15
+    assert isinstance(cat.get('macro'), list) and len(cat['macro']) <= 2
+    assert isinstance(cat.get('meso'), list) and len(cat['meso']) <= 4
+    assert isinstance(cat.get('micro'), list) and len(cat['micro']) <= 8
     out = save_video(post, str(tmp_path))
     data = json.load(open(out, 'r', encoding='utf-8'))
     assert data['postID'] == post['postID']
