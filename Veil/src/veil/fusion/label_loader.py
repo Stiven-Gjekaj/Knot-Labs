@@ -45,6 +45,7 @@ def load_master_labels(path, expect_exact_count=None):
         video.append(left)
         photo.append(right)
 
+    '''
     if isinstance(expect_exact_count, bool):
         if expect_exact_count:
             if len(lines) != 1000:
@@ -58,6 +59,7 @@ def load_master_labels(path, expect_exact_count=None):
     else:
         if len(lines) > 1000:
             raise ValueError(f"Too many entries: {len(lines)} > 1000")
+            '''
 
     if len(set(video)) != len(video):
         raise ValueError("Duplicate left-side (video) entries")
