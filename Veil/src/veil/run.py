@@ -6,15 +6,15 @@ Unified runner for Veil fusion using:
   - Whisper+CLIP (speech)
   - YAMNet (audio events -> label scores)
 
+By default all three modalities are active and the top 14 labels are
+returned (2 macro, 4 meso, 8 micro). ANN retrieval is optional and
+disabled unless ``--use_ann true`` is provided.
+
 Example:
   python -m veil.run \
     --mode video \
     --video path/to/video.mp4 \
-    --master_labels_file Mesh/mastercategories.txt \
-    --use_ann true --ann_k 64 --ann_agg mean \
-    --use_whisper true --whisper_model base \
-    --w_video 0.7 --w_speech 0.2 --w_audio 0.1 \
-    --threshold 0.25
+    --master_labels_file Mesh/mastercategories.txt
 
 Notes:
   - FAISS is used for ANN if installed; otherwise falls back to dot product.
@@ -167,14 +167,18 @@ def _build_label_embeddings(
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Veil fusion runner (CLIP + Whisper + YAMNet + ANN)")
+    p = argparse.ArgumentParser(
+        description=(
+            "Veil fusion runner (CLIP + Whisper + YAMNet; ANN disabled by default)"
+        )
+    )
     p.add_argument("--mode", choices=["video", "image"], required=True)
     p.add_argument("--video")
     p.add_argument("--image")
     p.add_argument("--master_labels_file", default="Mesh/mastercategories.txt")
     p.add_argument("--model", default="ViT-B/32")
     p.add_argument("--frames", type=int, default=8)
-    p.add_argument("--topk", type=int, default=5)
+    p.add_argument("--topk", type=int, default=14)
     p.add_argument("--threshold", type=float)
 
     # Speech / audio
@@ -183,12 +187,12 @@ def main() -> None:
     p.add_argument("--print_event_matches", action="store_true")
 
     # Weights
-    p.add_argument("--w_video", type=float, default=0.7)
-    p.add_argument("--w_speech", type=float, default=0.2)
-    p.add_argument("--w_audio", type=float, default=0.1)
+    p.add_argument("--w_video", type=float, default=0.5)
+    p.add_argument("--w_speech", type=float, default=0.3)
+    p.add_argument("--w_audio", type=float, default=0.2)
 
     # ANN controls
-    p.add_argument("--use_ann", default="true")
+    p.add_argument("--use_ann", default="false")
     p.add_argument("--ann_k", type=int, default=32)
     p.add_argument("--ann_agg", choices=["mean","max","softmax"], default="mean")
 

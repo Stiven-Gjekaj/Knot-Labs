@@ -1,19 +1,17 @@
 from __future__ import annotations
 
 import os
-import sys
 import numpy as np
-
-
-def _add_veil_to_path() -> None:
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    veil_src = os.path.join(root, "Veil", "src")
-    if veil_src not in sys.path:
-        sys.path.insert(0, veil_src)
+import sys
+import types
+import importlib.machinery
 
 
 def test_min_max_norm_and_load_categories() -> None:
-    _add_veil_to_path()
+    if 'cv2' not in sys.modules:
+        cv2_stub = types.ModuleType("cv2")
+        cv2_stub.__spec__ = importlib.machinery.ModuleSpec("cv2", loader=None)
+        sys.modules['cv2'] = cv2_stub
     from veil.utils import min_max_norm, load_categories  # type: ignore
 
     arr = np.array([2.0, 4.0, 6.0], dtype=np.float32)

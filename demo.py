@@ -108,20 +108,10 @@ def _run_veil_and_get_categories(media_path: str, topk: int = 14) -> List[str]:
         media_path,
         "--master_labels_file",
         MASTER_PATH,
-        # Enable ANN fusion by default; YAMNet handles audio
-        "--use_ann","true",
-        "--ann_k","64",
-        "--ann_agg","mean",
-        "--use_whisper","true",
-        "--w_video","0.7",
-        "--w_speech","0.2",
-        "--w_audio","0.1",
         "--topk",
         str(topk),
     ]
     env = os.environ.copy()
-    veil_src = os.path.join(ROOT, "Veil", "src")
-    env["PYTHONPATH"] = (veil_src + os.pathsep + env.get("PYTHONPATH", ""))
     # Run Veil with a timeout to avoid hanging jobs
     try:
         timeout_s = int(os.environ.get("KNOT_VEIL_TIMEOUT_SEC", "180"))
