@@ -1,0 +1,43 @@
+{
+  "postID": "104359d927734fc297d875bfa0f6f80e",
+  "creator": "c338bc76fc224ec0ae01dd5e95e4d65c",
+  "description": "Description Here",
+  "Score": 0.0,
+  "Category": {
+    "macro": [
+      "set index articles on cars",
+      "lists of vehicles by manufacturer"
+    ],
+    "meso": [
+      "car classifications",
+      "automotive industry",
+      "vehicles by century of introduction",
+      "vehicles by media"
+    ],
+    "micro": [
+      "kit cars",
+      "art vehicles",
+      "adapted automobiles",
+      "works based on manga",
+      "set index articles on manga",
+      "manga taish",
+      "manga debuts by decade",
+      "akita shoten manga"
+    ]
+  },
+  "country": "IT",
+  "created_at": 1757502571.2701216,
+  "isPayPerView": false,
+  "PostType": "Video",
+  "isPromotion": false,
+  "isFlagged": false,
+  "isActive": true,
+  "isDeleted": false,
+  "payPerViewCount": 0,
+  "likesCount": 0,
+  "commentsCount": 0,
+  "giftsCount": 0,
+  "isSuggested": false,
+  "shareCount": 0,
+  "star": 0
+}
