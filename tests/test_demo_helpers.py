@@ -28,7 +28,7 @@ def test_bump_user_after_action_basic():
 
 
 def test_to_category_parser_and_fallback(tmp_path, monkeypatch):
-    # Expose helper by importing function indirectly via demo module
+
     # Create a small master file
     master = os.path.join(tmp_path, 'master.txt')
     with open(master, 'w', encoding='utf-8') as f:
@@ -41,71 +41,46 @@ def test_to_category_parser_and_fallback(tmp_path, monkeypatch):
     # Patch MASTER_PATH
     monkeypatch.setattr(demo, 'MASTER_PATH', master)
 
-    class FakeRes:
-        def __init__(self, text):
-            self.stdout = text
-            self.stderr = ''
-
-    class FakeProc:
+    # --- Normal path ---
+    class FakeProcNormal:
         def __init__(self, text):
             self._text = text
             self.returncode = 0
+        def poll(self): return 0
+        def communicate(self): return self._text, ''
+        def wait(self, timeout=None): return 0
+        def terminate(self): pass
+        def kill(self): pass
 
-        def poll(self):
-            return 0
+    def fake_popen_normal(cmd, stdout, stderr, text, env, cwd=None):
+        return FakeProcNormal('Predictions: a video about birds, a photo of foxes')
 
-        def communicate(self):
-            return self._text, ''
-
-        def wait(self, timeout=None):
-            return 0
-
-        def terminate(self):
-            pass
-
-        def kill(self):
-            pass
-
-    def fake_popen(cmd, stdout, stderr, text, env, cwd=None):
-        assert cwd is not None  # ensure demo passes working directory
-        return FakeProc('Predictions: a video about birds, a photo of foxes')
-
-    monkeypatch.setattr(demo.subprocess, 'Popen', fake_popen)
+    monkeypatch.setattr(demo.subprocess, 'Popen', fake_popen_normal)
     cats = demo._run_veil_and_get_categories('dummy.mp4', topk=5)
-    # Should strip prompts and fill to 5 unique entries
     assert 'birds' in cats and 'foxes' in cats
     assert len(cats) == 5
 
-    def test_run_veil_cancelled(monkeypatch):
-    class FakeProc:
+    # --- Cancelled path ---
+    class FakeProcCancelled:
         def __init__(self):
             self.returncode = 0
+        def poll(self): return None  # process is "still running"
+        def communicate(self): return '', ''
+        def wait(self, timeout=None): return 0
+        def terminate(self): pass
+        def kill(self): pass
 
-        def poll(self):
-            return None
+    def fake_popen_cancelled(cmd, stdout, stderr, text, env, cwd=None):
+        return FakeProcCancelled()
 
-        def communicate(self):
-            return '', ''
-
-        def wait(self, timeout=None):
-            return 0
-
-        def terminate(self):
-            pass
-
-        def kill(self):
-            pass
-
-    def fake_popen(cmd, stdout, stderr, text, env, cwd=None):
-        return FakeProc()
-
-    monkeypatch.setattr(demo.subprocess, 'Popen', fake_popen)
+    monkeypatch.setattr(demo.subprocess, 'Popen', fake_popen_cancelled)
 
     def cancel_check():
-        return True
+        return True  # trigger immediate cancel
 
     res = demo._run_veil_and_get_categories('dummy.mp4', cancel_check=cancel_check)
     assert res == {'error': 'cancelled'}
+
 
 
 def test_run_veil_timeout(monkeypatch):
