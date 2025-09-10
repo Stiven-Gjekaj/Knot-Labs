@@ -441,8 +441,8 @@ function showToast(level, msg, timeoutMs = 3500) {
       const s2 = document.getElementById('clsStage2').checked;
       const agg = document.getElementById('clsAgg').value || 'mean';
       const useAudio = document.getElementById('clsUseAudio').checked;
-      const wv = parseFloat(document.getElementById('clsWVideo').value || '0.7');
-      const wa = parseFloat(document.getElementById('clsWAudio').value || '0.3');
+      const wv = parseFloat(document.getElementById('clsWVideo').value || '0.5');
+      const wa = parseFloat(document.getElementById('clsWAudio').value || '0.2');
       try { localStorage.setItem('knot_audio_use', useAudio ? '1':'0'); localStorage.setItem('knot_audio_wv', String(wv)); localStorage.setItem('knot_audio_wa', String(wa)); } catch {}
       if (!p){ log('error','Classify: set Media Path or Upload'); return; }
       const url = '/classify/ann?video_path=' + encodeURIComponent(p) + '&k=' + k + '&frames=' + f + '&model=' + encodeURIComponent(m) + '&stage2=' + (s2?'true':'false') + '&agg=' + encodeURIComponent(agg) + '&use_audio=' + (useAudio?'true':'false') + '&w_video=' + encodeURIComponent(wv) + '&w_audio=' + encodeURIComponent(wa);
@@ -467,8 +467,8 @@ function showToast(level, msg, timeoutMs = 3500) {
       const s2 = document.getElementById('clsStage2').checked;
       const agg = document.getElementById('clsAgg').value || 'mean';
       const useAudio = document.getElementById('clsUseAudio').checked;
-      const wv = parseFloat(document.getElementById('clsWVideo').value || '0.7');
-      const wa = parseFloat(document.getElementById('clsWAudio').value || '0.3');
+      const wv = parseFloat(document.getElementById('clsWVideo').value || '0.5');
+      const wa = parseFloat(document.getElementById('clsWAudio').value || '0.2');
       const qs = '/classify/ann?video_path=' + encodeURIComponent(p) + '&k=' + k + '&frames=' + f + '&model=' + encodeURIComponent(m) + '&stage2=' + (s2?'true':'false') + '&agg=' + encodeURIComponent(agg) + '&use_audio=' + (useAudio?'true':'false') + '&w_video=' + encodeURIComponent(wv) + '&w_audio=' + encodeURIComponent(wa);
       const url = originBase() + qs;
       const parts = ['curl \"' + url + '\"'].concat(curlHeaders(false));
@@ -570,8 +570,8 @@ function showToast(level, msg, timeoutMs = 3500) {
       </div>
       <div class="row"><label>Use Audio (YAMNet)</label><input type="checkbox" id="clsUseAudio" checked/></div>
       <div class="row"><label>Weights (video / audio)</label>
-        <input type="number" id="clsWVideo" value="0.7" min="0" max="1" step="0.1" />
-        <input type="number" id="clsWAudio" value="0.3" min="0" max="1" step="0.1" />
+        <input type="number" id="clsWVideo" value="0.5" min="0" max="1" step="0.1" />
+        <input type="number" id="clsWAudio" value="0.2" min="0" max="1" step="0.1" />
       </div>
       <div class="row">
         <button onclick="classifyAnn()">Classify</button><button onclick="copyCurlClassify()">Copy curl</button>

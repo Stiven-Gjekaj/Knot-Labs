@@ -16,17 +16,6 @@ from Mesh.tools.gen_user import GENDERS as USER_GENDERS  # type: ignore
 from Mesh.tools.gen_videos import COUNTRIES as POST_COUNTRIES  # type: ignore
 
 
-def _ensure_paths_on_sys_path() -> None:
-    # Ensure Veil src path is available for imports and subprocess calls
-    root = os.path.dirname(os.path.abspath(__file__))
-    veil_src = os.path.join(root, 'Veil', 'src')
-    if os.path.isdir(veil_src):
-        if veil_src not in (os.environ.get('PYTHONPATH','').split(os.pathsep)):
-            os.environ['PYTHONPATH'] = veil_src + os.pathsep + os.environ.get('PYTHONPATH','')
-        if veil_src not in sys.path:
-            sys.path.insert(0, veil_src)
-
-
 class TextRedirector:
     def __init__(self, widget: tk.Text):
         self.widget = widget
@@ -48,7 +37,6 @@ def _notify(text_widget: tk.Text, text: str) -> None:
 
 class App:
     def __init__(self, root: tk.Tk):
-        _ensure_paths_on_sys_path()
         self.root = root
         root.title("Knot-Labs GUI")
         root.geometry("1000x720")
@@ -144,8 +132,8 @@ class App:
         ttk.Label(f_post, text="Use Audio (YAMNet)").grid(row=6, column=0, padx=5, pady=5, sticky="e")
         ttk.Checkbutton(f_post, variable=self.use_audio).grid(row=6, column=1, padx=5, pady=5, sticky="w")
         ttk.Label(f_post, text="Weights v/a").grid(row=6, column=2, padx=5, pady=5, sticky="e")
-        self.w_video = ttk.Entry(f_post, width=6); self.w_video.insert(0, "0.7")
-        self.w_audio = ttk.Entry(f_post, width=6); self.w_audio.insert(0, "0.3")
+        self.w_video = ttk.Entry(f_post, width=6); self.w_video.insert(0, "0.5")
+        self.w_audio = ttk.Entry(f_post, width=6); self.w_audio.insert(0, "0.2")
         self.w_video.grid(row=6, column=3, padx=2, pady=5, sticky="w")
         self.w_audio.grid(row=6, column=4, padx=2, pady=5, sticky="w")
         ttk.Button(f_post, text="Classify (ANN)", command=self.on_classify_ann).grid(row=7, column=0, padx=5, pady=5, sticky="w")
@@ -379,9 +367,9 @@ class App:
                         mn, mx = float(x.min(initial=0.0)), float(x.max(initial=0.0))
                         return (x - mn) / (mx - mn + 1e-9)
                     try:
-                        wv = float(self.w_video.get().strip() or '0.7'); wa = float(self.w_audio.get().strip() or '0.3')
+                        wv = float(self.w_video.get().strip() or '0.5'); wa = float(self.w_audio.get().strip() or '0.2')
                     except Exception:
-                        wv, wa = 0.7, 0.3
+                        wv, wa = 0.5, 0.2
                     fused = wv * _mm(Sv) + wa * _mm(Sa)
                     order = _np.argsort(fused)[::-1][: int(k)]
                     top = [(labels[i], float(fused[i]), int(i)) for i in order]
@@ -618,7 +606,6 @@ class App:
 
 
 def main() -> None:
-    _ensure_paths_on_sys_path()
     core._ensure_dirs()
 
     root = tk.Tk()

@@ -6,15 +6,7 @@ import types
 import numpy as np
 
 
-def _add_veil_to_path() -> None:
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    veil_src = os.path.join(root, "Veil", "src")
-    if veil_src not in sys.path:
-        sys.path.insert(0, veil_src)
-
-
 def test_veil_run_ann_and_yamnet_path(tmp_path, monkeypatch, capsys):
-    _add_veil_to_path()
 
     # Stub 'clip' before importing veil.run (avoid heavy deps)
     if 'clip' not in sys.modules:
@@ -34,6 +26,11 @@ def test_veil_run_ann_and_yamnet_path(tmp_path, monkeypatch, capsys):
         stub.tokenize = _tok
         stub.load = _load
         sys.modules['clip'] = stub  # type: ignore
+    if 'cv2' not in sys.modules:
+        import importlib.machinery
+        cv2_stub = types.ModuleType("cv2")
+        cv2_stub.__spec__ = importlib.machinery.ModuleSpec("cv2", loader=None)
+        sys.modules['cv2'] = cv2_stub
 
     import veil.run as vr  # type: ignore
 
@@ -109,9 +106,9 @@ def test_veil_run_ann_and_yamnet_path(tmp_path, monkeypatch, capsys):
         "--ann_k", "2",
         "--ann_agg", "mean",
         "--use_whisper", "true",
-        "--w_video", "0.7",
-        "--w_speech", "0.2",
-        "--w_audio", "0.1",
+        "--w_video", "0.5",
+        "--w_speech", "0.3",
+        "--w_audio", "0.2",
         "--topk", "2",
     ]
     monkeypatch.setattr(sys, "argv", argv)

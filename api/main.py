@@ -666,7 +666,7 @@ def api_health_mongo():
 
 
 @app.get('/classify/ann')
-def api_classify_ann(request: Request, video_path: str, k: int = 10, frames: int = 8, model: str = 'ViT-B/32', stage2: bool = True, use_audio: bool = False, w_video: float = 0.7, w_speech: float = 0.2, w_audio: float = 0.1, agg: str = 'mean'):
+def api_classify_ann(request: Request, video_path: str, k: int = 10, frames: int = 8, model: str = 'ViT-B/32', stage2: bool = True, use_audio: bool = False, w_video: float = 0.5, w_speech: float = 0.3, w_audio: float = 0.2, agg: str = 'mean'):
     _check_rate(request)
     master = MASTER_PATH
     idx = ensure_index(master, out_dir=os.path.join(ROOT, 'indexes'), model_name=model, mode='video')
