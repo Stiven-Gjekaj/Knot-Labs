@@ -56,6 +56,7 @@ Everything is Python. One requirements file: `requirements.txt`.
 
 - Veil fusion (ANN + YAMNet)
 
+  - `set PYTHONPATH=DIRECTORY\Knot-Labs\Veil\src;%PYTHONPATH%`
   - `python -m veil.run --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt --use_ann true --ann_k 64 --ann_agg mean --use_whisper true --whisper_model base --w_video 0.7 --w_audio 0.3 --topk 10`
   - Uses FAISS for ANN when available; falls back to dot product.
   - Audio scoring uses YAMNet by default when `--w_audio > 0`; otherwise audio scores are zeros.
