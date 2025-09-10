@@ -534,70 +534,11 @@ function showToast(level, msg, timeoutMs = 3500) {
       <div class="row"><label>Compact Mode</label>
         <input type="checkbox" id="compactToggle" onchange="onCompactToggle(this)" />
       </div>
-      <div class="row"><label>Autoload Categories</label>
-        <input type="checkbox" id="autoTree" onchange="onAutoTreeToggle(this)" />
-      </div>
       <div class="row">
         <button onclick="testApi()">Test API</button>
         <button onclick="testCors()">Test CORS</button>
-        <button onclick="testRedis()">Test Redis</button>
         <button onclick="resetUI()">Reset UI</button>
       </div>
-    </fieldset>
-
-    <div class="grid">
-    <fieldset>
-      <legend>Classify (ANN)</legend>
-      <div class="row"><label>Media Path (server path)</label><input type="text" id="clsMedia" placeholder="/path/to/video" /></div>
-      <div class="row"><label>Top K</label><input type="number" id="clsK" value="10" min="1" /></div>
-      <div class="row"><label>Frames</label><input type="number" id="clsFrames" value="8" min="1" /></div>
-      <div class="row"><label>Model</label>
-        <select id="clsModel">
-          <option value="ViT-B/32" selected>ViT-B/32</option>
-          <option value="ViT-B/16">ViT-B/16</option>
-          <option value="ViT-L/14">ViT-L/14</option>
-          <option value="ViT-H/14">ViT-H/14 (OpenCLIP)</option>
-          <option value="ViT-g/14">ViT-g/14 (OpenCLIP)</option>
-        </select>
-      </div>
-      <div class="row"><label>Stage2 re-rank</label><input type="checkbox" id="clsStage2" checked /></div>
-      <div class="row"><label>Aggregation</label>
-        <select id="clsAgg">
-          <option value="mean" selected>mean</option>
-          <option value="max">max</option>
-          <option value="softmax">softmax</option>
-        </select>
-      </div>
-      <div class="row"><label>Use Audio (YAMNet)</label><input type="checkbox" id="clsUseAudio" checked/></div>
-      <div class="row"><label>Weights (video / audio)</label>
-        <input type="number" id="clsWVideo" value="0.5" min="0" max="1" step="0.1" />
-        <input type="number" id="clsWAudio" value="0.2" min="0" max="1" step="0.1" />
-      </div>
-      <div class="row">
-        <button onclick="classifyAnn()">Classify</button><button onclick="copyCurlClassify()">Copy curl</button>
-      </div>
-      <div id="clsResults" class="row"></div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Categories Tree</legend>
-      <div class="row">
-        <button onclick="loadCategoriesTree()">Load Categories</button>
-      </div>
-      <div id="catTree" class="row" style="max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--surface);"></div>
-      <div class="muted">Fetches <code>/categories/tree</code> and renders macros → mesos → micros. If the tree is missing, the API builds it on-demand.</div>
-    </fieldset>
-    <fieldset>
-      <legend>Redis KV (demo)</legend>
-      <div class="row"><label>Key</label><input type="text" id="kvKey" placeholder="demo:key" /></div>
-      <div class="row"><label>Value</label><input type="text" id="kvValue" placeholder="value" /></div>
-      <div class="row"><label>TTL (seconds)</label><input type="number" id="kvTtl" min="0" placeholder="optional" /></div>
-      <div class="row">
-        <button onclick="redisSet()">Set</button><button onclick="copyCurlKvSet()">Copy curl</button>
-        <button onclick="redisGet()">Get</button><button onclick="copyCurlKvGet()">Copy curl</button>
-        <button onclick="redisDel()">Delete</button><button onclick="copyCurlKvDel()">Copy curl</button>
-      </div>
-      <div class="muted">Note: Set/Delete require API key if server enforces one.</div>
     </fieldset>
 
     <fieldset>
@@ -630,7 +571,7 @@ function showToast(level, msg, timeoutMs = 3500) {
       <div class="row"><label>Viewer ID</label><input type="text" id="viewer" /></div>
       <div class="row"><label>Author ID</label><input type="text" id="author" /></div>
       <div class="row"><label>Post ID</label><input type="text" id="postId" /></div>
-      <div class="row"><label>Gift Amount</label><input type="number" id="giftAmt" value="1" min="1" /></div>
+      <div class="row"><label>Amount</label><input type="number" id="giftAmt" value="1" min="1" /></div>
       <div class="row">
         <button onclick="interact('like')">Like</button>
         <button onclick="interact('comment')">Comment</button>

@@ -1,0 +1,43 @@
+{
+  "postID": "ce5ee2794b4f4139a209dfa7eabb4fd8",
+  "creator": "36f60694907240aea3ad8905bbc14b19",
+  "description": "Second video",
+  "Score": 0.0,
+  "Category": {
+    "macro": [
+      "cuisine by dependent territory",
+      "cuisine by culture"
+    ],
+    "meso": [
+      "creamy dishes",
+      "culinary arts",
+      "breakfast television",
+      "food preparation utensils by country"
+    ],
+    "micro": [
+      "chefs by nationality",
+      "barbecue",
+      "foods by cooking technique",
+      "basque language education",
+      "airline catering",
+      "food security",
+      "cooking schools by continent",
+      "cooking schools by country"
+    ]
+  },
+  "country": "NG",
+  "created_at": 1757512071.4098957,
+  "isPayPerView": false,
+  "PostType": "Video",
+  "isPromotion": false,
+  "isFlagged": false,
+  "isActive": true,
+  "isDeleted": false,
+  "payPerViewCount": 0,
+  "likesCount": 0,
+  "commentsCount": 0,
+  "giftsCount": 0,
+  "isSuggested": false,
+  "shareCount": 0,
+  "star": 0
+}
