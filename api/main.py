@@ -59,9 +59,9 @@ REQ_COUNT = Counter('knot_requests_total', 'Total API requests', ['path', 'metho
 REQ_LAT = Histogram('knot_request_latency_seconds', 'Request latency', ['path', 'method']) if Histogram else None
 JOBS_COUNT = Counter('knot_jobs_total', 'Jobs processed', ['type', 'status']) if Counter else None
 
-# Static UI mount (simple web UI under /ui)
+# Static UI mount (serve the simple Knot UI under /ui)
 try:
-    static_dir = os.path.join(ROOT, 'api', 'static')
+    static_dir = os.path.join(ROOT, 'simple_site', 'static')
     if os.path.isdir(static_dir):
         app.mount('/ui', StaticFiles(directory=static_dir, html=True), name='ui')
 except Exception:
