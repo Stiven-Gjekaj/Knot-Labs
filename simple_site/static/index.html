@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Simple Knot UI</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    section { margin-bottom: 20px; }
+    pre { background: #f0f0f0; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Simple Knot UI</h1>
+
+  <section>
+    <h2>Test API</h2>
+    <button onclick="testAPI()">Test</button>
+    <pre id="test-api-result"></pre>
+  </section>
+
+  <section>
+    <h2>Test CORS</h2>
+    <button onclick="testCORS()">Test</button>
+    <pre id="test-cors-result"></pre>
+  </section>
+
+  <section>
+    <h2>Log In</h2>
+    <input id="login-id" placeholder="userID" />
+    <input id="login-username" placeholder="username" />
+    <button onclick="login()">Log In</button>
+    <pre id="login-result"></pre>
+  </section>
+
+  <section>
+    <h2>Post</h2>
+    <input id="post-user" placeholder="userID" />
+    <input type="file" id="post-file" />
+    <button onclick="uploadPost()">Upload</button>
+    <pre id="post-result"></pre>
+  </section>
+
+  <section>
+    <h2>Interact</h2>
+    <input id="interact-viewer" placeholder="viewerID" />
+    <input id="interact-post" placeholder="postID" />
+    <select id="interact-action">
+      <option value="like">like</option>
+      <option value="comment">comment</option>
+      <option value="gift">gift</option>
+      <option value="share">share</option>
+    </select>
+    <input id="interact-amount" type="number" value="1" />
+    <button onclick="interact()">Send</button>
+    <pre id="interact-result"></pre>
+  </section>
+
+  <section>
+    <h2>Search</h2>
+    <input id="search-q" placeholder="query" />
+    <button onclick="search()">Search</button>
+    <pre id="search-result"></pre>
+  </section>
+
+  <section>
+    <h2>Feed</h2>
+    <button onclick="feed()">Load</button>
+    <pre id="feed-result"></pre>
+  </section>
+
+  <section>
+    <h2>Logs</h2>
+    <button onclick="logs()">Fetch</button>
+    <pre id="logs-result"></pre>
+  </section>
+
+<script>
+const base = '';
+function testAPI(){fetch(base+'/test_api').then(r=>r.json()).then(d=>{document.getElementById('test-api-result').textContent=JSON.stringify(d,null,2);});}
+function testCORS(){fetch(base+'/test_cors').then(r=>r.json()).then(d=>{document.getElementById('test-cors-result').textContent=JSON.stringify(d,null,2);});}
+function login(){fetch(base+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userID:document.getElementById('login-id').value,username:document.getElementById('login-username').value})}).then(r=>r.json()).then(d=>{document.getElementById('login-result').textContent=JSON.stringify(d,null,2);});}
+function uploadPost(){const fd=new FormData();fd.append('userID',document.getElementById('post-user').value);fd.append('file',document.getElementById('post-file').files[0]);fetch(base+'/post',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{document.getElementById('post-result').textContent=JSON.stringify(d,null,2);});}
+function interact(){const payload={viewerID:document.getElementById('interact-viewer').value,videoID:document.getElementById('interact-post').value,action:document.getElementById('interact-action').value,amount:parseInt(document.getElementById('interact-amount').value||'1',10)};fetch(base+'/interact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).then(d=>{document.getElementById('interact-result').textContent=JSON.stringify(d,null,2);});}
+function search(){const q=document.getElementById('search-q').value;fetch(base+'/search?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{document.getElementById('search-result').textContent=JSON.stringify(d,null,2);});}
+function feed(){fetch(base+'/feed').then(r=>r.json()).then(d=>{document.getElementById('feed-result').textContent=JSON.stringify(d,null,2);});}
+function logs(){fetch(base+'/logs').then(r=>r.json()).then(d=>{document.getElementById('logs-result').textContent=JSON.stringify(d,null,2);});}
+</script>
+</body>
+</html>
