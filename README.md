@@ -87,36 +87,6 @@ All of this runs entirely on your computer - no cloud services required, your da
 4. **Try Searching** - Search for topics like "cats", "sports", or "technology"
 5. **Upload Media** - Drop a video or image to see automatic classification in action
 
-## Use Cases
-
-### For Educators & Students
-
-- Learn how social media algorithms work
-- Understand content recommendation systems
-- Explore AI-powered media classification
-- Study data structures and APIs
-
-### For Developers
-
-- Prototype social features without cloud dependencies
-- Test content moderation strategies
-- Build custom social experiences
-- Integrate with existing applications
-
-### For Researchers
-
-- Analyze recommendation algorithms
-- Study content categorization systems
-- Experiment with ranking strategies
-- Test algorithmic transparency approaches
-
-### For Privacy Advocates
-
-- Run a completely local social platform
-- Keep all data under your control
-- No tracking, no surveillance
-- Full transparency in how feeds are generated
-
 ## System Requirements
 
 - **Operating System**: Windows 10+, macOS 10.15+, or Linux
