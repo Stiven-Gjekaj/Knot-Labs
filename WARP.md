@@ -2,11 +2,11 @@
 
 This file provides guidance to WARP (warp.dev) when working with code in this repository.
 
-## Core Commands
+## Core Development Commands
 
-### Environment Setup
+### Setup and Installation
 ```bash
-# Windows PowerShell (recommended)
+# PowerShell (Windows)
 powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 
 # Or using Make
@@ -17,225 +17,229 @@ python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-### Starting the API Server
+### Running the API Server
 ```bash
-# Windows (recommended - uses venv automatically)
-scripts\start-api.bat
-
 # PowerShell
 powershell -ExecutionPolicy Bypass -File scripts\start-api.ps1
 
-# Direct command (from repo root)
-.venv\Scripts\python.exe -m uvicorn --env-file .env api.main:app --reload
+# Windows CMD
+scripts\start-api.bat
 
-# Using Make
-make run
+# Or directly with uvicorn
+.venv\Scripts\python.exe -m uvicorn --env-file .env api.main:app --reload
+```
+
+### Building Category Labels
+```bash
+# Build hierarchical categories from Wikipedia (recommended)
+.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --count 200
+
+# Build with fixed counts per level
+.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --mesos 3 --micros 3
+
+# Precompute label embeddings for fast ANN classification
+python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes
 ```
 
 ### Running Tests
 ```bash
 # Run all tests
-.venv\Scripts\python.exe -m pytest -q
+pytest -q
 
-# Run specific test file
-.venv\Scripts\python.exe -m pytest tests/test_api_auth_rate.py -v
+# Run specific test module
+pytest tests/test_drift_ranker.py -v
 
-# Run tests with coverage
-.venv\Scripts\python.exe -m pytest --cov=api --cov=Mesh --cov=Veil --cov=Drift --cov=Scribe
+# Run with coverage
+pytest --cov=. --cov-report=html
 ```
 
-### Linting and Formatting
+### GUI and Demo Commands
 ```bash
-# Format with Black
-.venv\Scripts\python.exe -m black . --line-length 100
+# Run GUI demo (Tkinter)
+python gui_demo.py
 
-# Lint with Ruff
-.venv\Scripts\python.exe -m ruff check .
+# Run CLI demo
+python demo.py
 
-# Type checking with MyPy
-.venv\Scripts\python.exe -m mypy api Mesh Veil Drift Scribe
-```
-
-### Building Category Labels
-```bash
-# Build flat categories (1000 unique)
-.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --count 1000
-
-# Build tree from Wikipedia (200 total micros)
-.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --count 200
-
-# Build with fixed counts per level
-.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --mesos 3 --micros 3
-```
-
-### Label Embeddings for Fast ANN
-```bash
-# Precompute embeddings (recommended before first use)
-python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes
-
-# With specific model
-python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video
-```
-
-### Running Demos
-```bash
-# CLI demo
-.venv\Scripts\python.exe demo.py
-
-# GUI demo (Tkinter)
-.venv\Scripts\python.exe gui_demo.py
-
-# CLI with specific actions
-.venv\Scripts\python.exe cli_demo.py classify-ann --video /path/to/video.mp4 --k 10
+# Run classification CLI
+python cli_demo.py classify-ann --video /path/to/video.mp4 --k 10
 ```
 
 ## Architecture Overview
 
 ### Component Structure
 
-The codebase implements a modular social media stack with four main components:
+**Knot-Labs** is a modular social media backend prototype with four main components:
 
-1. **Veil** (`Veil/src/veil/`) - Zero-shot media classifier
-   - `video_clip.py`, `image_clip.py` - CLIP-based visual classification
-   - `audio_whisper.py` - Speech-to-text processing
-   - `fusion/yamnet_events.py` - Audio event detection
-   - `fusion/label_loader.py` - Label management and prompt engineering
-   - `run.py` - Main fusion pipeline orchestrating all modalities
+1. **Veil** (`Veil/src/veil/`) - Media Classification System
+   - Multi-modal classifier using CLIP (video/image), Whisper (speech), and YAMNet (audio)
+   - Entry point: `veil.run` module for unified fusion
+   - Key classes: `classify_video_clip()`, `classify_image_clip()`
+   - Supports ANN (Approximate Nearest Neighbor) search via FAISS when available
 
-2. **Mesh** (`Mesh/`) - Data layer and storage
-   - `schemas.py` - Pydantic models for Users, Posts, Categories
-   - `sqlite_store.py` - Local SQLite persistence
-   - `mongo_store.py` - MongoDB integration (optional)
-   - `category.py` - Category system (macro/meso/micro hierarchy)
-   - `analytics.py` - Category-based analytics
-   - `tools/` - Data generation and management utilities
+2. **Mesh** (`Mesh/`) - Data Storage Layer
+   - JSON-backed storage for users and posts with optional MongoDB/SQLite persistence
+   - Category system with hierarchical structure (macro → meso → micro)
+   - Analytics and category management via `Mesh/analytics.py` and `Mesh/category.py`
+   - Tools for data generation in `Mesh/tools/`
 
-3. **Drift** (`Drift/`) - Feed ranking algorithm
-   - `drift_ranker.py` - Core ranking logic with signal weights
-   - `models.py` - Ranking request/response models
-   - `app.py` - Standalone ranking service
-   - Uses signals: likes, comments, shares, gifts, recency, category affinity
+3. **Drift** (`Drift/`) - Feed Ranking Engine
+   - Sophisticated ranking algorithm with configurable weights in `drift_ranker.py`
+   - Considers engagement signals, recency, user preferences, and content diversity
+   - Enforces variety constraints (creator limits, category runs)
+   - Integration via `Mesh/drift_adapter.py`
 
-4. **Scribe** (`Scribe/`) - Search functionality
-   - `search.py` - Dual backend: BoW TF-IDF or Sentence-Transformers
-   - Indexes post descriptions + category tokens
+4. **Scribe** (`Scribe/`) - Search System
+   - Full-text search over posts using TF-IDF or Sentence-Transformers
+   - Indexes post descriptions and category tokens
+   - Backend-agnostic search interface
 
-### API Layer (`api/`)
+### API Architecture (`api/main.py`)
 
-FastAPI server orchestrating all components:
-- `main.py` - Core endpoints and middleware
-- `jobs.py` - Background job queue (classification tasks)
-- `label_index.py` - Label embedding management for ANN search
+The FastAPI application provides RESTful endpoints with:
+- Optional authentication via `KNOT_API_KEY`
+- Rate limiting (memory or Redis-backed)
+- Caching layer with configurable TTL
+- Prometheus metrics (`/metrics`)
+- CORS support for cross-origin requests
+- Static UI serving at `/ui`
 
 Key endpoints:
-- User/Post CRUD: `POST /users`, `POST /posts`
-- Ranking: `GET /rank?user=<id>&k=20`
-- Search: `GET /search?q=...&backend=bow|st`
-- Classification: `GET /classify/ann?video_path=...`
-- Analytics: `GET /analytics/categories`
+- User/Post CRUD operations
+- `/rank` - Feed ranking with Drift
+- `/search` - Text search with Scribe
+- `/classify/ann` - Fast media classification with Veil
+- `/analytics/categories` - Category statistics
+- `/cache/flush` - Admin cache management
 
 ### Data Flow
 
-1. **Media Upload** → `POST /upload` → saved to `Mesh/Uploads/`
-2. **Post Creation** → `POST /posts` → triggers Veil classification if media_path provided
-3. **Classification** → Veil fusion (CLIP + Whisper + YAMNet) → Category object (macro/meso/micro)
-4. **Storage** → JSON files + optional SQLite/MongoDB persistence
-5. **Ranking** → Drift scores candidates using engagement signals + category affinity
-6. **Search** → Scribe indexes descriptions + categories for retrieval
+1. **Content Creation**: Users/posts created via API or GUI → stored in JSON (Mesh/) → optionally persisted to MongoDB
+2. **Classification**: Media files → Veil multi-modal analysis → structured Category object (macro/meso/micro levels)
+3. **Ranking**: User profile + candidate posts → Drift scoring → variety-constrained feed
+4. **Search**: Query → Scribe indexing → ranked results with optional caching
 
 ### Category System
 
-Hierarchical label structure stored in `Mesh/mastercategories.txt`:
-- **Macro**: Top-level categories (e.g., "Gaming", "Music", "Sports")
-- **Meso**: Mid-level subcategories 
-- **Micro**: Fine-grained specific topics
+Categories follow a three-tier hierarchy:
+- **Macro**: Top-level categories (2 max per post)
+- **Meso**: Mid-level subcategories (4 max per post)
+- **Micro**: Fine-grained topics (8 max per post)
 
-Tree builder fetches from Wikipedia with fallback to offline seeds.
-Posts carry structured Category objects for multi-level classification.
+The master category file (`Mesh/mastercategories.txt`) contains Veil-compatible prompts that can be built from Wikipedia or offline seeds.
+
+### Storage Backends
+
+- **Primary**: JSON files in `Mesh/Users/` and `Mesh/Posts/`
+- **Optional MongoDB**: Write-through persistence via `MONGO_URI`
+- **Optional SQLite**: Via `Mesh/sqlite_store.py`
+- **Redis**: For caching and rate limiting via `REDIS_URL`
 
 ## Environment Configuration
 
-Key environment variables (set in `.env`):
-- `KNOT_API_KEY` - API authentication (if set, requires X-API-Key header)
-- `REDIS_URL` - Redis connection for caching/rate limiting
-- `MONGO_URI` - MongoDB connection for persistence
-- `KNOT_SERVE_UPLOADS` - Enable file serving at /uploads/{filename}
-- `KNOT_CORS_ORIGINS` - CORS allowed origins (comma-separated)
-- `KNOT_CACHE_ENABLED` - Enable result caching (default: 1)
+Key environment variables (see `.env` file):
+- `KNOT_API_KEY` - API authentication key
+- `REDIS_URL` - Redis connection string
+- `MONGO_URI` - MongoDB connection string
+- `KNOT_CACHE_ENABLED` - Enable/disable caching (default: 1)
 - `KNOT_CACHE_TTL` - Cache TTL in seconds (default: 60)
+- `KNOT_SERVE_UPLOADS` - Enable file serving (default: 0)
+- `KNOT_CORS_ORIGINS` - Comma-separated CORS origins
 
-## Development Workflow
+## Development Patterns
 
-### Quick Development Cycle
-1. Activate venv: `.venv\Scripts\activate` (auto-activates with PowerShell profile)
-2. Start API with hot reload: `scripts\start-api.bat`
-3. Test changes: Access http://localhost:8000/ui or use API directly
-4. Run specific tests: `pytest tests/test_<module>.py::test_<function> -v`
+### Adding New Ranking Signals
 
-### Adding New Features
-1. Implement in appropriate module (Veil/Mesh/Drift/Scribe)
-2. Add API endpoint in `api/main.py` if needed
-3. Write tests in `tests/`
-4. Update category labels if adding new classification domains
+To add new ranking factors to Drift:
+1. Add field to `VideoCandidate` in `Drift/models.py`
+2. Update `Mesh/tools/gen_videos.py` to generate the field
+3. Add weight to `WEIGHTS` dict in `Drift/drift_ranker.py`
+4. Implement scoring logic in `compute_score()`
 
-### Performance Optimization
-- FAISS integration for ANN search (install `faiss-cpu` for acceleration)
-- Precompute label embeddings before deployment
-- Redis caching for search/rank results
-- Background job queue for heavy classification tasks
+### Extending Classification
 
-## Common Issues and Solutions
+To modify Veil classification:
+1. Label generation: Edit `Mesh/tools/build_mastercategories.py`
+2. Fusion weights: Adjust in `veil.run` arguments (`--w_video`, `--w_speech`, `--w_audio`)
+3. ANN index: Rebuild with `tools/embed_labels.py` after label changes
 
-### Module Import Errors
-- Always run from repo root
-- Use module form: `python -m <module>` instead of direct script execution
-- Ensure editable install: `pip install -e .`
+### API Extension Pattern
 
-### Classification Performance
-- Precompute embeddings: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
-- Install FAISS for faster ANN: `pip install faiss-cpu` (Linux/macOS)
-- Reduce frame sampling for faster processing: `--frames 8`
-
-### API Rate Limiting
-- Default in-memory backend, switch to Redis for production
-- Configure via `KNOT_RATE_BACKEND=redis` with `REDIS_URL`
+New endpoints should follow the established pattern:
+1. Add route handler in `api/main.py`
+2. Use `_check_auth()` for protected endpoints
+3. Use `_check_rate()` for rate limiting
+4. Add metrics via `REQ_COUNT` and `REQ_LAT`
+5. Support caching where appropriate
 
 ## Testing Strategy
 
-### Unit Tests
-- Core logic: `test_drift_ranker.py`, `test_scribe_search.py`
-- Data layer: `test_sqlite_store.py`, `test_export_import.py`
-- Classification: `test_veil_*` files
-- API: `test_api_auth_rate.py`, `test_admin_and_uploads.py`
+- Unit tests in `tests/` cover all major components
+- Test files follow `test_*.py` naming convention
+- Key test areas:
+  - `test_drift_ranker.py` - Feed ranking logic
+  - `test_veil_*` - Classification components
+  - `test_api_auth_rate.py` - API security
+  - `test_build_mastercategories*.py` - Category generation
 
-### Integration Points
-- Veil + Mesh: Classification results stored as Category objects
-- Mesh + Drift: User preferences and post metadata for ranking
-- Mesh + Scribe: Post content indexing for search
+## Common Development Tasks
 
-### Manual Testing
-- GUI: `python gui_demo.py` for interactive testing
-- Web UI: http://localhost:8000/ui for API interaction
-- CLI: `python cli_demo.py` for command-line testing
+### Rebuilding After Category Changes
+```bash
+# Rebuild categories
+.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --use-tree --count 200
 
-## Key Implementation Details
+# Recompute embeddings
+python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes
 
-### Veil Fusion Pipeline
-1. Sample frames from video (configurable count)
-2. Extract CLIP embeddings per frame
-3. Match against label embeddings (ANN or direct)
-4. Optional audio fusion with Whisper (speech) + YAMNet (events)
-5. Weighted combination: video (0.5) + speech (0.3) + audio events (0.2)
-6. Return structured categories (macro/meso/micro limits)
+# Restart API to load new categories
+```
 
-### Drift Ranking Algorithm
-- Base scores from engagement signals (likes, comments, shares, gifts)
-- Category affinity bonus for user preferences
-- Creator overexposure penalty for diversity
-- Recency decay with configurable half-life
-- Run limits to ensure variety (max same category/creator in sequence)
+### Debugging Classification
+```bash
+# Test classification with detailed output
+python -m veil.run --mode video --video /path/to/video.mp4 --master_labels_file Mesh/mastercategories.txt --topk 20
 
-### Scribe Search Backends
-- **BoW (default)**: Fast TF-IDF scoring over tokenized text
-- **Sentence-Transformers**: Dense embeddings for semantic search
-- Both index description + category tokens for hybrid retrieval
+# With ANN enabled
+python -m veil.run --mode video --video /path/to/video.mp4 --use_ann true --ann_k 64
+```
+
+### Database Operations
+```bash
+# Export/import data
+python -m Mesh.tools.export_import export --output backup.json
+python -m Mesh.tools.export_import import --input backup.json
+
+# Validate categories
+python -m Mesh.tools.validate_categories
+```
+
+## Performance Considerations
+
+- **FAISS**: Install `faiss-cpu` for 10-100x faster ANN search
+- **Label Embeddings**: Always precompute with `tools/embed_labels.py` to avoid startup delays
+- **Caching**: Enable Redis caching for search/ranking results in production
+- **Video Processing**: Adjust `--frames` parameter based on video length and available memory
+
+## Troubleshooting
+
+### Module Import Errors
+- Always run Python commands from repository root
+- Use module form: `python -m module.name` instead of direct script execution
+- Ensure virtual environment is activated
+
+### Classification Issues
+- Verify `Mesh/mastercategories.txt` exists and is non-empty
+- Check CUDA availability for GPU acceleration: `.venv\Scripts\python.exe -c "import torch;print(torch.cuda.is_available())"`
+- For video issues, ensure FFmpeg is installed and on PATH
+
+### API Issues
+- Check uvicorn is using the venv version: `.venv\Scripts\python.exe -m uvicorn`
+- Verify `.env` file exists with required variables
+- For CORS issues, set `KNOT_CORS_ORIGINS` appropriately
+
+### Performance Bottlenecks
+- Enable Redis for production workloads
+- Use FAISS for large-scale classification
+- Consider MongoDB for persistence at scale
+- Profile with `python -m cProfile` for specific bottlenecks
