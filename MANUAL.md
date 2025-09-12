@@ -21,8 +21,8 @@ Knot-Labs consists of four core components:
 
 ```
 ┌─────────────────────────────────────────────┐
-│                   API Layer                  │
-│              (FastAPI + Uvicorn)             │
+│                   API Layer                 │
+│              (FastAPI + Uvicorn)            │
 ├─────────────────────────────────────────────┤
 │     Veil          │        Drift            │
 │ (Classification)  │   (Feed Ranking)        │
@@ -30,7 +30,7 @@ Knot-Labs consists of four core components:
 │     Mesh          │        Scribe           │
 │  (Data Store)     │      (Search)           │
 ├─────────────────────────────────────────────┤
-│            Storage Layer                     │
+│            Storage Layer                    │
 │    (JSON / MongoDB / SQLite / Redis)        │
 └─────────────────────────────────────────────┘
 ```
@@ -774,5 +774,4 @@ app.include_router(router)
 
 - **Issues**: GitHub Issues for bug reports
 - **Discussions**: GitHub Discussions for questions
-- **Email**: support@knot-labs.example.com
-- **Documentation**: This manual, README.md, and WARP.md
+- **Documentation**: This manual, README.md
