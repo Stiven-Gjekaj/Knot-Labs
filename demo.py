@@ -126,10 +126,13 @@ def _run_veil_and_get_categories(
         '0.3',
         '--w_audio',
         '0.2',
+        '--frames',
+        '4',
     ]
+    logging.info({'event': 'veil_command', 'mode': mode, 'cmd': cmd})
     env = os.environ.copy()
     try:
-        timeout_s = int(os.environ.get("KNOT_VEIL_TIMEOUT_SEC", "360"))
+        timeout_s = int(os.environ.get("KNOT_VEIL_TIMEOUT_SEC", "720"))
     except Exception:
         timeout_s = 360
     start = time.time()

@@ -27,7 +27,7 @@ Dynamic: license-file
    - 🪟 PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1`
    - 🐧 Bash / WSL: `bash scripts/setup.sh`
    - 🔧 Make: `make setup`
-   - 🧪 Manual: `python -m venv .venv && .venv\Scripts\python.exe -m pip install -r requirements.txt`
+   - 🧪 Manual: `python -m venv .venv && .venv\Scripts\python.exe -m pip install -r requirements.txt && pip install -e .`
 3. Launch the CLI demo: `python demo.py`
 4. Fire up the GUI: `python gui_demo.py`
 5. Start the API (auto-reloads): `.venv\Scripts\python.exe -m uvicorn --env-file .env api.main:app --reload`
