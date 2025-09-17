@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import uuid
+import json
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Request, Response, UploadFile, File
 from fastapi.responses import FileResponse, RedirectResponse
@@ -47,6 +48,36 @@ USERS_DIR = os.path.join(MESH_DIR, 'Users')
 POSTS_DIR = os.path.join(MESH_DIR, 'Posts')
 MASTER_PATH = os.path.join(MESH_DIR, 'mastercategories.txt')
 UPLOADS_DIR = os.path.join(MESH_DIR, 'Uploads')
+
+
+
+
+def _load_user_record(path: str) -> Optional[Dict[str, Any]]:
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _find_user_record(identifier: str) -> Optional[Dict[str, Any]]:
+    if not os.path.isdir(USERS_DIR):
+        return None
+    direct = os.path.join(USERS_DIR, f"{identifier}.json")
+    if os.path.isfile(direct):
+        data = _load_user_record(direct)
+        if data:
+            return data
+    for name in os.listdir(USERS_DIR):
+        if not name.endswith('.json'):
+            continue
+        path = os.path.join(USERS_DIR, name)
+        data = _load_user_record(path)
+        if not data:
+            continue
+        if data.get('userID') == identifier or data.get('username') == identifier:
+            return data
+    return None
 
 
 app = FastAPI(title="Knot-Labs API")
@@ -336,6 +367,15 @@ def _handle_job(job: Dict[str, Any]) -> Any:
     return {'status': 'unknown'}
 
 
+@app.get("/users/{identifier}")
+def api_get_user(identifier: str, request: Request):
+    _check_rate(request)
+    user = _find_user_record(identifier)
+    if user is None:
+        raise HTTPException(404, 'User not found')
+    return user
+
+
 @app.post("/users")
 def api_create_user(req: CreateUser, request: Request):
     _check_auth(request)
@@ -361,20 +401,9 @@ def api_create_post(req: CreatePost, request: Request):
     _check_rate(request)
     # Find creator by ID or username
     creator_id = req.creator
-    # If username was supplied, scan users dir
-    if len(creator_id) < 32:  # crude check; usernames likely shorter than UUID
-        for name in os.listdir(USERS_DIR):
-            if not name.endswith('.json'):
-                continue
-            import json
-            p = os.path.join(USERS_DIR, name)
-            try:
-                u = json.load(open(p, 'r', encoding='utf-8'))
-            except Exception:
-                continue
-            if u.get('username') == creator_id:
-                creator_id = u.get('userID')
-                break
+    match = _find_user_record(creator_id)
+    if match and match.get('userID'):
+        creator_id = match['userID']
     post = make_post(creator_id, categories=[], country=req.country)
     if req.description:
         post['description'] = req.description

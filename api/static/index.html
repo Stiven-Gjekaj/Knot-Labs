@@ -253,21 +253,73 @@ function showToast(level, msg, timeoutMs = 3500) {
     }
 
     // Users
-    async function createUser() {
-      const username = document.getElementById('userName').value.trim();
+    function setUserContext(user, message) {
+      if (!user) { return; }
+      const userId = user.userID || user.userId || user.id || '';
+      const username = user.username || '';
+      const nameInput = document.getElementById('userName');
+      if (nameInput) { nameInput.value = username; }
+      const genderField = document.getElementById('userGender');
+      if (genderField) {
+        const g = (user.Gender || user.gender || '').toLowerCase();
+        genderField.value = ['female','male','other'].includes(g) ? g : '';
+      }
+      const countryField = document.getElementById('userCountry');
+      if (countryField) {
+        const c = (user.country || user.Country || '').toUpperCase();
+        const hasOption = Array.from(countryField.options || []).some(opt => opt.value === c);
+        countryField.value = hasOption ? c : '';
+      }
+      if (userId) {
+        ['creator','viewer','activeUser'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) { el.value = userId; }
+        });
+      }
+      const label = username || userId || 'user';
+      if (message) {
+        log('ok', message + ': ' + label);
+        showToast('ok', message + ': ' + label);
+      }
+    }
+
+    async function ensureUser() {
+      const nameInput = document.getElementById('userName');
+      const username = (nameInput && nameInput.value ? nameInput.value : '').trim();
+      if (!username) {
+        log('error', 'Enter a username to continue');
+        showToast('error', 'Username required');
+        return;
+      }
       const gender = (document.getElementById('userGender').value || '').trim();
       const country = document.getElementById('userCountry').value || '';
+      try {
+        const existing = await api('/users/' + encodeURIComponent(username), { headers: headers(false) });
+        if (existing.status === 200 && existing.data) {
+          setUserContext(existing.data, 'Logged in');
+          return;
+        }
+        if (existing.status && existing.status !== 404) {
+          log('error', 'Lookup user failed: ' + JSON.stringify(existing.data));
+          showToast('error', 'Lookup failed');
+          return;
+        }
+      } catch (e) {
+        log('error', 'Lookup user error: ' + e);
+        showToast('error', 'Lookup error');
+        return;
+      }
       const body = JSON.stringify({
-        username: username || null,
+        username: username,
         gender: gender || null,
         country: country || null,
       });
-      const r = await api('/users', { method: 'POST', headers: headers(true), body });
-      log(r.status === 200 ? 'ok' : 'error', 'Create user: ' + JSON.stringify(r.data));
-      if (r.status === 200 && r.data && r.data.userID) {
-        document.getElementById('creator').value = r.data.userID;
-        document.getElementById('viewer').value = r.data.userID;
-        document.getElementById('activeUser').value = r.data.userID;
+      const created = await api('/users', { method: 'POST', headers: headers(true), body });
+      if (created.status === 200 && created.data) {
+        setUserContext(created.data, 'Created user');
+      } else {
+        log('error', 'Create user failed: ' + JSON.stringify(created.data));
+        showToast('error', 'Create user failed');
       }
     }
 
@@ -592,8 +644,8 @@ function showToast(level, msg, timeoutMs = 3500) {
     </fieldset>
 
     <fieldset>
-      <legend>Create User</legend>
-      <div class="row"><label>Username</label><input type="text" id="userName" placeholder="optional" /></div>
+      <legend>User</legend>
+      <div class="row"><label>Username</label><input type="text" id="userName" placeholder="choose a username" /></div>
       <div class="row"><label>Gender</label><select id="userGender">
           <option value="">Auto</option>
           <option value="female">Female</option>
@@ -623,7 +675,8 @@ function showToast(level, msg, timeoutMs = 3500) {
           <option value="SE">Sweden</option>
           <option value="NO">Norway</option>
         </select></div>
-      <div class="row"><button onclick="createUser()">Create User</button><button onclick="copyCurlCreateUser()">Copy curl</button></div>
+      <div class="row"><span class="muted">Existing usernames will log you in automatically.</span></div>
+      <div class="row"><button onclick="ensureUser()">Log In / Create</button><button onclick="copyCurlCreateUser()">Copy curl (create)</button></div>
     </fieldset>
 
     <fieldset>
