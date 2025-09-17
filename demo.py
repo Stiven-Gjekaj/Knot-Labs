@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import logging
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Callable, Union
 from Mesh.tools.gen_videos import make_post, save_post  # type: ignore
 from Mesh.category import ensure_category, make_category_with_limits
@@ -101,18 +102,30 @@ def _run_veil_and_get_categories(
     cancel_check: Optional[Callable[[], bool]] = None,
 ) -> Union[List[str], Dict[str, str]]:
     """Run Veil classification and return categories or an error dict."""
+    image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff'}
+    suffix = Path(media_path).suffix.lower()
+    mode = 'image' if suffix in image_exts else 'video'
+
     cmd = [
         sys.executable,
-        "-m",
-        "veil.run",
-        "--mode",
-        "video",
-        "--video",
+        '-m',
+        'veil.run',
+        '--mode',
+        mode,
+        '--image' if mode == 'image' else '--video',
         media_path,
-        "--master_labels_file",
+        '--master_labels_file',
         MASTER_PATH,
-        "--topk",
+        '--topk',
         str(topk),
+        '--use_whisper',
+        'true',
+        '--w_video',
+        '0.5',
+        '--w_speech',
+        '0.3',
+        '--w_audio',
+        '0.2',
     ]
     env = os.environ.copy()
     try:
