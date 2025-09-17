@@ -1,13 +1,11 @@
 # Knot-Labs 🌐
 
-Welcome to Knot-Labs — a cozy playground for experimenting with a social media stack in pure Python. If you want to try the demo, explore the GUI, or spin up the API, you are in the right place. For deep architecture docs or contributor notes, hop over to the [developer manual](MANUAL.md).
-
 ## ✨ Highlights
 
 - 🧠 **Veil** — zero-shot media classifier for audio + video with prompt-style labels.
 - 📂 **Mesh** — local JSON store handling users, posts, and lightweight analytics.
-- 🔁 **Drift** — transparent feed ranking you can explain to your team.
-- 🔍 **Scribe** — snappy full-text search across posts.
+- 🔁 **Drift** — transparent feed ranking.
+- 🔍 **Scribe** — full-text search across posts.
 - 🧰 Everything runs on Python with a single `requirements.txt`.
 
 ## 🚀 Quick Start
