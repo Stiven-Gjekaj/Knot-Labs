@@ -1,34 +1,35 @@
-# Knot-Labs ??
+# Knot-Labs 🌐
 
-Welcome to Knot-Labs � a cozy playground for experimenting with a social media stack in pure Python. If you want to try the demo, explore the GUI, or spin up the API, you are in the right place. For deep architecture docs or contributor notes, hop over to the [developer manual](MANUAL.md).
+Welcome to Knot-Labs — a cozy playground for experimenting with a social media stack in pure Python. If you want to try the demo, explore the GUI, or spin up the API, you are in the right place. For deep architecture docs or contributor notes, hop over to the [developer manual](MANUAL.md).
 
-## ? Highlights
+## ✨ Highlights
 
-- ?? **Veil** � zero-shot media classifier for audio + video with prompt-style labels.
-- ??? **Mesh** � local JSON store handling users, posts, and lightweight analytics.
-- ?? **Drift** � transparent feed ranking you can explain to your team.
-- ?? **Scribe** � snappy full-text search across posts.
-- ?? Everything runs on Python with a single `requirements.txt`.
+- 🧠 **Veil** — zero-shot media classifier for audio + video with prompt-style labels.
+- 📂 **Mesh** — local JSON store handling users, posts, and lightweight analytics.
+- 🔁 **Drift** — transparent feed ranking you can explain to your team.
+- 🔍 **Scribe** — snappy full-text search across posts.
+- 🧰 Everything runs on Python with a single `requirements.txt`.
 
-## ?? Quick Start
+## 🚀 Quick Start
 
 1. Ensure Python 3.10+ is installed (3.13 recommended).
 2. Choose your setup script:
-   - ?? PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1`
-   - ?? Bash / WSL: `bash scripts/setup.sh`
-   - ??? Make: `make setup`
-   - ?? Manual: `python -m venv .venv && .venv\Scripts\python.exe -m pip install -r requirements.txt`
+   - 🪟 PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1`
+   - 🐧 Bash / WSL: `bash scripts/setup.sh`
+   - 🔧 Make: `make setup`
+   - 🧪 Manual: `python -m venv .venv && .venv\Scripts\python.exe -m pip install -r requirements.txt`
 3. Launch the CLI demo: `python demo.py`
 4. Fire up the GUI: `python gui_demo.py`
 5. Start the API (auto-reloads): `.venv\Scripts\python.exe -m uvicorn --env-file .env api.main:app --reload`
+6. Open `/ui` to create users and posts — the new dropdowns let you pin gender and country or leave them on auto-select.
 
-## ?? Try The Media Classifier
+## 🎯 Try The Media Classifier
 
 - Build master labels: `.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --count 1000`
 - (Optional) Enable ANN speed-ups: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
 - Classify a video: `python -m veil.run --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt`
 
-## ??? API Endpoints (Favorites)
+## 📡 API Endpoints (Favorites)
 
 - `POST /users`
 - `POST /posts`
