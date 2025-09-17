@@ -86,24 +86,13 @@
     .toast .muted { color: var(--muted); }
   </style>
   <script>
-    let apiKey = '';
     let apiBase = '';
     let compact = false;
     function headers(json=true) {
       const h = {};
-      if (apiKey) h['x-api-key'] = apiKey;
       if (json) h['content-type'] = 'application/json';
       return h;
     }
-    function setKey() {
-      apiKey = document.getElementById('apiKey').value.trim();
-      log('info', apiKey ? 'API key set' : 'API key cleared');
-    }
-function setApiBase() {
-  apiBase = document.getElementById('apiBase').value.trim();
-  if (apiBase.endsWith('/')) apiBase = apiBase.slice(0,-1);
-  log('info', apiBase ? ('API base set to ' + apiBase) : 'API base cleared (using same origin)');
-}
 function applyTheme(t) {
   const theme = (t === 'light') ? 'light' : 'dark';
   document.body.classList.toggle('theme-light', theme === 'light');
@@ -171,8 +160,6 @@ function resetUI() {
   const chk = document.getElementById('compactToggle');
   if (chk) { chk.checked = false; }
   applyCompact(false);
-  try { document.getElementById('apiBase').value = ''; } catch {}
-  try { document.getElementById('apiKey').value = ''; apiKey=''; } catch {}
   showToast('ok', 'UI settings reset');
   log('ok', 'UI settings reset');
 }
@@ -196,7 +183,6 @@ function resetUI() {
       try {
         const r = await fetch(base + '/ping', {
           method: 'GET',
-          headers: { 'X-API-Key': 'test', 'Content-Type': 'application/json' },
           mode: 'cors',
         });
         const allowOrigin = r.headers.get('access-control-allow-origin');
@@ -269,7 +255,13 @@ function showToast(level, msg, timeoutMs = 3500) {
     // Users
     async function createUser() {
       const username = document.getElementById('userName').value.trim();
-      const body = JSON.stringify({ username: username || null });
+      const gender = (document.getElementById('userGender').value || '').trim();
+      const country = document.getElementById('userCountry').value || '';
+      const body = JSON.stringify({
+        username: username || null,
+        gender: gender || null,
+        country: country || null,
+      });
       const r = await api('/users', { method: 'POST', headers: headers(true), body });
       log(r.status === 200 ? 'ok' : 'error', 'Create user: ' + JSON.stringify(r.data));
       if (r.status === 200 && r.data && r.data.userID) {
@@ -283,9 +275,25 @@ function showToast(level, msg, timeoutMs = 3500) {
     let pollTimer = null;
     async function createPostAnalyze() {
       const creator = document.getElementById('creator').value.trim();
-      const media = document.getElementById('mediaPath').value.trim();
+      let media = document.getElementById('mediaPath').value.trim();
       const desc = document.getElementById('description').value.trim();
-      const body = JSON.stringify({ creator, media_path: media || null, description: desc || null });
+      const country = document.getElementById('postCountry').value || '';
+
+      if (!creator) {
+        log('error', 'Provide a creator (user ID or username) before posting');
+        return;
+      }
+
+      if (!media) {
+        const autoUpload = await uploadSelectedFile({ silent: true });
+        if (!autoUpload || !autoUpload.path) {
+          log('error', 'Select a media file or provide a server media path before posting');
+          return;
+        }
+        media = autoUpload.path;
+      }
+
+      const body = JSON.stringify({ creator, media_path: media || null, description: desc || null, country: country || null });
       const r = await api('/posts', { method: 'POST', headers: headers(true), body });
       log(r.status === 200 ? 'ok' : 'error', 'Create post: ' + JSON.stringify(r.data));
       if (r.status === 200 && r.data && r.data.job_id) {
@@ -302,11 +310,13 @@ function showToast(level, msg, timeoutMs = 3500) {
       }
     }
 
-    async function uploadMedia() {
+    async function uploadSelectedFile({ silent = false } = {}) {
       const inp = document.getElementById('mediaFile');
       if (!inp || !inp.files || inp.files.length === 0) {
-        log('error', 'Select a file to upload');
-        return;
+        if (!silent) {
+          log('error', 'Select a file to upload');
+        }
+        return null;
       }
       const fd = new FormData();
       fd.append('file', inp.files[0]);
@@ -318,19 +328,30 @@ function showToast(level, msg, timeoutMs = 3500) {
         try { data = JSON.parse(txt); } catch (e) { data = { raw: txt }; }
         if (resp.ok && data && data.path) {
           document.getElementById('mediaPath').value = data.path;
-          log('ok', 'Uploaded ' + (data.filename || '') + ' -> ' + data.path + ' (' + (data.size || 0) + ' bytes)');
+          const level = silent ? 'info' : 'ok';
+          const verb = silent ? 'Auto-uploaded' : 'Uploaded';
+          const sizeInfo = (typeof data.size === 'number') ? ' (' + data.size + ' bytes)' : '';
+          const name = data.filename ? ' ' + data.filename : '';
+          log(level, verb + name + ' -> ' + data.path + sizeInfo);
           if (data.filename) {
-            const base = apiBase || '';
-            const url = base + '/uploads/' + encodeURIComponent(data.filename);
-            logLink('ok', 'Preview:', url, 'Open');
+            const baseUrl = apiBase || '';
+            const url = baseUrl + '/uploads/' + encodeURIComponent(data.filename);
+            logLink(level, 'Preview:', url, 'Open');
             setPreview(data.filename, data.mime || '');
           }
-        } else {
-          log('error', 'Upload failed: ' + txt);
+          return data;
         }
+        const failure = txt;
+        log('error', (silent ? 'Auto-upload failed: ' : 'Upload failed: ') + failure);
+        return null;
       } catch (e) {
-        log('error', 'Upload error: ' + e);
+        log('error', (silent ? 'Auto-upload error: ' : 'Upload error: ') + e);
+        return null;
       }
+    }
+
+    async function uploadMedia() {
+      await uploadSelectedFile({ silent: false });
     }
 
     function fileExt(name) {
@@ -476,21 +497,58 @@ function showToast(level, msg, timeoutMs = 3500) {
     }
     // curl helpers
     function originBase(){ return (apiBase || window.location.origin); }
-    function curlHeaders(json){ const parts=[]; if(apiKey){ parts.push('-H "X-API-Key: ' + apiKey.replace(/"/g,'\\"') + '"'); } if(json){ parts.push('-H "Content-Type: application/json"'); } return parts; }
-    function buildCurl(method, path, body){ const url = originBase() + path; let parts = ['curl -X ' + method + ' "' + url + '"']; parts = parts.concat(curlHeaders(!!body)); if (body){ parts.push('-d ' + '\'' + JSON.stringify(body) + '\''); } return parts.join(' '); }
+    function curlHeaders(json){ const parts=[]; if(json){ parts.push('-H "Content-Type: application/json"'); } return parts; }
+    function buildCurl(method, path, body){
+      const url = originBase() + path;
+      let parts = ['curl -X ' + method + ' "' + url + '"'];
+      const headerParts = curlHeaders(!!body);
+      if (headerParts.length){ parts = parts.concat(headerParts); }
+      if (body){ parts.push("-d '" + JSON.stringify(body) + "'"); }
+      return parts.join(' ');
+    }
     async function copyText(txt){ try{ await navigator.clipboard.writeText(txt); showToast('ok','Copied curl'); }catch(e){ try{ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('ok','Copied curl'); }catch{ showToast('error','Copy failed'); } } }
     // Copy curl actions
-    function copyCurlCreateUser(){ const username=(document.getElementById('userName').value||'').trim()||null; const cmd=buildCurl('POST','/users',{username}); copyText(cmd); }
-    function copyCurlCreatePost(){ const creator=(document.getElementById('creator').value||'').trim(); const description=(document.getElementById('description').value||'').trim()||null; const media=(document.getElementById('mediaPath').value||'').trim()||null; const body={ creator, description, media_path: media }; const cmd=buildCurl('POST','/posts',body); copyText(cmd); }
-    function copyCurlUpload(){ const url = originBase() + '/upload'; let cmd = 'curl -X POST "' + url + '" ' + (apiKey?('-H "X-API-Key: ' + apiKey.replace(/"/g,'\\"') + '" '):'') + '-F "file=@/path/to/file"'; copyText(cmd); }
-    function copyCurlInteraction(action){ const viewer=(document.getElementById('viewer').value||'').trim(); const creator=(document.getElementById('author').value||'').trim(); const post=(document.getElementById('postId').value||'').trim(); const amount=parseFloat(document.getElementById('giftAmt').value||'0'); const cmd=buildCurl('POST','/interactions/'+encodeURIComponent(action),{viewer, creator, post, amount}); copyText(cmd); }
+    function copyCurlCreateUser(){
+      const username = (document.getElementById('userName').value||'').trim() || null;
+      const gender = (document.getElementById('userGender').value||'').trim() || null;
+      const country = document.getElementById('userCountry').value || null;
+      const body = { username: username, gender: gender, country: country };
+      const cmd = buildCurl('POST','/users',body);
+      copyText(cmd);
+    }
+    function copyCurlCreatePost(){
+      const creator = (document.getElementById('creator').value||'').trim();
+      const description = (document.getElementById('description').value||'').trim() || null;
+      const media = (document.getElementById('mediaPath').value||'').trim() || null;
+      const country = document.getElementById('postCountry').value || null;
+      const body = { creator: creator, description: description, media_path: media, country: country };
+      const cmd = buildCurl('POST','/posts',body);
+      copyText(cmd);
+    }
+    function copyCurlInteraction(action){
+      const viewer = (document.getElementById('viewer').value||'').trim();
+      const creator = (document.getElementById('author').value||'').trim();
+      const post = (document.getElementById('postId').value||'').trim();
+      const amount = parseFloat(document.getElementById('giftAmt').value||'0');
+      const body = { viewer: viewer, creator: creator, post: post, amount: amount };
+      const cmd = buildCurl('POST','/interactions/'+encodeURIComponent(action), body);
+      copyText(cmd);
+    }
     function copyCurlRank(){ const user=(document.getElementById('activeUser').value||'').trim(); const k=parseInt(document.getElementById('rankK').value||'20',10); const url=originBase()+('/rank?user='+encodeURIComponent(user)+'&k='+k); const parts=['curl "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
     function copyCurlSearch(){ const q=(document.getElementById('searchQ').value||'').trim(); const k=parseInt(document.getElementById('searchK').value||'10',10); const url=originBase()+('/search?q='+encodeURIComponent(q)+'&k='+k); const parts=['curl "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
     function copyCurlFlush(){ const pf=(document.getElementById('cachePrefix').value||'').trim(); const qs=pf?('?prefix='+encodeURIComponent(pf)) : ''; const url=originBase()+'/cache/flush'+qs; const parts=['curl -X POST "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
-    function copyCurlKvSet(){ const k=(document.getElementById('kvKey').value||'').trim(); const v=document.getElementById('kvValue').value; const ttlRaw=(document.getElementById('kvTtl').value||'').trim(); const ttl=ttlRaw?parseInt(ttlRaw,10):undefined; const body=ttl?{value:v, ttl}:{value:v}; const cmd=buildCurl('PUT','/redis/kv/'+encodeURIComponent(k),body); copyText(cmd); }
+    function copyCurlKvSet(){
+      const k = (document.getElementById('kvKey').value||'').trim();
+      const v = document.getElementById('kvValue').value;
+      const ttlRaw = (document.getElementById('kvTtl').value||'').trim();
+      const ttl = ttlRaw ? parseInt(ttlRaw,10) : undefined;
+      const body = ttl ? { value: v, ttl: ttl } : { value: v };
+      const cmd = buildCurl('PUT','/redis/kv/'+encodeURIComponent(k), body);
+      copyText(cmd);
+    }
     function copyCurlKvGet(){ const k=(document.getElementById('kvKey').value||'').trim(); const url=originBase()+('/redis/kv/'+encodeURIComponent(k)); const parts=['curl "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
     function copyCurlKvDel(){ const k=(document.getElementById('kvKey').value||'').trim(); const url=originBase()+('/redis/kv/'+encodeURIComponent(k)); const parts=['curl -X DELETE "'+url+'"'].concat(curlHeaders(false)); copyText(parts.join(' ')); }
-    // Initialize preferences
+// Initialize preferences
   window.addEventListener('load', () => {
     try {
       ensurePanelIds();
@@ -519,15 +577,7 @@ function showToast(level, msg, timeoutMs = 3500) {
     <div class="container">
     <h1>Knot-Labs Web UI</h1>
     <fieldset>
-      <legend>Auth</legend>
-      <div class="row"><label>API Key</label>
-        <input type="text" id="apiKey" placeholder="optional if server auth disabled" />
-        <button onclick="setKey()">Set</button>
-      </div>
-      <div class="row"><label>API Base URL</label>
-        <input type="text" id="apiBase" placeholder="e.g., http://localhost:8000" />
-        <button onclick="setApiBase()">Set</button>
-      </div>
+      <legend>UI Preferences</legend>
       <div class="row"><label>Dark Mode</label>
         <input type="checkbox" id="themeToggle" onchange="onThemeToggle(this)" />
       </div>
@@ -544,16 +594,68 @@ function showToast(level, msg, timeoutMs = 3500) {
     <fieldset>
       <legend>Create User</legend>
       <div class="row"><label>Username</label><input type="text" id="userName" placeholder="optional" /></div>
+      <div class="row"><label>Gender</label><select id="userGender">
+          <option value="">Auto</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+          <option value="other">Other</option>
+        </select></div>
+      <div class="row"><label>Country</label><select id="userCountry">
+          <option value="">Auto</option>
+          <option value="US">United States</option>
+          <option value="CA">Canada</option>
+          <option value="GB">United Kingdom</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+          <option value="BR">Brazil</option>
+          <option value="IN">India</option>
+          <option value="JP">Japan</option>
+          <option value="KR">South Korea</option>
+          <option value="AU">Australia</option>
+          <option value="MX">Mexico</option>
+          <option value="ID">Indonesia</option>
+          <option value="NG">Nigeria</option>
+          <option value="ZA">South Africa</option>
+          <option value="EG">Egypt</option>
+          <option value="IT">Italy</option>
+          <option value="ES">Spain</option>
+          <option value="NL">Netherlands</option>
+          <option value="SE">Sweden</option>
+          <option value="NO">Norway</option>
+        </select></div>
       <div class="row"><button onclick="createUser()">Create User</button><button onclick="copyCurlCreateUser()">Copy curl</button></div>
     </fieldset>
 
     <fieldset>
-      <legend>Create Post + Analyze</legend>
+      <legend>Create Post</legend>
       <div class="row"><label>Creator (userID or username)</label><input type="text" id="creator" /></div>
       <div class="row"><label>Description</label><input type="text" id="description" placeholder="optional" /></div>
       <div class="row"><label>Media Path (server path)</label><input type="text" id="mediaPath" placeholder="/path/to/video" /></div>
-      <div class="row"><label>Upload Media</label><input type="file" id="mediaFile" /> <button onclick="uploadMedia()">Upload</button> <button onclick="copyCurlUpload()">Copy curl (upload)</button></div>
-      <div class="row"><button onclick="createPostAnalyze()">Post & Analyze</button><button onclick="copyCurlCreatePost()">Copy curl</button></div>
+      <div class="row"><label>Media File</label><input type="file" id="mediaFile" /></div>
+      <div class="row"><label>Country</label><select id="postCountry">
+          <option value="">Auto</option>
+          <option value="US">United States</option>
+          <option value="CA">Canada</option>
+          <option value="GB">United Kingdom</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+          <option value="BR">Brazil</option>
+          <option value="IN">India</option>
+          <option value="JP">Japan</option>
+          <option value="KR">South Korea</option>
+          <option value="AU">Australia</option>
+          <option value="MX">Mexico</option>
+          <option value="ID">Indonesia</option>
+          <option value="NG">Nigeria</option>
+          <option value="ZA">South Africa</option>
+          <option value="EG">Egypt</option>
+          <option value="IT">Italy</option>
+          <option value="ES">Spain</option>
+          <option value="NL">Netherlands</option>
+          <option value="SE">Sweden</option>
+          <option value="NO">Norway</option>
+        </select></div>
+      <div class="row"><button onclick="createPostAnalyze()">Post</button><button onclick="copyCurlCreatePost()">Copy curl</button></div>
     </fieldset>
 
     <fieldset>

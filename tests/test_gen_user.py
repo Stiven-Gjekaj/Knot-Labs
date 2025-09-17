@@ -9,6 +9,7 @@ def test_make_user_structure():
     assert isinstance(u["userID"], str)
     assert isinstance(u["SeenPosts"], list)
     assert isinstance(u["ViewerScore"], dict)
+    assert isinstance(u["country"], str)
 
 
 def test_save_user(tmp_path):
@@ -17,3 +18,4 @@ def test_save_user(tmp_path):
     assert os.path.isfile(path)
     data = json.load(open(path, 'r', encoding='utf-8'))
     assert data["userID"] == u["userID"]
+    assert data["country"] == u["country"]

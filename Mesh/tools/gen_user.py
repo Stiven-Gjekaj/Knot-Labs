@@ -12,21 +12,29 @@ from typing import Dict
 
 GENDERS = ["male", "female", "other"]
 
+COUNTRIES = [
+    "US", "CA", "GB", "DE", "FR", "BR", "IN", "JP", "KR", "AU",
+    "MX", "ID", "NG", "ZA", "EG", "IT", "ES", "NL", "SE", "NO",
+]
+
 
 def ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
-def make_user(username: str | None = None, gender: str | None = None) -> Dict:
+def make_user(username: str | None = None, gender: str | None = None, country: str | None = None) -> Dict:
     user_id = uuid.uuid4().hex
     if not username:
         username = f"user_{user_id[:8]}"
     if gender is None or gender not in GENDERS:
         gender = random.choice(GENDERS)
+    if country is None or country not in COUNTRIES:
+        country = random.choice(COUNTRIES)
     return {
         "username": username,
         "userID": user_id,
         "Gender": gender,
+        "country": country,
         "SeenPosts": [],
         "RecentCreators": [],
         "CreatorScore": 0,
@@ -50,6 +58,7 @@ def main() -> None:
     p.add_argument("--users-dir", default=os.path.join("Mesh", "Users"))
     p.add_argument("--username", help="custom username to use when N=1")
     p.add_argument("--gender", choices=GENDERS, help="optional gender to assign (applies to all created)")
+    p.add_argument("--country", choices=COUNTRIES, help="optional country to assign (applies to all created)")
     args = p.parse_args()
 
     if args.N <= 0:
@@ -59,7 +68,7 @@ def main() -> None:
 
     created = []
     for i in range(args.N):
-        user = make_user(username=args.username if args.N == 1 else None, gender=args.gender)
+        user = make_user(username=args.username if args.N == 1 else None, gender=args.gender, country=args.country)
         path = save_user(user, args.users_dir)
         created.append((user["userID"], path))
     for uid, path in created:

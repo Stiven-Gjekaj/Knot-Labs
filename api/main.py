@@ -247,12 +247,15 @@ def _cache_set(key: str, val: str, ttl: Optional[int] = None) -> None:
 
 class CreateUser(BaseModel):
     username: Optional[str] = None
+    gender: Optional[str] = None
+    country: Optional[str] = None
 
 
 class CreatePost(BaseModel):
     creator: str
     description: Optional[str] = "Description Here"
     media_path: Optional[str] = None
+    country: Optional[str] = None
 
 
 class Interaction(BaseModel):
@@ -337,7 +340,7 @@ def _handle_job(job: Dict[str, Any]) -> Any:
 def api_create_user(req: CreateUser, request: Request):
     _check_auth(request)
     _check_rate(request)
-    u = make_user(username=req.username)
+    u = make_user(username=req.username, gender=req.gender, country=req.country)
     save_user(u, USERS_DIR)
     try:
         from Mesh.sqlite_store import save_user as save_user_db  # type: ignore
@@ -372,7 +375,7 @@ def api_create_post(req: CreatePost, request: Request):
             if u.get('username') == creator_id:
                 creator_id = u.get('userID')
                 break
-    post = make_post(creator_id, categories=[])
+    post = make_post(creator_id, categories=[], country=req.country)
     if req.description:
         post['description'] = req.description
     path = save_post(post, POSTS_DIR)
