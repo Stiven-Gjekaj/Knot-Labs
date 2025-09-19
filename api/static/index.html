@@ -368,13 +368,30 @@ function showToast(level, msg, timeoutMs = 3500) {
         const job = r.data.job_id;
         log('info', 'Polling job ' + job);
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-        pollTimer = setInterval(async () => {
-          const s = await api('/jobs/' + encodeURIComponent(job), { headers: headers(false) });
-          log('info', 'Job ' + job + ': ' + JSON.stringify(s.data));
-          if (s.data && (s.data.status === 'done' || s.data.status === 'error')) {
-            clearInterval(pollTimer); pollTimer = null;
+        let baseDelay = 1200;
+        let maxDelay = 8000;
+        const poll = async (delay) => {
+          try {
+            const s = await api('/jobs/' + encodeURIComponent(job), { headers: headers(false) });
+            if (s.status === 429) {
+              // Back off on rate limit
+              const next = Math.min(maxDelay, Math.floor((delay || baseDelay) * 1.7));
+              log('info', 'Job ' + job + ': Too Many Requests; backing off to ' + next + 'ms');
+              setTimeout(() => poll(next), next);
+              return;
+            }
+            log('info', 'Job ' + job + ': ' + JSON.stringify(s.data));
+            if (s.data && (s.data.status === 'done' || s.data.status === 'error')) {
+              return; // stop polling
+            }
+            setTimeout(() => poll(baseDelay), baseDelay);
+          } catch (e) {
+            const next = Math.min(maxDelay, Math.floor((delay || baseDelay) * 1.7));
+            log('error', 'Job ' + job + ' poll error; retrying in ' + next + 'ms: ' + e);
+            setTimeout(() => poll(next), next);
           }
-        }, 1200);
+        };
+        poll(baseDelay);
       }
     }
 

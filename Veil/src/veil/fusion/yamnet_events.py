@@ -52,7 +52,7 @@ def _load_yamnet() -> Tuple[hub.KerasLayer, List[str]]:
     return _yamnet_layer, _yamnet_labels  # type: ignore[return-value]
 
 
-def _extract_wav_ffmpeg(inp: str, sr: int = 16000) -> tuple[str, int]:
+def _extract_wav_ffmpeg(inp: str, sr: int = 16000, max_sec: Optional[float] = None) -> tuple[str, int]:
     import tempfile
     import ffmpeg  # type: ignore
 
@@ -60,10 +60,16 @@ def _extract_wav_ffmpeg(inp: str, sr: int = 16000) -> tuple[str, int]:
     out = tmp.name
     tmp.close()
     try:
+        out_kwargs = {"acodec": "pcm_s16le", "ac": 1, "ar": sr, "loglevel": "error"}
+        if max_sec is not None:
+            try:
+                out_kwargs["t"] = float(max_sec)
+            except Exception:
+                pass
         (
             ffmpeg
             .input(inp)
-            .output(out, acodec="pcm_s16le", ac=1, ar=sr, loglevel="error")
+            .output(out, **out_kwargs)
             .overwrite_output()
             .run(capture_stdout=True, capture_stderr=True)
         )
@@ -92,7 +98,7 @@ def _read_wav_to_np(path: str) -> tuple[np.ndarray, int]:
     return audio, fr
 
 
-def _load_audio_mono16k(path: str) -> np.ndarray:
+def _load_audio_mono16k(path: str, max_sec: Optional[float] = None) -> np.ndarray:
     """Load audio from file into mono float32 @16k using librosa.
 
     If the input is a video file, first extract a temporary wav via ffmpeg.
@@ -101,10 +107,13 @@ def _load_audio_mono16k(path: str) -> np.ndarray:
     cleanup = None
     try:
         # Try direct librosa first; if it fails, extract wav via ffmpeg
-        y, sr = librosa.load(src, sr=16000, mono=True)
+        if max_sec is not None:
+            y, sr = librosa.load(src, sr=16000, mono=True, duration=float(max_sec))
+        else:
+            y, sr = librosa.load(src, sr=16000, mono=True)
         return y.astype(np.float32)
     except Exception:
-        wav_path, _ = _extract_wav_ffmpeg(path, sr=16000)
+        wav_path, _ = _extract_wav_ffmpeg(path, sr=16000, max_sec=max_sec)
         cleanup = wav_path
         try:
             audio, sr = _read_wav_to_np(wav_path)
@@ -117,13 +126,13 @@ def _load_audio_mono16k(path: str) -> np.ndarray:
                     pass
 
 
-def run_yamnet(audio_or_video_path: str, topn: int = 10) -> YamnetResult:
+def run_yamnet(audio_or_video_path: str, topn: int = 10, max_sec: Optional[float] = None) -> YamnetResult:
     """Run YAMNet on an audio or video file and return averaged class scores.
 
     Returns topn (name, score) tuples sorted by score descending.
     """
     layer, class_names = _load_yamnet()
-    wav = _load_audio_mono16k(audio_or_video_path)
+    wav = _load_audio_mono16k(audio_or_video_path, max_sec=max_sec)
     # YAMNet expects a [n] float32 waveform at 16k. It returns: scores [frames, 521]
     scores, embeddings, spectrogram = layer(wav)
     scores_np = scores.numpy()

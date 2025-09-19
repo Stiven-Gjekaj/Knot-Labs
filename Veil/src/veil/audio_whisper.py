@@ -31,15 +31,21 @@ def _labels_look_like_prompts(categories: List[str]) -> bool:
     return first.startswith("a video ") or first.startswith("a photo ")
 
 
-def _extract_wav_ffmpeg(inp: str, sr: int = 16000) -> tuple[str, int]:
+def _extract_wav_ffmpeg(inp: str, sr: int = 16000, max_sec: Optional[float] = None) -> tuple[str, int]:
     tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     out = tmp.name
     tmp.close()
     try:
+        out_kwargs: Dict[str, Any] = {"acodec": "pcm_s16le", "ac": 1, "ar": sr, "loglevel": "error"}
+        if max_sec is not None:
+            try:
+                out_kwargs["t"] = float(max_sec)
+            except Exception:
+                pass
         (
             ffmpeg
             .input(inp)
-            .output(out, acodec="pcm_s16le", ac=1, ar=sr, loglevel="error")
+            .output(out, **out_kwargs)
             .overwrite_output()
             .run(capture_stdout=True, capture_stderr=True)
         )
@@ -69,20 +75,38 @@ def _read_wav_to_np(path: str) -> tuple[np.ndarray, int]:
     return audio, fr
 
 
-def transcribe_audio(video_path, model_size="small"):
+def transcribe_audio(video_path, model_size="small", max_sec: Optional[float] = None):
     """Transcribe audio from a video (or fallback WAV) using faster-whisper.
 
     This CPU-only implementation always uses int8 inference.
     """
     model = get_whisper_model(model_size)
 
+    # If a max duration is provided, force an ffmpeg-limited decode to bound runtime
+    if max_sec is not None:
+        wav_path = None
+        try:
+            wav_path, sr = _extract_wav_ffmpeg(video_path, sr=16000, max_sec=max_sec)
+            audio, sr = _read_wav_to_np(wav_path)
+            segments, _ = model.transcribe(audio, sampling_rate=sr)
+            text = " ".join(seg.text.strip() for seg in segments)
+            return text
+        except Exception as e2:
+            warnings.warn(f"Audio decode/transcription (limited) failed ({e2!r}); continuing with empty transcript.")
+            return ""
+        finally:
+            if wav_path and os.path.exists(wav_path):
+                try:
+                    os.unlink(wav_path)
+                except OSError:
+                    pass
+
+    # Otherwise try direct media path, then fallback to full WAV extraction
     try:
-        # Try direct path (let faster-whisper open the media)
         segments, _ = model.transcribe(video_path)
         text = " ".join(seg.text.strip() for seg in segments)
         return text
     except Exception:
-        # Fallback: extract WAV via ffmpeg, transcribe raw PCM
         wav_path = None
         try:
             wav_path, sr = _extract_wav_ffmpeg(video_path, sr=16000)

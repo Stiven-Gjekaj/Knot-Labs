@@ -119,13 +119,17 @@ def _run_veil_and_get_categories(
         '--topk',
         str(topk),
         '--use_whisper',
-        'true',
+        os.environ.get('KNOT_VEIL_USE_WHISPER', 'false'),
         '--w_video',
         '0.5',
         '--w_speech',
         '0.3',
         '--w_audio',
-        '0.2',
+        os.environ.get('KNOT_W_AUDIO', '0'),
+        '--speech_max_sec',
+        os.environ.get('KNOT_SPEECH_MAX_SEC', '45'),
+        '--audio_max_sec',
+        os.environ.get('KNOT_AUDIO_MAX_SEC', '20'),
         '--frames',
         '4',
     ]
@@ -137,7 +141,7 @@ def _run_veil_and_get_categories(
         timeout_s = 360
     start = time.time()
     try:
-                proc = subprocess.Popen(
+        proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -181,7 +185,75 @@ def _run_veil_and_get_categories(
 
     if proc.returncode != 0:
         logging.info({"event": "veil_failed", "code": proc.returncode})
-        return {"error": "failed"}
+        # Attempt a simpler retry with audio/speech disabled (common failure points)
+        def _tail(s: str, n: int = 30) -> str:
+            if not s:
+                return ""
+            lines = [ln.rstrip() for ln in s.splitlines()]
+            return "\n".join(lines[-n:])
+
+        simple_cmd = None
+        try:
+            simple_cmd = []
+            it = iter(cmd)
+            for token in it:
+                if token == '--use_whisper':
+                    next(it, None)
+                    simple_cmd.extend(['--use_whisper', 'false'])
+                elif token == '--w_audio':
+                    next(it, None)
+                    simple_cmd.extend(['--w_audio', '0'])
+                else:
+                    simple_cmd.append(token)
+        except Exception:
+            simple_cmd = None
+
+        retry_rc = None
+        retry_out = ""
+        retry_err = ""
+        if simple_cmd:
+            try:
+                logging.info({'event': 'veil_retry_simple', 'cmd': simple_cmd})
+                rproc = subprocess.Popen(
+                    simple_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    env=env,
+                    cwd=ROOT,
+                )
+                try:
+                    retry_out, retry_err = rproc.communicate(timeout=max(30, min(120, timeout_s // 2)))
+                except subprocess.TimeoutExpired:
+                    rproc.kill()
+                    rproc.wait()
+                    retry_out, retry_err = "", "retry_timeout"
+                retry_rc = rproc.returncode
+                if retry_rc == 0:
+                    # Parse predictions from retry
+                    combined_retry = (retry_out or "") + "\n" + (retry_err or "")
+                    cats_retry: List[str] = []
+                    for line in combined_retry.splitlines():
+                        line = line.strip()
+                        if line.startswith("Predictions: "):
+                            payload = line[len("Predictions: "):].strip()
+                            cats_retry = [c.strip() for c in payload.split(",") if c.strip()]
+                            break
+                    if cats_retry:
+                        return cats_retry[:topk]
+            except Exception as e2:
+                retry_err = f"retry_exception: {e2}"
+
+        return {
+            "error": "failed",
+            "returncode": int(proc.returncode or -1),
+            "duration_s": round(time.time() - start, 3),
+            "stderr_tail": _tail(err, 40),
+            "stdout_tail": _tail(out, 20),
+            "retry_returncode": (None if retry_rc is None else int(retry_rc)),
+            "retry_stderr_tail": _tail(retry_err, 40) if retry_err else None,
+            "retry_stdout_tail": _tail(retry_out, 20) if retry_out else None,
+        }
 
     def _to_category(label: str) -> str:
         l = label.strip()

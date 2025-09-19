@@ -29,6 +29,8 @@ from typing import List, Dict, Optional, Tuple
 import numpy as np
 import torch
 import concurrent.futures
+import threading
+import queue as _queue
 
 from .fusion.label_loader import load_master_labels, select_labels
 from .video_clip import classify_video_clip, _labels_look_like_prompts
@@ -116,6 +118,26 @@ except Exception:
     rerank_with_frames = None  # type: ignore
 
 
+def _encode_texts_batched(model, texts: List[str], device: str, batch_size: Optional[int] = None) -> torch.Tensor:
+    """Encode texts with CLIP in smaller batches to limit peak memory.
+
+    Returns LxD float32 tensor on CPU, normalized per row.
+    """
+    bs = int(os.environ.get("VEIL_LABEL_BATCH", os.environ.get("KNOT_LABEL_BATCH", "128")))
+    if batch_size is not None:
+        bs = int(batch_size)
+    outs: List[torch.Tensor] = []
+    for i in range(0, len(texts), max(1, bs)):
+        chunk = texts[i : i + max(1, bs)]
+        tokens = clip.tokenize(chunk, truncate=True).to(device)
+        with torch.no_grad():
+            emb = normalize_tensor(model.encode_text(tokens).float())
+        outs.append(emb.cpu())
+    if not outs:
+        return torch.zeros((0, 1), dtype=torch.float32)
+    return torch.cat(outs, dim=0)
+
+
 def _build_label_embeddings(
     base_labels: List[str],
     mode: str,
@@ -152,9 +174,7 @@ def _build_label_embeddings(
     rep_prompts = [templates[0].format(c) for c in base_labels]
     for tmpl in templates:
         prompts = [tmpl.format(c) for c in base_labels]
-        tokens = clip.tokenize(prompts, truncate=True).to(device)
-        with torch.no_grad():
-            emb = normalize_tensor(model.encode_text(tokens).float())  # [L, D]
+        emb = _encode_texts_batched(model, prompts, device=device)
         if emb_accum is None:
             emb_accum = emb
         else:
@@ -184,6 +204,8 @@ def main() -> None:
     # Speech / audio
     p.add_argument("--use_whisper", default="true")
     p.add_argument("--whisper_model", default="base")
+    p.add_argument("--speech_max_sec", type=float, default=None)
+    p.add_argument("--audio_max_sec", type=float, default=None)
     p.add_argument("--print_event_matches", action="store_true")
 
     # Weights
@@ -208,6 +230,22 @@ def main() -> None:
     use_whisper = _parse_bool(args.use_whisper)
     use_ann = _parse_bool(args.use_ann)
 
+    # Env fallbacks for max durations
+    if args.speech_max_sec is None:
+        _env_s = os.environ.get("KNOT_SPEECH_MAX_SEC") or os.environ.get("VEIL_SPEECH_MAX_SEC")
+        if _env_s:
+            try:
+                args.speech_max_sec = float(_env_s)
+            except Exception:
+                args.speech_max_sec = None
+    if args.audio_max_sec is None:
+        _env_a = os.environ.get("KNOT_AUDIO_MAX_SEC") or os.environ.get("VEIL_AUDIO_MAX_SEC")
+        if _env_a:
+            try:
+                args.audio_max_sec = float(_env_a)
+            except Exception:
+                args.audio_max_sec = None
+
     # Load labels (prompts)
     master = load_master_labels(args.master_labels_file, expect_exact_count=False)
     labels: List[str] = select_labels(master, "video" if args.mode == "video" else "photo")
@@ -218,7 +256,8 @@ def main() -> None:
     E_np: Optional[np.ndarray] = None
     ann_labels: Optional[List[str]] = None
     ann_index = None
-    if use_ann and ensure_index is not None and _embed_video_api is not None:
+    # Try to load cached label embeddings regardless of ANN usage, for memory savings
+    if ensure_index is not None:
         try:
             idx = ensure_index(
                 args.master_labels_file,
@@ -228,40 +267,21 @@ def main() -> None:
             )
             E_np = idx.get("emb")
             ann_labels = idx.get("labels")
-            ann_index = idx.get("index")
-            if isinstance(E_np, np.ndarray) and isinstance(ann_labels, list):
-                if len(ann_labels) == len(labels):
-                    label_emb = torch.from_numpy(E_np)
-                    labels = ann_labels
-                else:
-                    warnings.warn(
-                        "ANN label count mismatch; rebuilding label embeddings",
-                        RuntimeWarning,
-                        stacklevel=2,
-                    )
-                    raise ValueError("ANN label length mismatch")
+            ann_index = idx.get("index") if _parse_bool(args.use_ann) else None
+            if isinstance(E_np, np.ndarray) and isinstance(ann_labels, list) and len(ann_labels) == len(labels):
+                label_emb = torch.from_numpy(E_np)
+                labels = ann_labels
             else:
-                raise RuntimeError("Invalid ANN embeddings")
+                E_np = None
+                ann_labels = None
+                ann_index = None
         except Exception:
             E_np = None
             ann_labels = None
             ann_index = None
-            # Fallback to local build
-            base_labels = [
-                _strip_prompt_prefix(lbl, "video" if args.mode == "video" else "photo")
-                for lbl in labels
-            ]
-            rep_prompts = [
-                ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
-                for c in base_labels
-            ]
-            ck = _cache_key(args.model, args.mode, rep_prompts)
-            if ck in _LABEL_CACHE:
-                label_emb = _LABEL_CACHE[ck]
-            else:
-                label_emb, _ = _build_label_embeddings(base_labels, args.mode, args.model, device)
-                _LABEL_CACHE[ck] = label_emb
-    else:
+
+    if 'label_emb' not in locals():
+        # Fallback to local build
         base_labels = [
             _strip_prompt_prefix(lbl, "video" if args.mode == "video" else "photo")
             for lbl in labels
@@ -334,7 +354,7 @@ def main() -> None:
 
     def _speech_task():
         from .audio_whisper import transcribe_audio, score_transcript_with_clip
-        transcript = transcribe_audio(args.video, model_size=args.whisper_model)
+        transcript = transcribe_audio(args.video, model_size=args.whisper_model, max_sec=args.speech_max_sec)
         return score_transcript_with_clip(
             transcript,
             labels,
@@ -348,7 +368,7 @@ def main() -> None:
         if args.mode == "video":
             try:
                 from .fusion.yamnet_events import run_yamnet, score_events_to_labels
-                ydiag_local = run_yamnet(args.video, topn=10)
+                ydiag_local = run_yamnet(args.video, topn=10, max_sec=args.audio_max_sec)
                 emap = score_events_to_labels(
                     args.video,
                     labels,
@@ -363,27 +383,51 @@ def main() -> None:
                     print(f"YAMNet scoring failed: {e}")
         return np.zeros(len(labels), dtype=np.float32), None, 'none'
 
+    # Run visual and speech via threadpool, but run audio (YAMNet) in a daemon
+    # thread with a hard join timeout to avoid long TF Hub downloads blocking.
     futures: Dict[str, concurrent.futures.Future] = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
         futures["video"] = ex.submit(_video_task)
         if args.mode == "video" and use_whisper and args.w_speech > 0:
             futures["speech"] = ex.submit(_speech_task)
+
+        # Launch YAMNet in a daemon thread so the process is not held open
+        audio_q: Optional[_queue.Queue] = None
+        audio_thread: Optional[threading.Thread] = None
         if args.mode == "video" and args.w_audio > 0:
-            futures["audio"] = ex.submit(_audio_task)
+            audio_q = _queue.Queue(maxsize=1)
 
-    # Gather results
-    vres = futures["video"].result()
-    if "speech" in futures:
-        sres = futures["speech"].result()
-    else:
-        sres = {"categories": labels, "scores": np.zeros(len(labels)), "chunk_count": 0}
+            def _audio_worker():
+                try:
+                    res = _audio_task()
+                    if audio_q is not None:
+                        audio_q.put(res)
+                except Exception:
+                    if audio_q is not None:
+                        audio_q.put((np.zeros(len(labels), dtype=np.float32), None, 'none'))
 
-    audio_backend = 'none'
-    if "audio" in futures:
-        escores, ydiag, audio_backend = futures["audio"].result()
-    else:
+            audio_thread = threading.Thread(target=_audio_worker, name="yamnet-audio", daemon=True)
+            audio_thread.start()
+
+        # Gather results
+        vres = futures["video"].result()
+        if "speech" in futures:
+            sres = futures["speech"].result()
+        else:
+            sres = {"categories": labels, "scores": np.zeros(len(labels)), "chunk_count": 0}
+
+        # Audio: wait a bounded time; if not ready, use zeros
         escores = np.zeros(len(labels), dtype=np.float32)
         ydiag = None
+        audio_backend = 'none'
+        if audio_thread is not None and audio_q is not None:
+            # Timeout proportional to max audio seconds (model load may add overhead)
+            wait_s = float(max(15.0, min(90.0, (args.audio_max_sec or 20.0) * 2.0)))
+            audio_thread.join(timeout=wait_s)
+            try:
+                escores, ydiag, audio_backend = audio_q.get_nowait()
+            except Exception:
+                pass
 
     # Fuse with simple reliability-based gating for speech/events
     v_mmn = min_max_norm(vres["scores"]) if isinstance(vres.get("scores"), np.ndarray) else np.zeros(len(labels))

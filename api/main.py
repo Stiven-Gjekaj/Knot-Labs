@@ -350,7 +350,12 @@ def _handle_job(job: Dict[str, Any]) -> Any:
                 return {'status': 'cancelled'}
             if JOBS_COUNT:
                 JOBS_COUNT.labels(type='classify_post', status='error').inc()
-            raise RuntimeError(res['error'])
+            try:
+                import json as _json
+                _msg = _json.dumps(res)
+            except Exception:
+                _msg = str(res)
+            raise RuntimeError(_msg)
 
         if job_queue.is_cancelled(job['id']):
             if JOBS_COUNT:
@@ -432,7 +437,12 @@ def api_create_post(req: CreatePost, request: Request):
 
 @app.get('/jobs/{job_id}')
 def api_job_status(job_id: str, request: Request):
-    _check_rate(request)
+    # Allow a higher rate for lightweight job polling
+    try:
+        poll_limit = int(os.environ.get("KNOT_JOBS_POLL_LIMIT", "180"))
+    except Exception:
+        poll_limit = 180
+    _check_rate(request, limit=poll_limit)
     return job_queue.status(job_id)
 
 

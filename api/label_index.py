@@ -69,6 +69,26 @@ def _strip_prompt_prefix(label: str, mode: str) -> str:
     return l
 
 
+def _encode_texts_batched(model, texts: List[str], device: str, batch_size: Optional[int] = None) -> torch.Tensor:
+    """Encode a list of texts with CLIP in smaller batches to avoid OOM.
+
+    Returns a LxD float32 tensor on CPU, normalized per row.
+    """
+    bs = int(os.environ.get("KNOT_LABEL_BATCH", os.environ.get("VEIL_LABEL_BATCH", "128")))
+    if batch_size is not None:
+        bs = int(batch_size)
+    outputs: List[torch.Tensor] = []
+    for i in range(0, len(texts), max(1, bs)):
+        chunk = texts[i : i + max(1, bs)]
+        tokens = clip.tokenize(chunk, truncate=True).to(device)
+        with torch.no_grad():
+            emb = _normalize(model.encode_text(tokens).float())
+        outputs.append(emb.cpu())
+    if not outputs:
+        return torch.zeros((0, 1), dtype=torch.float32)
+    return torch.cat(outputs, dim=0)
+
+
 def build_label_embeddings(master_path: str, model_name: str = "ViT-B/32", mode: str = "video", device: str = "cpu") -> Tuple[np.ndarray, List[str]]:
     raw = _read_labels(master_path, mode=mode)
     if not raw:
@@ -80,9 +100,7 @@ def build_label_embeddings(master_path: str, model_name: str = "ViT-B/32", mode:
     emb_accum: Optional[torch.Tensor] = None
     for tmpl in templates:
         prompts = [tmpl.format(c) for c in base_labels]
-        tokens = clip.tokenize(prompts, truncate=True).to(device)
-        with torch.no_grad():
-            emb = _normalize(model.encode_text(tokens).float())  # [L, D]
+        emb = _encode_texts_batched(model, prompts, device=device)
         emb_accum = emb if emb_accum is None else (emb_accum + emb)
     assert emb_accum is not None
     emb_avg = _normalize(emb_accum / float(len(templates)))
