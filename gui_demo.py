@@ -396,7 +396,7 @@ class App:
                 try:
                     from Mesh.tools.build_mastercategories import build_tree_and_write  # type: ignore
                     _notify(self.log, "Tree not found. Building categories tree...")
-                    build_tree_and_write(out_path=os.path.join("Mesh", "mastercategories.txt"), tree_out=tree_path, mesos=3, micros=3)
+                    build_tree_and_write(out_path=os.path.join("Mesh", "mastercategories.txt"), tree_out=tree_path, mesos=3, micros=8)
                     _notify(self.log, "Built categories tree.")
                 except Exception as _e:
                     _notify(self.log, f"Tree not found and build failed: {_e}")
@@ -416,6 +416,12 @@ class App:
                         if isinstance(micros, list):
                             for mi in micros:
                                 self.tree.insert(sid, 'end', text=str(mi))
+                        elif isinstance(micros, dict):
+                            for mi, nanos in micros.items():
+                                mi_id = self.tree.insert(sid, 'end', text=str(mi))
+                                if isinstance(nanos, list):
+                                    for na in nanos:
+                                        self.tree.insert(mi_id, 'end', text=str(na))
             _notify(self.log, "Loaded categories tree")
         except Exception as e:
             _notify(self.log, f"Error loading tree: {e}")

@@ -60,9 +60,9 @@ def load_master_categories(path: str) -> List[str]:
 
 def make_post(creator_id: str, categories: List[str], country: str | None = None) -> Dict:
     post_id = uuid.uuid4().hex
-    # pick up to 14 unique categories (2 macro + 4 meso + 8 micro)
+    # pick up to 26 unique categories (2 macro + 4 meso + 8 micro + 12 nano)
     if categories:
-        picks = random.sample(categories, k=min(14, len(categories)))
+        picks = random.sample(categories, k=min(26, len(categories)))
     else:
         picks = []
     if country is None or country not in COUNTRIES:

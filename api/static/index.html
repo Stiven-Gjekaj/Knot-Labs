@@ -102,7 +102,7 @@ function onThemeToggle(el) { applyTheme((el && el.checked) ? 'dark' : 'light'); 
 function onAutoTreeToggle(el){ try { localStorage.setItem('knot_auto_tree', (el && el.checked) ? '1' : '0'); } catch {} }
     function onAccordionToggle(el){ try { localStorage.setItem('knot_accordion', (el && el.checked) ? '1' : '0'); } catch {} }
 
-    // Categories Tree: fetch and render macros -> mesos -> micros
+    // Categories Tree: fetch and render macros -> mesos -> micros -> nanos
     async function loadCategoriesTree() {
       try {
         const r = await api('/categories/tree');
@@ -132,12 +132,28 @@ function onAutoTreeToggle(el){ try { localStorage.setItem('knot_auto_tree', (el 
           macroLi.appendChild(mesoUl);
           Object.keys(mesos).forEach((meso) => {
             const mesoLi = addItem(mesoUl, meso);
-            const micros = Array.isArray(mesos[meso]) ? mesos[meso] : [];
+            const microValue = mesos[meso];
             const microUl = document.createElement('ul');
             microUl.style.listStyle = 'circle';
             microUl.style.paddingLeft = '18px';
             mesoLi.appendChild(microUl);
-            micros.forEach((mi) => addItem(microUl, mi));
+            if (Array.isArray(microValue)) {
+              // Legacy/basic tree: list of micros
+              microValue.forEach((mi) => addItem(microUl, mi));
+            } else if (microValue && typeof microValue === 'object') {
+              // Extended tree: map micro -> nanos[]
+              Object.keys(microValue).forEach((mi) => {
+                const miLi = addItem(microUl, mi);
+                const nanos = Array.isArray(microValue[mi]) ? microValue[mi] : [];
+                if (nanos.length > 0) {
+                  const nanoUl = document.createElement('ul');
+                  nanoUl.style.listStyle = 'square';
+                  nanoUl.style.paddingLeft = '18px';
+                  miLi.appendChild(nanoUl);
+                  nanos.forEach((na) => addItem(nanoUl, na));
+                }
+              });
+            }
           });
         });
         cont.appendChild(ul);

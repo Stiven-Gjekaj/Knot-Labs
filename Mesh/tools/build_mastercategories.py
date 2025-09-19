@@ -30,7 +30,7 @@ import os
 import re
 import random
 import time
-from typing import Dict, List, Tuple, Iterable, Set, Optional
+from typing import Dict, List, Tuple, Iterable, Set, Optional, Callable
 
 try:
     from rapidfuzz.fuzz import token_set_ratio  # type: ignore
@@ -49,6 +49,23 @@ SEED = 42
 random.seed(SEED)
 
 TARGET_COUNT = 1000
+
+
+class _Progress:
+    def __init__(self, enabled: bool = True) -> None:
+        self.enabled = enabled
+        self._last = -1
+
+    def update(self, percent: int, prefix: str = "") -> None:
+        if not self.enabled:
+            return
+        p = max(1, min(100, int(percent)))
+        if p == self._last:
+            return
+        print(f"\r{prefix}Progress: {p}%", end="", flush=True)
+        if p >= 100:
+            print("")
+        self._last = p
 
 
 def normalize(text: str) -> str:
@@ -97,31 +114,31 @@ MACROS: List[str] = [
 
 # Map friendly macro names to Wikipedia category topics to broaden coverage
 MACRO_WIKI_TOPICS: Dict[str, List[str]] = {
-    "Gaming": ["Gaming", "Video games"],
-    "Music": ["Music"],
-    "Sports": ["Sports"],
-    "Movies & TV": ["Film", "Television"],
-    "Anime & Comics": ["Anime", "Manga", "Comics"],
-    "Technology & Gadgets": ["Technology", "Electronics"],
-    "Science & Education": ["Science", "Education"],
-    "Art & Design": ["Art", "Design"],
-    "Fashion & Beauty": ["Fashion", "Beauty"],
-    "Food & Cooking": ["Food", "Cooking"],
-    "Travel & Places": ["Travel", "Geography"],
-    "Cars & Vehicles": ["Vehicles", "Automobiles"],
-    "Health & Fitness": ["Health", "Physical fitness"],
-    "Lifestyle & Routines": ["Lifestyle"],
-    "History & Culture": ["History", "Culture"],
-    "Politics & News": ["Politics", "News media"],
-    "Finance & Business": ["Finance", "Business"],
-    "Nature & Animals": ["Nature", "Animals"],
-    "DIY & How-To": ["Do it yourself"],
-    "Comedy & Memes": ["Comedy", "Internet memes"],
-    "Motivation & Self-Help": ["Self-help", "Personal development"],
-    "Mystery & Horror": ["Horror", "Mystery fiction"],
-    "Podcasts & Talk": ["Podcasts", "Talk radio"],
-    "Relationships & Community": ["Relationships", "Community"],
-    "Spirituality & Philosophy": ["Spirituality", "Philosophy"],
+    "Gaming": ["Gaming", "Video games", "Esports", "Game development", "Board games"],
+    "Music": ["Music", "Music genres", "Musicians", "Concerts", "Music industry"],
+    "Sports": ["Sports", "Sports by type", "Recreational sports", "Outdoor recreation"],
+    "Movies & TV": ["Film", "Television", "Cinematography", "Screenwriting", "Animation"],
+    "Anime & Comics": ["Anime", "Manga", "Comics", "Graphic novels", "Light novels"],
+    "Technology & Gadgets": ["Technology", "Electronics", "Gadgets", "Computing", "Robotics"],
+    "Science & Education": ["Science", "Education", "STEM", "Research", "Academic disciplines"],
+    "Art & Design": ["Art", "Design", "Architecture", "Visual arts", "Applied arts"],
+    "Fashion & Beauty": ["Fashion", "Beauty", "Cosmetics", "Hairstyles", "Clothing"],
+    "Food & Cooking": ["Food", "Cooking", "Cuisines", "Beverages", "Baking"],
+    "Travel & Places": ["Travel", "Geography", "Tourism", "Landforms", "Attractions"],
+    "Cars & Vehicles": ["Vehicles", "Automobiles", "Transport", "Aviation", "Rail transport"],
+    "Health & Fitness": ["Health", "Physical fitness", "Exercise", "Wellness", "Nutrition"],
+    "Lifestyle & Routines": ["Lifestyle", "Hobbies", "Leisure", "Daily routines"],
+    "History & Culture": ["History", "Culture", "Cultural history", "World history"],
+    "Politics & News": ["Politics", "News media", "Public policy", "Elections"],
+    "Finance & Business": ["Finance", "Business", "Economics", "Entrepreneurship", "Investing"],
+    "Nature & Animals": ["Nature", "Animals", "Wildlife", "Natural environment"],
+    "DIY & How-To": ["Do it yourself", "Handicrafts", "Home improvement"],
+    "Comedy & Memes": ["Comedy", "Internet memes", "Humor"],
+    "Motivation & Self-Help": ["Self-help", "Personal development", "Motivation"],
+    "Mystery & Horror": ["Horror", "Mystery fiction", "Thriller"],
+    "Podcasts & Talk": ["Podcasts", "Talk radio", "Interviews"],
+    "Relationships & Community": ["Relationships", "Community", "Social groups"],
+    "Spirituality & Philosophy": ["Spirituality", "Philosophy", "Religion"],
 }
 
 
@@ -137,32 +154,92 @@ def _dedup_keep_order(items: Iterable[str]) -> List[str]:
     return out
 
 
-def _fetch_wikipedia_subcats(topic: str, max_items: int = 10) -> List[str]:
-    # Best-effort extraction; ignores failures gracefully
+_SUBCAT_CACHE: Dict[Tuple[str, int, int], List[str]] = {}
+
+
+def _fetch_wikipedia_subcats(topic: str, max_items: int = 10, depth: int = 0) -> List[str]:
+    """Fetch Wikipedia subcategories for a topic with pagination and optional depth.
+
+    - Follows `cmcontinue` to accumulate up to `max_items` entries.
+    - If `depth > 0`, performs a BFS into subcategories up to that depth.
+    - Results are memoized per (normalized(topic), max_items, depth).
+    - Best-effort: network errors yield [].
+    """
+    key = (normalize(topic), int(max_items), int(depth))
+    if key in _SUBCAT_CACHE:
+        return list(_SUBCAT_CACHE[key])
+
     try:
         import urllib.parse as up
         import urllib.request as ur
-        title = f"Category:{topic.replace(' ', '_')}"
-        url = (
-            "https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle="
-            + up.quote(title)
-            + "&cmtype=subcat&cmlimit=50&format=json"
-        )
-        # Wikipedia requires a descriptive User-Agent per policy
-        headers = {
-            "User-Agent": "Knot-Labs Category Builder/1.0 (+https://example.com; support@knotlabs.local)",
-        }
-        req = ur.Request(url, headers=headers)
-        with ur.urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-        items = [m.get('title','') for m in (data.get('query',{}).get('categorymembers') or [])]
-        cleaned = []
-        for it in items:
-            it = re.sub(r"^Category:\s*", "", it)
-            cleaned.append(it)
-        return _dedup_keep_order(cleaned)[:max_items]
     except Exception:
         return []
+
+    def _paged_fetch(cat_title: str, cap: int) -> List[str]:
+        results: List[str] = []
+        cont: Optional[str] = None
+        # Wikipedia requires a descriptive User-Agent per policy
+        headers = {
+            "User-Agent": "Knot-Labs Category Builder/1.1 (+https://github.com/knotlabs; tools@knotlabs.local)",
+        }
+        while len(results) < cap:
+            try:
+                title = f"Category:{cat_title.replace(' ', '_')}"
+                url = (
+                    "https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle="
+                    + up.quote(title)
+                    + "&cmtype=subcat&cmlimit=50&format=json"
+                )
+                if cont:
+                    url += "&cmcontinue=" + up.quote(cont)
+                req = ur.Request(url, headers=headers)
+                with ur.urlopen(req, timeout=8) as resp:
+                    data = json.loads(resp.read().decode('utf-8'))
+                items = [m.get('title','') for m in (data.get('query',{}).get('categorymembers') or [])]
+                for it in items:
+                    it = re.sub(r"^Category:\s*", "", it)
+                    if it:
+                        results.append(it)
+                        if len(results) >= cap:
+                            break
+                cont = None
+                try:
+                    cont = (data.get('continue', {}) or {}).get('cmcontinue')
+                except Exception:
+                    cont = None
+                if not cont:
+                    break
+            except Exception:
+                break
+        return _dedup_keep_order(results)[:cap]
+
+    # BFS over subcategories up to `depth`
+    collected: List[str] = []
+    collected_norm: Set[str] = set()
+    seen_nodes: Set[str] = set()
+    queue: List[Tuple[str, int]] = [(topic, 0)]
+    while queue and len(collected) < max_items:
+        node, d = queue.pop(0)
+        node_key = normalize(node)
+        if node_key in seen_nodes:
+            continue
+        seen_nodes.add(node_key)
+
+        subs = _paged_fetch(node, cap=max(1, max_items - len(collected)))
+        for s in subs:
+            ns = normalize(s)
+            if ns not in collected_norm:
+                collected.append(s)
+                collected_norm.add(ns)
+                if len(collected) >= max_items:
+                    break
+        if d < depth:
+            for s in subs:
+                queue.append((s, d + 1))
+
+    out = _dedup_keep_order(collected)[:max_items]
+    _SUBCAT_CACHE[key] = list(out)
+    return out
 
 
 FALLBACK_MESO: Dict[str, List[str]] = {
@@ -195,7 +272,7 @@ FALLBACK_MICRO: Dict[str, List[str]] = {
 _FALLBACK_MICRO_N: Dict[str, List[str]] = {normalize(k): v for k, v in FALLBACK_MICRO.items()}
 
 
-def build_tree(per_macro_mesos: int = 3, per_meso_micros: int = 3) -> Dict[str, Dict[str, List[str]]]:
+def build_tree(per_macro_mesos: int = 3, per_meso_micros: int = 3, mesos_depth: int = 0, micros_depth: int = 0) -> Dict[str, Dict[str, List[str]]]:
     """Build a hierarchical category tree using Wikipedia subcategories with offline fallbacks.
 
     Returns a dict: {macro: {meso: [micro, ...], ...}, ...}
@@ -203,14 +280,18 @@ def build_tree(per_macro_mesos: int = 3, per_meso_micros: int = 3) -> Dict[str, 
     tree: Dict[str, Dict[str, List[str]]] = {}
     taken: set[str] = set()
     for macro in MACROS:
-        mesos = _fetch_wikipedia_subcats(macro, max_items=10)
+        # Broaden mesos by querying multiple related topics with optional depth
+        meso_srcs: List[str] = []
+        for t in MACRO_WIKI_TOPICS.get(macro, [macro]):
+            meso_srcs.extend(_fetch_wikipedia_subcats(t, max_items=50, depth=mesos_depth))
+        mesos = meso_srcs or _fetch_wikipedia_subcats(macro, max_items=10, depth=mesos_depth)
         if not mesos:
             mesos = FALLBACK_MESO.get(macro, [])
         mesos = [m for m in mesos if m]
         mesos = _dedup_keep_order(mesos)[: max(1, per_macro_mesos)]
         tree[macro] = {}
         for meso in mesos:
-            micros = _fetch_wikipedia_subcats(meso, max_items=12)
+            micros = _fetch_wikipedia_subcats(meso, max_items=50, depth=micros_depth)
             if not micros:
                 # robust fallback lookup using normalized keys
                 micros = _FALLBACK_MICRO_N.get(normalize(meso), [])
@@ -232,7 +313,7 @@ def build_tree(per_macro_mesos: int = 3, per_meso_micros: int = 3) -> Dict[str, 
     return tree
 
 
-def build_tree_by_count(target_micros: int) -> Dict[str, Dict[str, List[str]]]:
+def build_tree_by_count(target_micros: int, mesos_depth: int = 0, micros_depth: int = 0) -> Dict[str, Dict[str, List[str]]]:
     """Build a hierarchical tree sourced from Wikipedia, selecting up to target micro categories.
 
     Strategy:
@@ -247,7 +328,7 @@ def build_tree_by_count(target_micros: int) -> Dict[str, Dict[str, List[str]]]:
         topics = MACRO_WIKI_TOPICS.get(macro, [macro])
         meso_accum: List[str] = []
         for t in topics:
-            meso_accum.extend(_fetch_wikipedia_subcats(t, max_items=50))
+            meso_accum.extend(_fetch_wikipedia_subcats(t, max_items=200, depth=mesos_depth))
         if not meso_accum:
             meso_accum = FALLBACK_MESO.get(macro, [])
         mesos = _dedup_keep_order(meso_accum)
@@ -257,7 +338,7 @@ def build_tree_by_count(target_micros: int) -> Dict[str, Dict[str, List[str]]]:
     pool: Dict[Tuple[str, str], List[str]] = {}
     for macro, mesos in macro_to_mesos.items():
         for meso in mesos:
-            micros = _dedup_keep_order(_fetch_wikipedia_subcats(meso, max_items=50) or _FALLBACK_MICRO_N.get(normalize(meso), []))
+            micros = _dedup_keep_order(_fetch_wikipedia_subcats(meso, max_items=500, depth=micros_depth) or _FALLBACK_MICRO_N.get(normalize(meso), []))
             # Filter out obvious self/parent duplicates
             micros = [mi for mi in micros if normalize(mi) not in {normalize(meso), normalize(macro)}]
             pool[(macro, meso)] = micros
@@ -305,11 +386,19 @@ def build_tree_by_count(target_micros: int) -> Dict[str, Dict[str, List[str]]]:
 
 
 def write_master_from_tree(tree: Dict[str, Dict[str, List[str]]], out_path: str) -> int:
-    """Write mastercategories.txt lines from a tree. Returns number of lines written."""
+    """Write mastercategories.txt lines from a tree. Returns number of lines written.
+
+    Supports both legacy trees where micros are a list[str] and extended trees where
+    micros are a mapping {micro: [nanos...]}. Only micro labels are written to master.
+    """
     lines: List[str] = []
     for macro, mesos in tree.items():
         for meso, micros in mesos.items():
-            for mi in micros:
+            if isinstance(micros, dict):
+                micro_iter = list(micros.keys())
+            else:
+                micro_iter = list(micros or [])
+            for mi in micro_iter:
                 lab = normalize(mi)
                 if not lab:
                     continue
@@ -328,12 +417,57 @@ def write_master_from_tree(tree: Dict[str, Dict[str, List[str]]], out_path: str)
     return len(final)
 
 
+def _build_nanos_for_tree(
+    tree: Dict[str, Dict[str, List[str]]],
+    nanos_per_micro: int = 3,
+    progress_cb: Optional[Callable[[int], None]] = None,
+) -> Dict[str, List[str]]:
+    """Build nano categories for each micro by querying Wikipedia subcategories.
+
+    Returns a mapping: {micro_label: [nano, ...]}.
+    """
+    micros: List[str] = []
+    for _macro, mesos in tree.items():
+        for _meso, micro_list in (mesos or {}).items():
+            for mi in (micro_list or []):
+                if mi:
+                    micros.append(normalize(mi))
+    total = len(micros) if micros else 1
+    out: Dict[str, List[str]] = {}
+    for i, mi in enumerate(micros, 1):
+        nanos = _dedup_keep_order(_fetch_wikipedia_subcats(mi, max_items=20))[: max(0, int(nanos_per_micro))]
+        out[mi] = nanos
+        if progress_cb is not None:
+            # nanos building accounts for 25% of the overall meter; scale here 0..100 for the sub-phase
+            subp = int((i / total) * 100)
+            progress_cb(subp)
+    return out
+
+
+def _embed_nanos_into_tree(tree: Dict[str, Dict[str, List[str]]], nanos_map: Dict[str, List[str]]) -> Dict[str, Dict[str, Dict[str, List[str]]]]:
+    """Return a new tree where each meso maps to {micro: [nanos...]}."""
+    new_tree: Dict[str, Dict[str, Dict[str, List[str]]]] = {}
+    for macro, mesos in (tree or {}).items():
+        new_tree[macro] = {}
+        for meso, micro_list in (mesos or {}).items():
+            micro_map: Dict[str, List[str]] = {}
+            for mi in (micro_list or []):
+                key = normalize(mi)
+                micro_map[mi] = list(nanos_map.get(key, nanos_map.get(mi, [])) or [])
+            new_tree[macro][meso] = micro_map
+    return new_tree
+
+
 def build_tree_and_write(
     out_path: Optional[str] = None,
     tree_out: Optional[str] = None,
     mesos: int = 3,
     micros: int = 3,
     total: Optional[int] = None,
+    nanos: Optional[int] = None,
+    mesos_depth: int = 0,
+    micros_depth: int = 0,
+    progress: bool = False,
 ) -> Dict[str, int]:
     """Programmatic entry to build the hierarchical tree and write outputs.
 
@@ -353,15 +487,84 @@ def build_tree_and_write(
         tree_out = os.path.join(root_dir, "master_tree.json")
 
     t0 = time.time()
+    prog = _Progress(enabled=progress)
+
+    # Phase 1: build tree (micros)
+    def _phase1(pct: int) -> None:
+        # map sub-phase [0..100] -> overall [1..70]
+        prog.update(1 + int(0.69 * max(0, min(100, pct))), prefix="(tree) ")
+
     if total is not None and int(total) > 0:
-        tree = build_tree_by_count(int(total))
+        # build by count, report progress during selection
+        tree = build_tree_by_count(int(total), mesos_depth=mesos_depth, micros_depth=micros_depth)
+        _phase1(100)
     else:
-        tree = build_tree(per_macro_mesos=int(mesos), per_meso_micros=int(micros))
+        # estimate progress across expected micros
+        approx_total = max(1, int(mesos) * int(micros) * max(1, len(MACROS)))
+        built = 0
+        tree: Dict[str, Dict[str, List[str]]] = {}
+        taken: set[str] = set()
+        for macro in MACROS:
+            # broaden mesos by using related topics and depth
+            meso_srcs: List[str] = []
+            for t in MACRO_WIKI_TOPICS.get(macro, [macro]):
+                meso_srcs.extend(_fetch_wikipedia_subcats(t, max_items=50, depth=mesos_depth))
+            meso_list = meso_srcs or _fetch_wikipedia_subcats(macro, max_items=10, depth=mesos_depth) or FALLBACK_MESO.get(macro, [])
+            meso_list = _dedup_keep_order([m for m in meso_list if m])[: max(1, int(mesos))]
+            tree[macro] = {}
+            for meso in meso_list:
+                micro_list = _fetch_wikipedia_subcats(meso, max_items=50, depth=micros_depth) or _FALLBACK_MICRO_N.get(normalize(meso), [])
+                micro_list = [mi for mi in micro_list if mi]
+                micro_list = [
+                    mi for mi in micro_list
+                    if normalize(mi) not in taken and normalize(mi) != normalize(meso) and normalize(mi) != normalize(macro)
+                ]
+                micro_list = _dedup_keep_order(micro_list)[: max(1, int(micros))]
+                for mi in micro_list:
+                    taken.add(normalize(mi))
+                tree[macro][meso] = micro_list
+                built += len(micro_list)
+                _phase1(int(min(100, (built / approx_total) * 100)))
+            if not tree[macro]:
+                fm = FALLBACK_MESO.get(macro, [])[: max(1, int(mesos))]
+                for m in fm:
+                    mi = FALLBACK_MICRO.get(m, [])[: max(1, int(micros))]
+                    tree[macro][m] = mi
+                    built += len(mi)
+                    _phase1(int(min(100, (built / approx_total) * 100)))
+
+    # Phase 2: write master from tree
     n = write_master_from_tree(tree, out_path)
+    prog.update(85, prefix="(write) ")
+
+    # Phase 3: optionally build nanos and embed into the tree structure
+    nanos_per_micro = 12 if nanos is None else int(nanos)
+    if nanos_per_micro > 0:
+        def _phase2_sub(pct: int) -> None:
+            # map sub-phase [0..100] -> overall [70..95]
+            prog.update(70 + int(0.25 * max(0, min(100, pct))), prefix="(nanos) ")
+        nanos_map = _build_nanos_for_tree(tree, nanos_per_micro=nanos_per_micro, progress_cb=_phase2_sub)
+        # Replace micros list with mapping micro -> nanos
+        tree = _embed_nanos_into_tree(tree, nanos_map)  # type: ignore[assignment]
+        prog.update(95, prefix="(nanos) ")
+
+    # Write the (possibly extended) tree JSON
     with open(tree_out, 'w', encoding='utf-8') as f:
         json.dump(tree, f, indent=2, ensure_ascii=False)
+
+    prog.update(100, prefix="(done) ")
     dt = time.time() - t0
-    return {"final": int(n), "macros": len(tree), "elapsed_s": int(dt)}
+    # Count nanos if embedded
+    nanos_total = 0
+    try:
+        for _macro, mesos_d in (tree or {}).items():
+            for _meso, micro_val in (mesos_d or {}).items():
+                if isinstance(micro_val, dict):
+                    for _mi, nanos_list in micro_val.items():
+                        nanos_total += len(nanos_list or [])
+    except Exception:
+        nanos_total = 0
+    return {"final": int(n), "macros": len(tree), "elapsed_s": int(dt), "nanos": int(nanos_total)}
 
 
 def build_candidates() -> Dict[str, List[str]]:
@@ -734,14 +937,17 @@ def write_master(lines: List[Tuple[str, str]], out_path: str) -> None:
             f.write(f"a video about {cat} | a photo of {cat}\n")
 
 
-def build_and_write(out_path: str | None = None, target_count: int = TARGET_COUNT) -> Dict[str, int]:
+def build_and_write(out_path: str | None = None, target_count: int = TARGET_COUNT, progress: bool = False) -> Dict[str, int]:
     """Programmatic entry point used by the GUI.
 
     Returns a dict of basic stats.
     """
+    prog = _Progress(enabled=progress)
+    prog.update(1, prefix="(flat) ")
     domains = build_candidates()
     raw_count = sum(len(v) for v in domains.values())
 
+    prog.update(20, prefix="(flat) ")
     # Normalize + dedup once for stats
     tagged: List[Tuple[str, str]] = []
     for dom, items in domains.items():
@@ -749,6 +955,7 @@ def build_and_write(out_path: str | None = None, target_count: int = TARGET_COUN
             tagged.append((dom, normalize(it)))
     deduped = unique_dedup(tagged)
 
+    prog.update(50, prefix="(flat) ")
     final = build_final(target_count)
 
     # Default path: Mesh/mastercategories.txt (parent of this tools/ dir)
@@ -757,7 +964,9 @@ def build_and_write(out_path: str | None = None, target_count: int = TARGET_COUN
         os.makedirs(out_dir, exist_ok=True)
         out_path = os.path.join(out_dir, "mastercategories.txt")
     out_path = os.path.abspath(out_path)
+    prog.update(90, prefix="(flat) ")
     write_master(final, out_path)
+    prog.update(100, prefix="(flat) ")
 
     return {
         "candidates": raw_count,
@@ -771,21 +980,35 @@ def main() -> None:
     p.add_argument("--output", default=None, help="Output path for mastercategories.txt (default Mesh/mastercategories.txt)")
     p.add_argument("--count", type=int, default=TARGET_COUNT, help="Target count (flat mode) or total micro labels in tree mode")
     # Hierarchical options
-    p.add_argument("--use-tree", action="store_true", help="Build using hierarchical macro/meso/micro tree and also write master_tree.json")
+    p.add_argument("--use-tree", action="store_true", help="Build using hierarchical macro/meso/micro(+nano) tree and also write master_tree.json")
     p.add_argument("--tree-out", default=None, help="Path for master_tree.json (default Mesh/master_tree.json)")
     p.add_argument("--mesos", type=int, default=3, help="meso per macro (tree mode)")
     p.add_argument("--micros", type=int, default=3, help="micro per meso (tree mode)")
+    p.add_argument("--nanos", type=int, default=None, help="nano per micro (tree mode; default 12; pass 0 to skip)")
+    p.add_argument("--depth-mesos", type=int, default=0, help="subcategory depth for mesos discovery (0=no recursion)")
+    p.add_argument("--depth-micros", type=int, default=0, help="subcategory depth for micros discovery (0=no recursion)")
+    p.add_argument("--progress", action="store_true", default=True, help="show a 1%-100% progress meter")
     args = p.parse_args()
 
     if args.use_tree:
-        stats = build_tree_and_write(out_path=args.output, tree_out=args.tree_out, mesos=args.mesos, micros=args.micros, total=args.count)
+        stats = build_tree_and_write(
+            out_path=args.output,
+            tree_out=args.tree_out,
+            mesos=args.mesos,
+            micros=args.micros,
+            total=args.count,
+            nanos=args.nanos,
+            mesos_depth=args.depth_mesos,
+            micros_depth=args.depth_micros,
+            progress=args.progress,
+        )
         out_path = args.output or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "mastercategories.txt")
         tree_out = args.tree_out or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "master_tree.json")
         print(f"Final (tree micros): {stats['final']}")
         print(f"Wrote: {os.path.abspath(out_path)}")
         print(f"Tree: {os.path.abspath(tree_out)}")
     else:
-        stats = build_and_write(out_path=args.output, target_count=args.count)
+        stats = build_and_write(out_path=args.output, target_count=args.count, progress=args.progress)
         # Resolve path for print
         out_path = args.output or os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)), "mastercategories.txt")
         print(f"Candidates: {stats['candidates']}")

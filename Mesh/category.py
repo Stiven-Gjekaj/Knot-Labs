@@ -9,6 +9,7 @@ def make_category_from_micro(micro: List[str]) -> Dict:
     - macro: first 2 unique labels (list[str])
     - meso: next 4 unique labels (list[str])
     - micro: next 8 unique labels (list[str])
+    - nano: remaining unique labels (list[str])
 
     Falls back to 'uncategorized' if empty.
     """
@@ -27,10 +28,12 @@ def make_category_from_micro(micro: List[str]) -> Dict:
     meso = rest_after_macro[:4] if rest_after_macro else macro
     rest_after_meso = rest_after_macro[4:]
     micro_labels = rest_after_meso[:8] if rest_after_meso else []
-    return {"macro": macro, "meso": meso, "micro": micro_labels}
+    rest_after_micro = rest_after_meso[8:]
+    nano_labels = rest_after_micro[:] if rest_after_micro else []
+    return {"macro": macro, "meso": meso, "micro": micro_labels, "nano": nano_labels}
 
 
-def make_category_with_limits(micro: List[str], macro_n: int = 2, meso_n: int = 4, micro_n: int = 8) -> Dict:
+def make_category_with_limits(micro: List[str], macro_n: int = 2, meso_n: int = 4, micro_n: int = 8, nano_n: int | None = 12) -> Dict:
     """Build a Category object with specific bucket sizes.
 
     This does not affect the default behavior of make_category_from_micro used by tests.
@@ -49,7 +52,12 @@ def make_category_with_limits(micro: List[str], macro_n: int = 2, meso_n: int = 
     meso = rest_after_macro[:meso_n] if rest_after_macro else macro
     rest_after_meso = rest_after_macro[meso_n:]
     micro_labels = rest_after_meso[:micro_n] if rest_after_meso else []
-    return {"macro": macro, "meso": meso, "micro": micro_labels}
+    rest_after_micro = rest_after_meso[micro_n:]
+    if nano_n is None:
+        nano_labels = rest_after_micro[:] if rest_after_micro else []
+    else:
+        nano_labels = rest_after_micro[:nano_n] if rest_after_micro else []
+    return {"macro": macro, "meso": meso, "micro": micro_labels, "nano": nano_labels}
 
 
 def ensure_category(post: Dict) -> Dict:
@@ -61,6 +69,9 @@ def ensure_category(post: Dict) -> Dict:
         micro = cat.get("micro")
         if not isinstance(micro, list):
             micro = []
+        nano = cat.get("nano")
+        if not isinstance(nano, list):
+            nano = []
         macro = cat.get("macro")
         if isinstance(macro, str):
             macro = [macro] if macro else []
@@ -73,12 +84,13 @@ def ensure_category(post: Dict) -> Dict:
             meso = []
         # If any fields missing, rebuild from micro for consistency
         if not macro or not meso:
-            rebuilt = make_category_from_micro(list(micro))
+            rebuilt = make_category_from_micro(list(micro or []))
             # Merge with existing when possible
             macro = macro or rebuilt["macro"]
             meso = meso or rebuilt["meso"]
             micro = list(micro) if micro else rebuilt["micro"]
-        cat_out = {"macro": macro, "meso": meso, "micro": micro}
+            nano = list(nano) if nano else rebuilt.get("nano", [])
+        cat_out = {"macro": macro, "meso": meso, "micro": micro, "nano": nano}
         return cat_out
     legacy = post.get("Categories") or []
     cat = make_category_from_micro(list(legacy))
@@ -88,7 +100,7 @@ def ensure_category(post: Dict) -> Dict:
 def category_texts(category: Dict) -> List[str]:
     """Flatten category object into text tokens for indexing.
 
-    Returns concatenated list of macros + mesos + micro labels.
+    Returns concatenated list of macros + mesos + micro + nano labels.
     """
     out: List[str] = []
     macro = category.get("macro")
@@ -104,4 +116,7 @@ def category_texts(category: Dict) -> List[str]:
     micro = category.get("micro") or []
     if isinstance(micro, list):
         out.extend([m for m in micro if isinstance(m, str)])
+    nano = category.get("nano") or []
+    if isinstance(nano, list):
+        out.extend([n for n in nano if isinstance(n, str)])
     return out

@@ -98,7 +98,7 @@ def create_test_user(username: Optional[str] = None, gender: Optional[str] = Non
 
 def _run_veil_and_get_categories(
     media_path: str,
-    topk: int = 14,
+    topk: int = 26,
     cancel_check: Optional[Callable[[], bool]] = None,
 ) -> Union[List[str], Dict[str, str]]:
     """Run Veil classification and return categories or an error dict."""
@@ -254,8 +254,8 @@ def post_and_classify(creator_identifier: Optional[str] = None, media_path: Opti
         pass
     print(f"Created post at {post_path}. Running Veil classification...")
     cats = _run_veil_and_get_categories(media)
-    # Limit Veil classification buckets to macro=2, meso=4, micro=8
-    post["Category"] = make_category_with_limits(cats[:14], macro_n=2, meso_n=4, micro_n=8)
+    # Limit Veil classification buckets to macro=2, meso=4, micro=8, nano=12
+    post["Category"] = make_category_with_limits(cats[:26], macro_n=2, meso_n=4, micro_n=8, nano_n=12)
     _save_json(post_path, post)
     print(f"Updated post category: {post['Category']}")
     return post
@@ -267,10 +267,13 @@ def _bump_user_after_action(viewer: Dict, creator: Dict, category: Dict, viewer_
     if cid:
         viewer.setdefault("ViewerScore", {})
         viewer["ViewerScore"][cid] = int(viewer["ViewerScore"].get(cid, 0) + viewer_delta)
-    # CategoryScores: bump each micro category
+    # CategoryScores: bump each micro and nano category
     viewer.setdefault("CategoryScores", {})
     micro = (category.get("micro") if isinstance(category, dict) else []) or []
     for c in micro:
+        viewer["CategoryScores"][c] = int(viewer["CategoryScores"].get(c, 0) + max(1, viewer_delta))
+    nano = (category.get("nano") if isinstance(category, dict) else []) or []
+    for c in nano:
         viewer["CategoryScores"][c] = int(viewer["CategoryScores"].get(c, 0) + max(1, viewer_delta))
     # RecentCreators tracking
     if cid:

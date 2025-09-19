@@ -341,7 +341,7 @@ def _handle_job(job: Dict[str, Any]) -> Any:
         def is_cancelled() -> bool:
             return job_queue.is_cancelled(job['id'])
 
-        res = _run_veil_and_get_categories(media_path, topk=14, cancel_check=is_cancelled)
+        res = _run_veil_and_get_categories(media_path, topk=26, cancel_check=is_cancelled)
 
         if isinstance(res, dict) and res.get('error'):
             if res['error'] == 'cancelled':
@@ -700,7 +700,7 @@ def api_categories_tree(request: Request):
         # Try to build on-demand using integrated builder
         try:
             from Mesh.tools.build_mastercategories import build_tree_and_write  # type: ignore
-            build_tree_and_write(out_path=MASTER_PATH, tree_out=tree_path, mesos=3, micros=3)
+            build_tree_and_write(out_path=MASTER_PATH, tree_out=tree_path, mesos=3, micros=8)
         except Exception as e:
             raise HTTPException(404, f'Category tree not found and build failed: {e}')
     try:
@@ -709,6 +709,9 @@ def api_categories_tree(request: Request):
         return data
     except Exception as e:
         raise HTTPException(500, f'Failed to read category tree: {e}')
+
+
+# Removed /categories/tree_plus; /categories/tree may already contain nanos nested.
 
 
 @app.get('/health/mongo')

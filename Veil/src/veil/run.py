@@ -6,8 +6,8 @@ Unified runner for Veil fusion using:
   - Whisper+CLIP (speech)
   - YAMNet (audio events -> label scores)
 
-By default all three modalities are active and the top 14 labels are
-returned (2 macro, 4 meso, 8 micro). ANN retrieval is optional and
+By default all three modalities are active and the top 26 labels are
+returned (2 macro, 4 meso, 8 micro, 12 nano). ANN retrieval is optional and
 disabled unless ``--use_ann true`` is provided.
 
 Example:
@@ -178,7 +178,7 @@ def main() -> None:
     p.add_argument("--master_labels_file", default="Mesh/mastercategories.txt")
     p.add_argument("--model", default="ViT-B/32")
     p.add_argument("--frames", type=int, default=8)
-    p.add_argument("--topk", type=int, default=14)
+    p.add_argument("--topk", type=int, default=26)
     p.add_argument("--threshold", type=float)
 
     # Speech / audio
