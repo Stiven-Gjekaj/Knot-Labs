@@ -25,7 +25,7 @@
 - (Optional) Enable ANN speed-ups: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
 - Classify a video: `python -m veil.run --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt`
 
-## ✨ Veil Defaults (Nice UX)
+## ✨ Veil Defaults
 
 - Frames: 4 (snappy on CPU)
 - Whisper: on by default (speech helps!)
