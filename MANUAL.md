@@ -42,7 +42,7 @@ This manual captures everything you need to build, extend, and debug the Knot-La
   - nano: all remaining
 - To cap sizes explicitly, use `make_category_with_limits(macro_n=2, meso_n=4, micro_n=8, nano_n=12)`.
   - Set `nano_n=None` to keep all remaining as nano.
-  - The CLI demo applies 2/4/8/12 (26 total) when updating a post’s Category from Veil predictions.
+  - The app applies 2/4/8/12 (26 total) when updating a post’s Category from Veil predictions.
 
 ### Label Embeddings (ANN)
 
@@ -65,8 +65,8 @@ This manual captures everything you need to build, extend, and debug the Knot-La
 Examples:
 
 - Precompute both caches for best speed and quality:
-  - Video: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
-  - Image: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
+  - Video: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
+  - Image: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
 - Force cached-only for latency-sensitive environments: set `VEIL_CACHED_ONLY=true` in the process environment.
 
 Related timeout knob (demo/API):
@@ -79,8 +79,8 @@ Related timeout knob (demo/API):
 - Cold starts can exceed default timeouts due to model downloads and label embedding builds.
 - If a job ends with `{ "status": "error", "error": "{\"error\": \"timeout\"}" }`:
   - Pre-warm caches:
-    - Video: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
-    - Image: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
+    - Video: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
+    - Image: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
   - Increase timeout before starting Uvicorn: `KNOT_VEIL_TIMEOUT_SEC=600`
   - Optional safeguards to avoid heavy builds on the API host:
     - `VEIL_CACHED_ONLY=true` to skip building NPZ files if missing.
@@ -102,10 +102,10 @@ Related timeout knob (demo/API):
 
 ## 🧪 Running The Stack
 
-- **CLI demo:** `python demo.py` (interactive walk-through of the components).
-- **GUI (Tkinter):** `python gui_demo.py`
-  - Ships with Python; install `python3-tk` on Linux if missing.
-  - GUI buttons auto-seed users when needed.
+
+
+
+
 - **Media classifier:** `python -m veil.run --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt`
   - Fusion pipeline uses CLIP + Whisper + YAMNet (ANN off by default).
   - Enable ANN: `--use_ann true --ann_k 64 --ann_agg mean` after embeddings exist.
@@ -169,7 +169,7 @@ Related timeout knob (demo/API):
 ## 🤝 Contributing
 
 - Follow Python code style with descriptive docstrings where helpful.
-- Add tests when extending components (CLI demos double as smoke tests).
+- Add tests when extending components.
 - File issues for large refactors or API changes before landing PRs.
 
 Happy building! 🔧

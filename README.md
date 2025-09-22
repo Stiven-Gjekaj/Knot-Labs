@@ -16,10 +16,8 @@
    - 🐧 Bash / WSL: `bash scripts/setup.sh`
    - 🔧 Make: `make setup`
    - 🧪 Manual: `python -m venv .venv && .venv\Scripts\python.exe -m pip install -r requirements.txt && pip install -e .`
-3. Launch the CLI demo: `python demo.py`
-4. Fire up the GUI: `python gui_demo.py`
-5. Start the API (auto-reloads): `.venv\Scripts\python.exe -m uvicorn --env-file .env api.main:app --reload`
-6. Open `/ui` to create users and posts — the new dropdowns let you pin gender and country or leave them on auto-select.
+3. Start the API (auto-reloads): `.venv\Scripts\python.exe -m uvicorn --env-file .env api.main:app --reload`
+4. Open `/ui` to create users and posts — the new dropdowns let you pin gender and country or leave them on auto-select.
 
 ## 🎯 Try The Media Classifier
 
@@ -38,8 +36,8 @@
 ## ⚡ Veil Caching (Embeddings)
 
 - Precompute label embeddings once to speed up classification:
-  - Video: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
-  - Image: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
+  - Video: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
+  - Image: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
 - Veil uses `indexes/labels_clip_<mode>_<model>.npz` when present.
 - If missing, it builds on first use (or skip builds with env toggles in MANUAL.md).
 

@@ -38,7 +38,6 @@ tests/test_drift_ranker.py
 tests/test_export_import.py
 tests/test_gen_user.py
 tests/test_gen_videos.py
-tests/test_gui_generators.py
 tests/test_jobqueue.py
 tests/test_new_params.py
 tests/test_scribe_search.py
