@@ -252,7 +252,9 @@ def main() -> None:
 
     # Build or load label embeddings
     device = "cpu"
-    label_emb: torch.Tensor
+    # Optional precomputed text embeddings for labels.
+    # If None, classify_* will tokenize a single-template prompt on the fly.
+    label_emb: Optional[torch.Tensor]
     E_np: Optional[np.ndarray] = None
     ann_labels: Optional[List[str]] = None
     ann_index = None
@@ -281,21 +283,27 @@ def main() -> None:
             ann_index = None
 
     if 'label_emb' not in locals():
-        # Fallback to local build
-        base_labels = [
-            _strip_prompt_prefix(lbl, "video" if args.mode == "video" else "photo")
-            for lbl in labels
-        ]
-        rep_prompts = [
-            ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
-            for c in base_labels
-        ]
-        ck = _cache_key(args.model, args.mode, rep_prompts)
-        if ck in _LABEL_CACHE:
-            label_emb = _LABEL_CACHE[ck]
+        # Fast boot path: avoid building embeddings and let classify_* compute single-template
+        # encodings internally. Enable by setting VEIL_FAST_BOOT=true.
+        fast_boot = _parse_bool(os.environ.get("VEIL_FAST_BOOT", "false"))
+        if fast_boot:
+            label_emb = None  # type: ignore[assignment]
         else:
-            label_emb, _ = _build_label_embeddings(base_labels, args.mode, args.model, device)
-            _LABEL_CACHE[ck] = label_emb
+            # Fallback to local build (multi-template ensembling)
+            base_labels = [
+                _strip_prompt_prefix(lbl, "video" if args.mode == "video" else "photo")
+                for lbl in labels
+            ]
+            rep_prompts = [
+                ("a video of a {}" if args.mode == "video" else "a photo of a {}").format(c)
+                for c in base_labels
+            ]
+            ck = _cache_key(args.model, args.mode, rep_prompts)
+            if ck in _LABEL_CACHE:
+                label_emb = _LABEL_CACHE[ck]
+            else:
+                label_emb, _ = _build_label_embeddings(base_labels, args.mode, args.model, device)
+                _LABEL_CACHE[ck] = label_emb
 
     # Launch modality scorers concurrently
 
