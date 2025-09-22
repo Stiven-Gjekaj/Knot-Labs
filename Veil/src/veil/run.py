@@ -282,6 +282,31 @@ def main() -> None:
             ann_labels = None
             ann_index = None
 
+        # Optional cross-mode fallback: if the preferred mode cache is missing,
+        # try loading embeddings from the other modality to avoid a slow rebuild.
+        # Enabled by default; set VEIL_CROSSMODE_FALLBACK=false to disable.
+        if 'label_emb' not in locals():
+            try:
+                use_fallback = _parse_bool(os.environ.get("VEIL_CROSSMODE_FALLBACK", "true"))
+            except Exception:
+                use_fallback = True
+            if use_fallback:
+                try:
+                    alt_mode = "image" if args.mode == "video" else "video"
+                    idx_alt = ensure_index(  # type: ignore[misc]
+                        args.master_labels_file,
+                        out_dir="indexes",
+                        model_name=args.model,
+                        mode=alt_mode,
+                    )
+                    E_alt = idx_alt.get("emb")
+                    L_alt = idx_alt.get("labels")
+                    if isinstance(E_alt, np.ndarray) and isinstance(L_alt, list) and len(L_alt) == len(labels):
+                        label_emb = torch.from_numpy(E_alt)
+                        labels = L_alt
+                except Exception:
+                    pass
+
     if 'label_emb' not in locals():
         # Fast boot path: avoid building embeddings and let classify_* compute single-template
         # encodings internally. Enable by setting VEIL_FAST_BOOT=true.
@@ -358,6 +383,7 @@ def main() -> None:
                 labels,
                 model_name=args.model,
                 prompt_template="a photo of {}",
+                label_emb=label_emb,
             )
 
     def _speech_task():

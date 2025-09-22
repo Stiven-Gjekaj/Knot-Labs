@@ -112,11 +112,17 @@ def ensure_index(master_path: str, out_dir: str = "indexes", model_name: str = "
     key = f"labels_clip_{mode}_{model_name.replace('/', '-')}.npz"
     npz_path = os.path.join(out_dir, key)
     labels: List[str]
+    # Allow a "cached-only" mode to avoid expensive first-builds in latency-sensitive paths.
+    # When VEIL_CACHED_ONLY=true (or KNOT_LABELS_CACHED_ONLY=true), return an empty index
+    # if the NPZ is not present instead of building it.
+    cached_only = str(os.environ.get("VEIL_CACHED_ONLY", os.environ.get("KNOT_LABELS_CACHED_ONLY", "false"))).lower() in {"1","true","yes","on"}
     if os.path.isfile(npz_path):
         d = np.load(npz_path, allow_pickle=True)
         E = d["E"].astype(np.float32)
         labels = list(d["labels"].tolist())
     else:
+        if cached_only:
+            return {"emb": np.zeros((0, 1), dtype=np.float32), "labels": [], "index": None, "npz": npz_path}
         E, labels = build_label_embeddings(master_path, model_name=model_name, mode=mode, device="cpu")
         np.savez_compressed(npz_path, E=E, labels=np.array(labels, dtype=object))
     index = None

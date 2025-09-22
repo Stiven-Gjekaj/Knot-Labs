@@ -32,6 +32,18 @@ This manual captures everything you need to build, extend, and debug the Knot-La
 - Outputs: `Mesh/mastercategories.txt` (flat) and `Mesh/master_tree.json` (tree).
 - Tree builder maps friendly macro names to Wikipedia topics (custom User-Agent, offline fallbacks).
 
+### Category Buckets (macro/meso/micro/nano)
+
+- Category objects consist of four lists: `macro`, `meso`, `micro`, and `nano`.
+- Defaults when deriving from a list of labels (Mesh/category.py: make_category_from_micro):
+  - macro: first 2 unique labels
+  - meso: next 4
+  - micro: next 8
+  - nano: all remaining
+- To cap sizes explicitly, use `make_category_with_limits(macro_n=2, meso_n=4, micro_n=8, nano_n=12)`.
+  - Set `nano_n=None` to keep all remaining as nano.
+  - The CLI demo applies 2/4/8/12 (26 total) when updating a post’s Category from Veil predictions.
+
 ### Label Embeddings (ANN)
 
 - Recommended pipeline: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`.
@@ -39,6 +51,54 @@ This manual captures everything you need to build, extend, and debug the Knot-La
 - Generates `indexes/labels_clip_<mode>_<model>.npz`.
 - Options: `--mode video|image`, `--model ViT-B/32|RN50|...`.
 - Reused by both the API and CLI for ANN classification; auto-build on first use if missing.
+
+#### Runtime Caching Behavior
+
+- Cache files live under `indexes/` as `labels_clip_<mode>_<model>.npz`.
+- Veil loads and uses these embeddings directly for both video and image modes.
+- If the NPZ is missing, Veil will normally build it on first use. You can
+  control this with environment variables:
+  - `VEIL_CACHED_ONLY=true` (or `KNOT_LABELS_CACHED_ONLY=true`): do not build when missing; return an empty index and skip ANN/cached labels.
+  - `VEIL_CROSSMODE_FALLBACK=true` (default): if the requested mode’s NPZ is missing, reuse the other mode’s NPZ when dimensions align.
+  - `VEIL_FAST_BOOT=true`: skip multi-template label embedding builds and rely on a single-template path for faster cold starts.
+
+Examples:
+
+- Precompute both caches for best speed and quality:
+  - Video: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
+  - Image: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
+- Force cached-only for latency-sensitive environments: set `VEIL_CACHED_ONLY=true` in the process environment.
+
+Related timeout knob (demo/API):
+
+- `KNOT_VEIL_TIMEOUT_SEC`: max seconds the demo/API waits for `veil.run` before returning `{"error":"timeout"}`.
+
+### Veil Runtime & Timeouts (API)
+
+- The API enqueues a `classify_post` job which runs `python -m veil.run`.
+- Cold starts can exceed default timeouts due to model downloads and label embedding builds.
+- If a job ends with `{ "status": "error", "error": "{\"error\": \"timeout\"}" }`:
+  - Pre-warm caches:
+    - Video: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
+    - Image: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
+  - Increase timeout before starting Uvicorn: `KNOT_VEIL_TIMEOUT_SEC=600`
+  - Optional safeguards to avoid heavy builds on the API host:
+    - `VEIL_CACHED_ONLY=true` to skip building NPZ files if missing.
+    - `VEIL_FAST_BOOT=true` to skip multi-template label embedding builds.
+    - `VEIL_CROSSMODE_FALLBACK=true` (default) to reuse the other mode’s NPZ when lengths match.
+
+### Veil Configuration (Env)
+
+- Defaults (demo/API launchers):
+  - Frames: `KNOT_VEIL_FRAMES=4`
+  - Whisper on: `KNOT_VEIL_USE_WHISPER=true`
+  - Weights: video `0.5`, speech `0.3`, audio `0.2` (passed via CLI flags)
+  - Top‑K: `26` (macro/meso/micro/nano = 2/4/8/12)
+- Additional knobs:
+  - `KNOT_SPEECH_MAX_SEC` (e.g., `45`) caps Whisper transcription time.
+  - `KNOT_AUDIO_MAX_SEC` (e.g., `20`) caps YAMNet audio duration.
+  - `KNOT_VEIL_TIMEOUT_SEC` bounds the subprocess wall time.
+- CLI overrides take precedence (`--frames`, `--use_whisper`, `--w_*`, `--topk`).
 
 ## 🧪 Running The Stack
 

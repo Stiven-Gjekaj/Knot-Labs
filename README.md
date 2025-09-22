@@ -27,6 +27,22 @@
 - (Optional) Enable ANN speed-ups: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
 - Classify a video: `python -m veil.run --mode video --video /abs/path.mp4 --master_labels_file Mesh/mastercategories.txt`
 
+## ✨ Veil Defaults (Nice UX)
+
+- Frames: 4 (snappy on CPU)
+- Whisper: on by default (speech helps!)
+- Weights: video 0.5, speech 0.3, audio 0.2
+- Top‑K: 26 labels (2/4/8/12 across macro/meso/micro/nano)
+- Tweak in `.env` or via CLI flags when needed.
+
+## ⚡ Veil Caching (Embeddings)
+
+- Precompute label embeddings once to speed up classification:
+  - Video: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
+  - Image: `python cli_demo.py embed-labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
+- Veil uses `indexes/labels_clip_<mode>_<model>.npz` when present.
+- If missing, it builds on first use (or skip builds with env toggles in MANUAL.md).
+
 ## 📡 API Endpoints (Favorites)
 
 - `POST /users`
@@ -37,3 +53,8 @@
 - `GET /ui`
 
 Need authentication, caching, or embeddings? Check the [developer manual](MANUAL.md).
+
+## ⏱️ Veil Timeouts (API)
+
+- Cold starts may time out while models/caches warm up.
+- Quick fixes: precompute embeddings and/or set `KNOT_VEIL_TIMEOUT_SEC=600`.

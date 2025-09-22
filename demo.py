@@ -131,10 +131,21 @@ def _run_veil_and_get_categories(
         '--audio_max_sec',
         os.environ.get('KNOT_AUDIO_MAX_SEC', '20'),
         '--frames',
-        '4',
+        os.environ.get('KNOT_VEIL_FRAMES', '4'),
     ]
     logging.info({'event': 'veil_command', 'mode': mode, 'cmd': cmd})
     env = os.environ.copy()
+    # Ensure the child process can import our local 'veil' package reliably
+    # by seeding PYTHONPATH with repo root and Veil/src
+    try:
+        extra_paths = [ROOT, os.path.join(ROOT, "Veil", "src")]
+        existing_pp = env.get("PYTHONPATH")
+        if existing_pp:
+            env["PYTHONPATH"] = os.pathsep.join(extra_paths + [existing_pp])
+        else:
+            env["PYTHONPATH"] = os.pathsep.join(extra_paths)
+    except Exception:
+        pass
     try:
         timeout_s = int(os.environ.get("KNOT_VEIL_TIMEOUT_SEC", "720"))
     except Exception:
@@ -326,6 +337,12 @@ def post_and_classify(creator_identifier: Optional[str] = None, media_path: Opti
         pass
     print(f"Created post at {post_path}. Running Veil classification...")
     cats = _run_veil_and_get_categories(media)
+    # Handle Veil errors (cancelled/timeout/failure) without crashing
+    if isinstance(cats, dict) and cats.get("error"):
+        err = cats.get("error")
+        print(f"Veil classification failed: {err}")
+        # Keep the post as created (likely 'uncategorized')
+        return post
     # Limit Veil classification buckets to macro=2, meso=4, micro=8, nano=12
     post["Category"] = make_category_with_limits(cats[:26], macro_n=2, meso_n=4, micro_n=8, nano_n=12)
     _save_json(post_path, post)

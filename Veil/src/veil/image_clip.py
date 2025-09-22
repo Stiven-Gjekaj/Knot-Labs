@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 import torch
 from PIL import Image
 from .utils import normalize_tensor
@@ -17,20 +17,24 @@ def classify_image_clip(
     categories: List[str],
     model_name: str = "ViT-B/32",
     prompt_template: str = "a photo of {}",
+    label_emb: Optional[torch.Tensor] = None,
 ) -> Dict:
     device = "cpu"
     model, preprocess = get_clip_model(model_name, device=device)
 
-    # Use categories directly if they already come as prompts (e.g. from
-    # mastercategories.txt: "a photo of <category>") to preserve exact text.
-    if _labels_look_like_prompts(categories):
-        prompts = categories
+    if label_emb is not None:
+        text_emb = normalize_tensor(label_emb.to(device).float())
     else:
-        tmpl = prompt_template or "a photo of {}"
-        prompts = [tmpl.format(c) for c in categories]
-    text_tokens = clip.tokenize(prompts).to(device)
-    with torch.no_grad():
-        text_emb = normalize_tensor(model.encode_text(text_tokens).float())
+        # Use categories directly if they already come as prompts (e.g. from
+        # mastercategories.txt: "a photo of <category>") to preserve exact text.
+        if _labels_look_like_prompts(categories):
+            prompts = categories
+        else:
+            tmpl = prompt_template or "a photo of {}"
+            prompts = [tmpl.format(c) for c in categories]
+        text_tokens = clip.tokenize(prompts).to(device)
+        with torch.no_grad():
+            text_emb = normalize_tensor(model.encode_text(text_tokens).float())
 
     img = Image.open(image_path).convert("RGB")
     img_tensor = preprocess(img).unsqueeze(0).to(device)
