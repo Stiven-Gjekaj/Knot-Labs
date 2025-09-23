@@ -340,58 +340,139 @@ function showToast(level, msg, timeoutMs = 3500) {
     }
 
     // Posts + Analyze
-    let pollTimer = null;
     async function createPostAnalyze() {
       const creator = document.getElementById('creator').value.trim();
-      let media = document.getElementById('mediaPath').value.trim();
+      const mediaInput = document.getElementById('mediaPath');
       const desc = document.getElementById('description').value.trim();
       const country = document.getElementById('postCountry').value || '';
+      const fileInput = document.getElementById('mediaFile');
+      const selectedFiles = (fileInput && fileInput.files) ? Array.from(fileInput.files) : [];
 
       if (!creator) {
         log('error', 'Provide a creator (user ID or username) before posting');
         return;
       }
 
-      if (!media) {
-        const autoUpload = await uploadSelectedFile({ silent: true });
-        if (!autoUpload || !autoUpload.path) {
-          log('error', 'Select a media file or provide a server media path before posting');
-          return;
+      const postWithMedia = async (mediaPath, label = '') => {
+        const body = JSON.stringify({
+          creator,
+          media_path: mediaPath || null,
+          description: desc || null,
+          country: country || null,
+        });
+        const prefix = label ? label + ' ' : '';
+        const r = await api('/posts', { method: 'POST', headers: headers(true), body });
+        log(r.status === 200 ? 'ok' : 'error', prefix + 'Create post: ' + JSON.stringify(r.data));
+        if (r.status === 200 && r.data && r.data.job_id) {
+          const job = r.data.job_id;
+          log('info', prefix + 'Polling job ' + job);
+          let baseDelay = 1200;
+          let maxDelay = 8000;
+          const poll = async (delay) => {
+            try {
+              const s = await api('/jobs/' + encodeURIComponent(job), { headers: headers(false) });
+              if (s.status === 429) {
+                // Back off on rate limit
+                const next = Math.min(maxDelay, Math.floor((delay || baseDelay) * 1.7));
+                log('info', prefix + 'Job ' + job + ': Too Many Requests; backing off to ' + next + 'ms');
+                setTimeout(() => poll(next), next);
+                return;
+              }
+              log('info', prefix + 'Job ' + job + ': ' + JSON.stringify(s.data));
+              if (s.data && (s.data.status === 'done' || s.data.status === 'error')) {
+                return; // stop polling
+              }
+              setTimeout(() => poll(baseDelay), baseDelay);
+            } catch (e) {
+              const next = Math.min(maxDelay, Math.floor((delay || baseDelay) * 1.7));
+              log('error', prefix + 'Job ' + job + ' poll error; retrying in ' + next + 'ms: ' + e);
+              setTimeout(() => poll(next), next);
+            }
+          };
+          poll(baseDelay);
         }
-        media = autoUpload.path;
+      };
+
+      if (selectedFiles.length > 0) {
+        const total = selectedFiles.length;
+        if (total > 1) {
+          log('info', 'Uploading and creating posts for ' + total + ' files');
+        }
+        for (let i = 0; i < total; i++) {
+          const file = selectedFiles[i];
+          const label = total > 1 ? '(' + (i + 1) + '/' + total + ')' : '';
+          const uploaded = await uploadFileBlob(file, {
+            silent: true,
+            updateInputs: true,
+            showPreview: i === total - 1,
+            label,
+          });
+          if (!uploaded || !uploaded.path) {
+            log('error', (label ? label + ' ' : '') + 'Skipping post creation due to upload failure');
+            continue;
+          }
+          await postWithMedia(uploaded.path, label);
+        }
+        try { if (fileInput) { fileInput.value = ''; } } catch {}
+        return;
       }
 
-      const body = JSON.stringify({ creator, media_path: media || null, description: desc || null, country: country || null });
-      const r = await api('/posts', { method: 'POST', headers: headers(true), body });
-      log(r.status === 200 ? 'ok' : 'error', 'Create post: ' + JSON.stringify(r.data));
-      if (r.status === 200 && r.data && r.data.job_id) {
-        const job = r.data.job_id;
-        log('info', 'Polling job ' + job);
-        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-        let baseDelay = 1200;
-        let maxDelay = 8000;
-        const poll = async (delay) => {
-          try {
-            const s = await api('/jobs/' + encodeURIComponent(job), { headers: headers(false) });
-            if (s.status === 429) {
-              // Back off on rate limit
-              const next = Math.min(maxDelay, Math.floor((delay || baseDelay) * 1.7));
-              log('info', 'Job ' + job + ': Too Many Requests; backing off to ' + next + 'ms');
-              setTimeout(() => poll(next), next);
-              return;
-            }
-            log('info', 'Job ' + job + ': ' + JSON.stringify(s.data));
-            if (s.data && (s.data.status === 'done' || s.data.status === 'error')) {
-              return; // stop polling
-            }
-            setTimeout(() => poll(baseDelay), baseDelay);
-          } catch (e) {
-            const next = Math.min(maxDelay, Math.floor((delay || baseDelay) * 1.7));
-            log('error', 'Job ' + job + ' poll error; retrying in ' + next + 'ms: ' + e);
-            setTimeout(() => poll(next), next);
+      const media = (mediaInput && mediaInput.value ? mediaInput.value : '').trim();
+      if (!media) {
+        log('error', 'Select a media file or provide a server media path before posting');
+        return;
+      }
+
+      await postWithMedia(media);
+    }
+
+    async function uploadFileBlob(file, { silent = false, updateInputs = true, showPreview = null, label = '' } = {}) {
+      if (!file) {
+        if (!silent) {
+          log('error', (label ? label + ' ' : '') + 'No file provided for upload');
+        }
+        return null;
+      }
+      if (showPreview === null) {
+        showPreview = updateInputs;
+      }
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const base = apiBase || '';
+        const resp = await fetch(base + '/upload', { method: 'POST', headers: headers(false), body: fd });
+        const txt = await resp.text();
+        let data = null;
+        try { data = JSON.parse(txt); } catch (e) { data = { raw: txt }; }
+        if (resp.ok && data && data.path) {
+          const mp = document.getElementById('mediaPath');
+          if (updateInputs && mp) {
+            mp.value = data.path;
           }
-        };
-        poll(baseDelay);
+          const level = silent ? 'info' : 'ok';
+          const verb = silent ? 'Auto-uploaded' : 'Uploaded';
+          const sizeInfo = (typeof data.size === 'number') ? ' (' + data.size + ' bytes)' : '';
+          const name = data.filename ? ' ' + data.filename : (file && file.name ? ' ' + file.name : '');
+          const prefix = label ? label + ' ' : '';
+          log(level, prefix + verb + name + ' -> ' + data.path + sizeInfo);
+          if (data.filename) {
+            const baseUrl = apiBase || '';
+            const url = baseUrl + '/uploads/' + encodeURIComponent(data.filename);
+            logLink(level, prefix + 'Preview:', url, 'Open');
+            if (showPreview) {
+              setPreview(data.filename, data.mime || '');
+            }
+          }
+          return data;
+        }
+        const failure = txt;
+        const prefix = label ? label + ' ' : '';
+        log('error', prefix + (silent ? 'Auto-upload failed: ' : 'Upload failed: ') + failure);
+        return null;
+      } catch (e) {
+        const prefix = label ? label + ' ' : '';
+        log('error', prefix + (silent ? 'Auto-upload error: ' : 'Upload error: ') + e);
+        return null;
       }
     }
 
@@ -403,36 +484,19 @@ function showToast(level, msg, timeoutMs = 3500) {
         }
         return null;
       }
-      const fd = new FormData();
-      fd.append('file', inp.files[0]);
-      try {
-        const base = apiBase || '';
-        const resp = await fetch(base + '/upload', { method: 'POST', headers: headers(false), body: fd });
-        const txt = await resp.text();
-        let data = null;
-        try { data = JSON.parse(txt); } catch (e) { data = { raw: txt }; }
-        if (resp.ok && data && data.path) {
-          document.getElementById('mediaPath').value = data.path;
-          const level = silent ? 'info' : 'ok';
-          const verb = silent ? 'Auto-uploaded' : 'Uploaded';
-          const sizeInfo = (typeof data.size === 'number') ? ' (' + data.size + ' bytes)' : '';
-          const name = data.filename ? ' ' + data.filename : '';
-          log(level, verb + name + ' -> ' + data.path + sizeInfo);
-          if (data.filename) {
-            const baseUrl = apiBase || '';
-            const url = baseUrl + '/uploads/' + encodeURIComponent(data.filename);
-            logLink(level, 'Preview:', url, 'Open');
-            setPreview(data.filename, data.mime || '');
-          }
-          return data;
-        }
-        const failure = txt;
-        log('error', (silent ? 'Auto-upload failed: ' : 'Upload failed: ') + failure);
-        return null;
-      } catch (e) {
-        log('error', (silent ? 'Auto-upload error: ' : 'Upload error: ') + e);
-        return null;
+      const files = Array.from(inp.files);
+      let lastResult = null;
+      for (let i = 0; i < files.length; i++) {
+        const label = files.length > 1 ? '(' + (i + 1) + '/' + files.length + ')' : '';
+        lastResult = await uploadFileBlob(files[i], {
+          silent,
+          updateInputs: i === files.length - 1,
+          showPreview: i === files.length - 1,
+          label,
+        });
       }
+      try { inp.value = ''; } catch {}
+      return lastResult;
     }
 
     async function uploadMedia() {
@@ -717,7 +781,7 @@ function showToast(level, msg, timeoutMs = 3500) {
       <div class="row"><label>Creator (userID or username)</label><input type="text" id="creator" /></div>
       <div class="row"><label>Description</label><input type="text" id="description" placeholder="optional" /></div>
       <div class="row"><label>Media Path (server path)</label><input type="text" id="mediaPath" placeholder="/path/to/video" /></div>
-      <div class="row"><label>Media File</label><input type="file" id="mediaFile" /></div>
+      <div class="row"><label>Media File(s)</label><input type="file" id="mediaFile" multiple /></div>
       <div class="row"><label>Country</label><select id="postCountry">
           <option value="">Auto</option>
           <option value="US">United States</option>
