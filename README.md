@@ -41,6 +41,11 @@
 - Veil uses `indexes/labels_clip_<mode>_<model>.npz` when present.
 - If missing, it builds on first use (or skip builds with env toggles in MANUAL.md).
 
+## ⏱️ Veil Timeouts (API)
+
+- Cold starts may time out while models/caches warm up.
+- Quick fixes: precompute embeddings and/or set `KNOT_VEIL_TIMEOUT_SEC=600`.
+
 ## 📡 API Endpoints (Favorites)
 
 - `POST /users`
@@ -51,8 +56,3 @@
 - `GET /ui`
 
 Need authentication, caching, or embeddings? Check the [developer manual](MANUAL.md).
-
-## ⏱️ Veil Timeouts (API)
-
-- Cold starts may time out while models/caches warm up.
-- Quick fixes: precompute embeddings and/or set `KNOT_VEIL_TIMEOUT_SEC=600`.

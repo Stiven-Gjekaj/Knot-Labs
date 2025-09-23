@@ -1033,7 +1033,7 @@ def build_candidates() -> Dict[str, List[str]]:
     nature += EXTRA_NATURE
     animals += EXTRA_ANIMALS
     vehicles += EXTRA_VEHICLES
-    places += EXTRA_PLACES
+    places_core += EXTRA_PLACES
     events += EXTRA_EVENTS
     objects += EXTRA_OBJECTS
     weather += EXTRA_WEATHER
