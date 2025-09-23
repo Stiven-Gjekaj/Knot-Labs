@@ -74,7 +74,8 @@ def normalize(text: str) -> str:
     Also squashes repeated whitespace.
     """
     t = text.lower().replace("&", " and ")
-    t = re.sub(r"[^a-z0-9\s/\-\(\)]", " ", t)
+    t = t.replace("-", " ")
+    t = re.sub(r"[^a-z0-9\s/\(\)]", " ", t)
     t = re.sub(r"\s+", " ", t).strip()
     return t
 
