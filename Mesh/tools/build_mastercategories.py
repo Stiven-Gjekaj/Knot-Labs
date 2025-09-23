@@ -74,12 +74,12 @@ def normalize(text: str) -> str:
     Also squashes repeated whitespace.
     """
     t = text.lower().replace("&", " and ")
-    t = re.sub(r"[^a-z0-9\s]", " ", t)
+    t = re.sub(r"[^a-z0-9\s/\-\(\)]", " ", t)
     t = re.sub(r"\s+", " ", t).strip()
     return t
 
 
-def unique_dedup(cands: Iterable[Tuple[str, str]], threshold: float = 93.0) -> List[Tuple[str, str]]:
+def unique_dedup(cands: Iterable[Tuple[str, str]], threshold: float = 75.0) -> List[Tuple[str, str]]:
     """Deduplicate by fuzzy token-set ratio on normalized values.
 
     cands: iterable of (domain, normalized_category)
@@ -793,7 +793,253 @@ def build_candidates() -> Dict[str, List[str]]:
         "debates", "roundtables", "panel discussions", "lectures", "lessons",
     ]
 
-    # Adjectives and adjective-styled objects removed by request.
+    # SEED EXPANSIONS
+    EXTRA_PEOPLE = [
+        "influencers", "content creators", "data analysts", "product managers", "project managers",
+        "ux designers", "ui designers", "graphic designers", "3d artists", "sound engineers",
+        "mixing engineers", "video editors", "cinematographers", "screenwriters", "voice actors",
+        "animators", "illustrators", "photoreporters", "biochemists", "bioinformaticians",
+        "statisticians", "economists", "lawyers", "judges", "paramedics", "therapists",
+        "psychologists", "veterinarians", "zookeepers", "librarians", "archivists",
+        "curators", "park rangers", "meteorologists", "cartographers", "urban planners",
+        "electric vehicle technicians", "drone pilots", "esports athletes", "game developers",
+        "stream moderators", "community managers", "social media managers", "marketers",
+        "copywriters", "salespeople", "hr specialists", "recruiters", "translators",
+        "interpreters", "tour operators", "flight attendants", "ship captains", "baristas",
+        "bartenders", "cheesemakers", "brewers", "distillers", "butchers", "fishmongers",
+        "tailors and seamstresses", "cobblers", "watchmakers", "goldsmiths", "blacksmiths",
+    ]
+
+    EXTRA_ACTIVITIES = [
+        "bouldering outdoors", "ice climbing", "trail running", "ultramarathons",
+        "orienteering", "geocaching", "slacklining", "paragliding", "hang gliding",
+        "windsurfing", "kitesurfing", "freediving", "spearfishing", "cave diving",
+        "wild camping", "foraging", "beekeeping", "soap making", "candle making",
+        "leatherworking", "glassblowing", "lockpicking (legal)", "juggling", "magic tricks",
+        "speedcubing", "home lab science", "pcb soldering", "retro computing",
+        "home automation", "mechanical keyboards", "drone racing", "fpv flying",
+        "lego building", "miniature painting", "warhammer painting", "3d printing minis",
+        "photobook making", "zine making", "calligraphy brush lettering",
+    ]
+
+    EXTRA_SPORTS = [
+        "australian rules football", "gaelic football", "canadian football", "arena football",
+        "lacrosse", "floorball", "netball", "softball", "hurling", "sepaktakraw",
+        "kabaddi", "paddle tennis", "beach tennis", "indoor rowing", "coastal rowing",
+        "skiff racing", "freestyle bmx", "downhill mountain biking", "cyclocross",
+        "bikepacking", "parkour", "freerunning", "orienteering sport", "trail orienteering",
+        "ultra trail running", "skyrunning", "snowshoeing", "telemark skiing", "nordic combined",
+        "ski jumping", "snow kiting", "ice climbing competition", "sport climbing lead",
+        "speed climbing", "ice cross downhill", "speedway", "motocross", "kart racing",
+        "drifting", "rally", "rallycross", "enduro", "sailing dinghy", "windsurf racing",
+        "kitesurf racing", "underwater hockey", "underwater rugby", "polo", "padel pro",
+        "pickleball doubles", "cheerleading", "strongman", "powerlifting", "weightlifting",
+        "arm wrestling", "futsal", "beach volleyball", "ultimate beach", "disc dog",
+    ]
+
+    EXTRA_ARTS = [
+        "concept art", "matte painting", "storyboarding", "character design", "pixel art",
+        "low poly art", "paper quilling", "encaustic painting", "airbrushing", "silkscreen",
+        "risograph printing", "linocut", "woodcut", "marbling", "origami tessellations",
+        "stained glass", "mosaic art", "ceramic glazing", "raku pottery", "weaving tapestries",
+        "bookbinding", "letterpress", "fashion illustration", "costume design", "prop making",
+    ]
+
+    EXTRA_MUSIC = [
+        "indie rock", "indie pop", "dream pop", "shoegaze", "grunge", "garage rock",
+        "post rock", "math rock", "funk", "disco", "soul jazz", "bebop", "swing",
+        "bluegrass", "americana", "progressive rock", "symphonic metal", "black metal",
+        "death metal", "power metal", "kawaii metal", "synthwave", "retrowave",
+        "vaporwave", "chiptune", "breakbeat", "two step", "garage", "jungle",
+        "hard trance", "hardstyle", "psytrance", "tech house", "uk drill", "afro house",
+        "baile funk", "reggaeton", "corridos tumbados", "cumbia", "soca", "dancehall",
+        "bossa nova", "samba", "fado", "flamenco", "tango", "bolero", "klezmer",
+    ]
+
+    EXTRA_GAMING = [
+        "roguelike games", "roguelite games", "extraction shooters", "battle royale games",
+        "auto battlers", "deck builders", "idle clicker games", "tycoon games",
+        "colony simulators", "city builders", "life sims", "dating sims", "visual novels",
+        "otome games", "metroidvania games", "soulslike games", "puzzle platformers",
+        "physics puzzle games", "party games", "local co op games", "competitive couch games",
+        "educational games", "brain training games", "rhythm games", "dance games",
+        "karaoke games", "music production games", "gacha games", "monster collecting games",
+        "trading card games digital", "tabletop skirmish games",
+    ]
+
+    EXTRA_TECH = [
+        "single board computers", "raspberry pi", "arduino projects", "microcontrollers",
+        "embedded systems", "firmware engineering", "real time operating systems",
+        "systems programming", "compilers", "program analysis", "static analysis",
+        "distributed systems", "stream processing", "data engineering", "lakehouses",
+        "vector databases", "retrieval augmented generation", "prompt engineering",
+        "mlops", "feature stores", "auto ml", "federated learning", "on device ai",
+        "edge ai", "robot operating system", "ros2", "slam", "drone autonomy",
+        "digital signal processing", "audio dsp", "computer graphics", "ray tracing",
+        "procedural generation", "webassembly", "wasm edge", "serverless",
+        "observability", "telemetry", "sre", "site reliability engineering",
+        "homelab", "self hosting", "nas builds", "reverse engineering",
+        "malware analysis", "threat hunting", "privacy engineering",
+    ]
+
+    EXTRA_SCIENCE = [
+        "astronautics", "planetary science", "exoplanets", "cosmology", "gravitational waves",
+        "quantum computing", "condensed matter physics", "materials science",
+        "photonic crystals", "nanotechnology", "supramolecular chemistry",
+        "electrochemistry", "synthetic biology", "metagenomics", "proteomics",
+        "epigenetics", "developmental biology", "systems neuroscience",
+        "computational neuroscience", "cognitive science", "linguistics science",
+        "behavioral economics", "game theory", "network science", "complex systems",
+        "climate modeling", "glaciology", "hydrology", "geophysics", "petrology",
+    ]
+
+    EXTRA_HEALTH = [
+        "functional fitness", "calisthenics", "hypertrophy training", "crossfit",
+        "mobility training", "breathwork", "cold exposure", "sauna therapy",
+        "sports nutrition", "macro tracking", "intuitive eating",
+        "mental skills training", "sports psychology", "sleep optimization",
+        "injury prevention", "physical therapy", "occupational therapy",
+        "speech therapy", "dental hygiene", "dermatology", "endocrinology",
+        "cardiology", "orthopedics", "sports medicine", "public health campaigns",
+    ]
+
+    EXTRA_FOOD = [
+        "street tacos", "birria", "arepas", "pupusas", "ceviche", "pão de queijo",
+        "feijoada", "chimichurri dishes", "empanadas", "mate drinks", "shawarma",
+        "falafel", "hummus plates", "tabbouleh", "baklava", "kebabs", "mezze",
+        "biryani", "butter chicken", "tandoori", "naan breads", "dosa", "idli",
+        "pho", "banh mi", "bun cha", "pad thai", "som tam", "massaman curry",
+        "bibimbap", "kimchi dishes", "ramen", "udon", "soba", "okonomiyaki",
+        "takoyaki", "yakitori", "sukiyaki", "hot pot", "mapo tofu", "xiao long bao",
+        "sourdough", "artisan cheese", "charcuterie", "kombucha", "kimchi fermenting",
+    ]
+
+    EXTRA_FASHION = [
+        "avant garde fashion", "techwear", "gorpcore", "cottagecore", "normcore",
+        "y2k fashion", "retro futurism", "minimalist wardrobe", "capsule wardrobe",
+        "workwear style", "heritage menswear", "tailoring", "street goth",
+        "athleisure", "performance wear", "denim culture", "sneaker culture",
+        "custom sneakers", "japanese selvedge denim", "sustainable textiles",
+        "natural dyes", "upcycled fashion", "3d printed fashion", "digital fashion",
+        "runway styling", "editorial styling", "nail extensions", "barber fades",
+    ]
+
+    EXTRA_LIFESTYLE = [
+        "bullet journaling", "second brain systems", "zettelkasten",
+        "notion workflows", "markdown workflows", "life os systems",
+        "time blocking", "pomodoro technique", "deep work routines",
+        "habit stacking", "minimalist living", "vanlife", "tiny house living",
+        "homesteading", "urban gardening", "zero waste", "thrifting flips",
+        "houseplant care", "aquascaping", "reef tank keeping", "pet enrichment",
+    ]
+
+    EXTRA_NATURE = [
+        "alpine meadows", "karst landscapes", "slot canyons", "sand dunes",
+        "mangroves", "kelp forests", "peat bogs", "fen wetlands", "salt marshes",
+        "badlands", "buttes and mesas", "lava fields", "moraines", "drumlins",
+        "geyser basins", "hot springs", "tide pools", "barrier reefs",
+    ]
+
+    EXTRA_ANIMALS = [
+        "marmots", "pikas", "wombats", "quokkas", "tasmanian devils",
+        "tapirs", "okapis", "civets", "genets", "wildebeest", "antelope",
+        "gazelles", "springboks", "ibex", "markhor", "snow leopards",
+        "red pandas", "lynxes", "caracals", "shoebills", "albatrosses",
+        "petrels", "boobies (birds)", "gannets", "cassowaries", "kiwis (birds)",
+        "echidnas", "platypuses", "axolotls", "caecilians", "poison dart frogs",
+        "mantis shrimps", "horseshoe crabs", "giant isopods", "tarantulas",
+    ]
+
+    EXTRA_VEHICLES = [
+        "hot hatches", "muscle cars", "restomods", "kit cars", "track cars",
+        "drift cars", "rally cars", "hypercars", "kei cars", "microcars",
+        "luxury suvs", "overlanding rigs", "electric motorcycles",
+        "classic motorcycles", "adventure bikes", "enduro bikes", "cafe racers",
+        "scramblers", "cargo bikes", "gravel bikes", "recumbent bikes",
+        "electric unicycles", "personal watercraft", "autogyros",
+        "ultralight aircraft", "gliders", "sailplanes", "high speed trains",
+    ]
+
+    EXTRA_PLACES = [
+        "botanical gardens", "arboretums", "zoos", "aquariums", "planetariums",
+        "observatories", "science museums", "art galleries", "craft markets",
+        "night markets", "food halls", "street food alleys", "co working spaces",
+        "maker spaces", "innovation hubs", "community centers", "youth centers",
+        "skate parks", "bmx parks", "climbing gyms", "indoor arenas",
+        "concert halls", "opera houses", "music conservatories",
+    ]
+
+    EXTRA_EVENTS = [
+        "comic conventions", "anime conventions", "makers fairs", "science fairs",
+        "book fairs", "zine fests", "tattoo conventions", "lan parties",
+        "speedrunning marathons", "game jams", "hack days", "startup demo days",
+        "pitch competitions", "e sports tournaments", "robotics competitions",
+        "cosplay contests", "film festivals", "photo walks", "photo marathons",
+        "craft fairs", "farmers markets", "food truck rallies",
+    ]
+
+    EXTRA_OBJECTS = [
+        "mechanical keyboard", "custom keycaps", "gaming mouse", "mousepad",
+        "vr headset", "action camera", "gimbal", "tripod", "studio light",
+        "softbox", "led panel", "lapel microphone", "shotgun microphone",
+        "field recorder", "sampler", "synthesizer", "drum machine", "groovebox",
+        "smartwatch", "fitness tracker", "e ink reader", "3d printer",
+        "soldering station", "multimeter", "oscilloscope",
+    ]
+
+    EXTRA_WEATHER = [
+        "stratocumulus clouds", "lenticular clouds", "mammatus clouds",
+        "roll clouds", "cloud inversions", "sea fog", "freezing fog",
+        "graupel", "sleet", "rime ice", "black ice", "dust storms", "haboobs",
+        "polar stratospheric clouds", "aurora", "sun halos", "moon halos",
+    ]
+
+    EXTRA_EMOTIONS = [
+        "awe", "melancholy", "serenity", "euphoria", "anticipation",
+        "yearning", "schadenfreude", "sonder", "embarrassment humor",
+        "flow state", "runner s high", "stage fright", "imposter syndrome",
+    ]
+
+    EXTRA_CULTURE = [
+        "artisan crafts", "folk embroidery", "lace making", "tatreez",
+        "ikat weaving", "batik", "block printing textiles", "indigo dyeing",
+        "henna art", "kintsugi", "tea ceremony culture", "coffee ceremony culture",
+        "call and response songs", "work songs", "sea shanties", "lullabies",
+        "oral history projects", "story circles", "slam poetry",
+    ]
+
+    EXTRA_FORMATS = [
+        "longform essays", "photo essays", "before and afters",
+        "comparison shots", "side by sides", "explainer threads",
+        "case studies", "teardowns", "build logs", "behind the build",
+        "dev diaries", "patch notes", "release notes", "bug bounties",
+        "live coding", "live music sessions", "studio sessions",
+        "sound design breakdowns", "speedpaints", "process videos",
+    ]
+
+    # Actually extend the base lists
+    people += EXTRA_PEOPLE
+    activities += EXTRA_ACTIVITIES
+    sports += EXTRA_SPORTS
+    arts += EXTRA_ARTS
+    music += EXTRA_MUSIC
+    gaming += EXTRA_GAMING
+    tech += EXTRA_TECH
+    science += EXTRA_SCIENCE
+    health += EXTRA_HEALTH
+    food += EXTRA_FOOD
+    fashion += EXTRA_FASHION
+    lifestyle += EXTRA_LIFESTYLE
+    nature += EXTRA_NATURE
+    animals += EXTRA_ANIMALS
+    vehicles += EXTRA_VEHICLES
+    places += EXTRA_PLACES
+    events += EXTRA_EVENTS
+    objects += EXTRA_OBJECTS
+    weather += EXTRA_WEATHER
+    emotions += EXTRA_EMOTIONS
+    culture += EXTRA_CULTURE
+    content_formats += EXTRA_FORMATS
 
     # Expand places by appending the word 'city' to city names to avoid conflict
     # with other contexts and to increase candidates.
@@ -858,7 +1104,7 @@ def build_final(target_count: int = TARGET_COUNT) -> List[Tuple[str, str]]:
             tagged.append((dom, normalize(it)))
 
     # Deduplicate across all using fuzzy token-set ratio
-    deduped = unique_dedup(tagged, threshold=93.0)
+    deduped = unique_dedup(tagged, threshold=75.0)
 
     # Partition by domain after dedup
     by_dom: Dict[str, List[str]] = {}
@@ -906,7 +1152,7 @@ def build_final(target_count: int = TARGET_COUNT) -> List[Tuple[str, str]]:
             i += 1
         idx_map[d] = i
 
-    while len(final) < target_count:
+    while (target_count is None or target_count <= 0) or (len(final) < target_count):
         progressed = False
         for d in domain_keys:
             cats = by_dom[d]
@@ -924,7 +1170,8 @@ def build_final(target_count: int = TARGET_COUNT) -> List[Tuple[str, str]]:
             break  # no more candidates
 
     # If we somehow exceed (should not), truncate deterministically
-    final = final[:target_count]
+    if target_count is not None and target_count > 0:
+        final = final[:target_count]
 
     # Sort by domain, then alphabetical within domain
     final.sort(key=lambda x: (x[0], x[1]))

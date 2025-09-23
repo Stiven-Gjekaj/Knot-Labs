@@ -19,7 +19,7 @@
 3. Start the API (auto-reloads): `.venv\Scripts\python.exe -m uvicorn --env-file .env api.main:app --reload`
 4. Open `/ui` to create users and posts — the new dropdowns let you pin gender and country or leave them on auto-select.
 
-## 🎯 Try The Media Classifier
+## 🎯 Media Classifier
 
 - Build master labels: `.venv\Scripts\python.exe -m Mesh.tools.build_mastercategories --count 1000`
 - (Optional) Enable ANN speed-ups: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes`
