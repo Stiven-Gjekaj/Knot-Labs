@@ -362,7 +362,11 @@ function showToast(level, msg, timeoutMs = 3500) {
         });
         const prefix = label ? label + ' ' : '';
         const r = await api('/posts', { method: 'POST', headers: headers(true), body });
-        log(r.status === 200 ? 'ok' : 'error', prefix + 'Create post: ' + JSON.stringify(r.data));
+        const success = r.status === 200;
+        log(success ? 'ok' : 'error', prefix + 'Create post: ' + JSON.stringify(r.data));
+        if (success && mediaInput) {
+          mediaInput.value = '';
+        }
         if (r.status === 200 && r.data && r.data.job_id) {
           const job = r.data.job_id;
           log('info', prefix + 'Polling job ' + job);
