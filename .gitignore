@@ -2,3 +2,11 @@
 .env
 __pycache__/
 *.pyc
+/.claude/
+.pytest_cache/
+*.pytest_cache
+CLAUDE.md
+nul
+*.egg-info/
+dist/
+build/
