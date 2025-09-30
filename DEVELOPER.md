@@ -2868,14 +2868,21 @@ print(f"CLIP encoding: {time.time() - t0:.2f}s")
 ## Final Notes
 
 **This is a sandbox.** Knot-Labs is built for experimentation. It's not production-ready, and that's okay. The goal is to understand how it work under the hood.
+
 **Code quality varies.** Some parts are polished, some are prototypes. That's the nature of a sandbox project.
+
 **Ask questions.** If something doesn't make sense, it's probably not documented well enough. Open an issue, ask the team, or just read the code.
+
 **Have fun.** Building things is fun. Breaking things is fun. Understanding how complex systems work is incredibly fun.
+
 **One last thing:** Programming is like an ex - it keeps coming back with new problems you thought you'd fixed and insists everything is your fault. At least with code, you can debug the relationship. 😅
+
 **Good luck!** 🚀
 
 ---
 
 **Document Version:** 1.0
+
 **Last Updated:** 2025-09-30
+
 **Maintained By:** Stiven Gjekaj
