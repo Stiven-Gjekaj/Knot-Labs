@@ -40,7 +40,7 @@
   - Video: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode video`
   - Image: `python -m tools.embed_labels --master Mesh/mastercategories.txt --out indexes --model ViT-B/32 --mode image`
 - Veil uses `indexes/labels_clip_<mode>_<model>.npz` when present.
-- If missing, it builds on first use (or skip builds with env toggles in MANUAL.md).
+- If missing, it builds on first use (or skip builds with env toggles in DEVELOPER.md).
 
 ## ⏱️ Veil Timeouts (API)
 
