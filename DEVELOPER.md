@@ -1,6 +1,6 @@
 # Knot-Labs Developer Documentation
 
-**Welcome to Knot-Labs.** This document is a comprehensive guide written for developers joining the team. It covers everything from high-level architecture to nitty-gritty implementation details, common gotchas, and where to find things.
+**Welcome to Knot-Labs.** This document is a comprehensive guide written for developers. It covers everything from high-level architecture to nitty-gritty implementation details, common gotchas, and where to find things.
 
 ---
 
