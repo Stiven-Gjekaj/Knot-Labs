@@ -7,3 +7,6 @@ __pycache__/
 *.pytest_cache
 CLAUDE.md
 nul
+*.egg-info/
+dist/
+build/
