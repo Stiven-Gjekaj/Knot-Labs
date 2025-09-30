@@ -6,6 +6,7 @@
 - 📂 **Mesh** — local JSON store handling users, posts, and lightweight analytics.
 - 🔁 **Drift** — transparent feed ranking.
 - 🔍 **Scribe** — full-text search across posts.
+- 👤 **Echo** — face recognition and similarity search with FAISS indexing.
 - 🧰 Everything runs on Python with a single `requirements.txt`.
 
 ## 🚀 Quick Start
@@ -54,5 +55,12 @@
 - `GET /search?q=...&k=10&backend=bow|st`
 - `GET /analytics/categories`
 - `GET /ui`
+
+## 👤 Echo Face Recognition
+
+- Build face index: `python -m Echo.scripts.build_index --known Mesh/Echo/known`
+- Query an image: `python -m Echo.scripts.query /path/to/image.jpg --k 5`
+- Use the web UI at `/ui` to upload photos and search the index
+- Index files stored in `indexes/echo_faiss_index.bin` and `indexes/echo_faiss_meta.json`
 
 Need authentication, caching, or embeddings? Check the [developer manual](MANUAL.md).

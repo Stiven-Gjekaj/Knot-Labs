@@ -779,3 +779,109 @@ def api_classify_ann(request: Request, video_path: str, k: int = 10, frames: int
     else:
         out = [{'label': lbl, 'score': sc} for lbl, sc, _ in top]
     return {'results': out, 'k': k, 'frames': frames, 'model': model, 'audio': audio_info}
+
+
+@app.get('/echo/search')
+def api_echo_search(request: Request, image_path: str, k: int = 5, threshold: Optional[float] = None):
+    _check_rate(request)
+    try:
+        import sys
+        from pathlib import Path as _Path
+        sys.path.insert(0, str(_Path(ROOT) / 'Echo'))
+        from Echo.scripts.query import load_index, load_meta, compute_threshold
+        from Echo.scripts.utils.embed import image_to_embeddings, l2_normalize
+        import numpy as np
+        import math
+
+        indexes_dir = os.path.join(ROOT, 'indexes')
+        index_path = _Path(indexes_dir) / 'echo_faiss_index.bin'
+        meta_path = _Path(indexes_dir) / 'echo_faiss_meta.json'
+
+        if not index_path.exists() or not meta_path.exists():
+            raise HTTPException(404, 'Echo index not found. Build the index first.')
+
+        index = load_index(index_path)
+        meta = load_meta(meta_path)
+        metric = meta.get('metric', 'cosine')
+        thresh = compute_threshold(metric, threshold)
+        items = meta.get('items', [])
+
+        if index.ntotal == 0 or not items:
+            return {'results': [], 'message': 'Index is empty'}
+
+        embeddings = image_to_embeddings(image_path)
+        if not embeddings:
+            return {'results': [], 'message': 'No faces detected in image'}
+
+        matrix = np.stack(embeddings).astype(np.float32)
+        if metric == 'cosine':
+            matrix = l2_normalize(matrix)
+
+        distances, indices = index.search(matrix, k)
+
+        results = []
+        for qi, (scores, idxs) in enumerate(zip(distances, indices)):
+            for rank, (score, idx) in enumerate(zip(scores, idxs), start=1):
+                if idx < 0 or idx >= len(items):
+                    continue
+                entry = items[idx]
+                if metric == 'cosine':
+                    match = score >= thresh
+                    display_score = float(score)
+                else:
+                    dist = math.sqrt(max(score, 0.0))
+                    match = dist <= thresh
+                    display_score = float(dist)
+
+                results.append({
+                    'rank': rank,
+                    'label': entry.get('label', '?'),
+                    'path': entry.get('path', '?'),
+                    'score': display_score,
+                    'match': match
+                })
+
+        return {'results': results, 'metric': metric, 'threshold': thresh}
+    except Exception as e:
+        raise HTTPException(500, f'Echo search error: {e}')
+
+
+@app.post('/echo/build')
+def api_echo_build(request: Request):
+    _check_auth(request)
+    _check_rate(request)
+    try:
+        import sys
+        import subprocess
+        from pathlib import Path as _Path
+
+        echo_dir = os.path.join(MESH_DIR, 'Echo')
+        known_dir = _Path(echo_dir) / 'known'
+
+        if not known_dir.exists():
+            known_dir.mkdir(parents=True, exist_ok=True)
+
+        build_script = _Path(ROOT) / 'Echo' / 'scripts' / 'build_index.py'
+        result = subprocess.run(
+            [sys.executable, str(build_script), '--known', str(known_dir)],
+            capture_output=True,
+            text=True,
+            env={**os.environ, 'FAKE_EMB': '0'}
+        )
+
+        if result.returncode != 0:
+            raise HTTPException(500, f'Index build failed: {result.stderr}')
+
+        indexes_dir = os.path.join(ROOT, 'indexes')
+        meta_path = _Path(indexes_dir) / 'echo_faiss_meta.json'
+        if meta_path.exists():
+            import json
+            with open(meta_path, 'r') as f:
+                meta = json.load(f)
+            faces_count = meta.get('count', 0)
+        else:
+            faces_count = 0
+
+        return {'ok': True, 'faces_indexed': faces_count, 'output': result.stdout}
+    except Exception as e:
+        raise HTTPException(500, f'Echo build error: {e}')

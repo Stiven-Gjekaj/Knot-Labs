@@ -648,6 +648,85 @@ function showToast(level, msg, timeoutMs = 3500) {
       const parts = ['curl \"' + url + '\"'].concat(curlHeaders(false));
       copyText(parts.join(' '));
     }
+    // Echo face search functions
+    function previewEchoPhoto(input) {
+      const preview = document.getElementById('echoPreview');
+      const img = document.getElementById('echoPreviewImg');
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          img.src = e.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      } else {
+        preview.style.display = 'none';
+      }
+    }
+    async function searchEchoFace() {
+      const fileInput = document.getElementById('echoPhoto');
+      const k = parseInt(document.getElementById('echoK').value || '5', 10);
+      const threshold = parseFloat(document.getElementById('echoThreshold').value || '0.6');
+
+      if (!fileInput.files || !fileInput.files[0]) {
+        log('error', 'Echo: Please select a photo to search');
+        return;
+      }
+
+      log('ok', 'Echo: Uploading photo...');
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const uploadResp = await fetch(originBase() + '/upload', {
+          method: 'POST',
+          body: formData,
+          headers: {}
+        });
+        const uploadData = await uploadResp.json();
+
+        if (!uploadData.ok || !uploadData.path) {
+          log('error', 'Echo: Upload failed');
+          return;
+        }
+
+        log('ok', 'Echo: Photo uploaded, searching...');
+        const searchUrl = '/echo/search?image_path=' + encodeURIComponent(uploadData.path) + '&k=' + k + '&threshold=' + threshold;
+        const r = await api(searchUrl, { headers: headers(false) });
+
+        const resultsDiv = document.getElementById('echoResults');
+        if (r.status === 200 && r.data && Array.isArray(r.data.results)) {
+          if (r.data.results.length === 0) {
+            resultsDiv.innerHTML = '<p class="muted">No matches found</p>';
+            log('ok', 'Echo: No matches found');
+          } else {
+            const rows = r.data.results.map((it, idx) =>
+              `<tr><td>${idx+1}</td><td>${it.label||'?'}</td><td>${(it.score||0).toFixed(4)}</td><td>${it.match?'✅':'—'}</td></tr>`
+            ).join('');
+            resultsDiv.innerHTML = `<table style="width:100%; border-collapse:collapse; margin-top:8px;">
+              <thead><tr><th>#</th><th>Label</th><th>Score</th><th>Match</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>`;
+            log('ok', 'Echo: Found ' + r.data.results.length + ' results');
+          }
+        } else {
+          resultsDiv.innerHTML = '<p class="err">Search failed</p>';
+          log('error', 'Echo: Search failed - ' + (r.error || 'unknown error'));
+        }
+      } catch (e) {
+        log('error', 'Echo: Error - ' + e);
+      }
+    }
+    async function buildEchoIndex() {
+      log('ok', 'Echo: Building index...');
+      const r = await api('/echo/build', { method: 'POST', headers: headers(true) });
+      if (r.status === 200 && r.data) {
+        log('ok', 'Echo: Index built - ' + (r.data.faces_indexed || 0) + ' faces indexed');
+      } else {
+        log('error', 'Echo: Index build failed - ' + (r.error || 'unknown error'));
+      }
+    }
+
     // curl helpers
     function originBase(){ return (apiBase || window.location.origin); }
     function curlHeaders(json){ const parts=[]; if(json){ parts.push('-H "Content-Type: application/json"'); } return parts; }
@@ -848,6 +927,21 @@ function showToast(level, msg, timeoutMs = 3500) {
       <div class="row"><label>Query</label><input type="text" id="searchQ" /></div>
       <div class="row"><label>Top K</label><input type="number" id="searchK" value="10" min="1" /></div>
       <div class="row"><button onclick="doSearch()">Search</button><button onclick="copyCurlSearch()">Copy curl</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Echo Face Search</legend>
+      <div class="row"><label>Upload Photo</label><input type="file" id="echoPhoto" accept="image/*" onchange="previewEchoPhoto(this)" /></div>
+      <div id="echoPreview" style="margin: 8px 0; display: none;">
+        <img id="echoPreviewImg" style="max-width: 100%; max-height: 300px; border-radius: 8px;" alt="Echo preview" />
+      </div>
+      <div class="row"><label>Top K Results</label><input type="number" id="echoK" value="5" min="1" max="20" /></div>
+      <div class="row"><label>Threshold</label><input type="number" id="echoThreshold" value="0.6" step="0.05" min="0" max="1" /></div>
+      <div class="row">
+        <button onclick="searchEchoFace()">Search Faces</button>
+        <button onclick="buildEchoIndex()">Rebuild Index</button>
+      </div>
+      <div id="echoResults" style="margin-top: 10px;"></div>
     </fieldset>
 
     <fieldset>

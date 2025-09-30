@@ -8,6 +8,7 @@ This manual captures everything you need to build, extend, and debug the Knot-La
 - **Mesh** — JSON-backed user/post store with analytics helpers and tooling.
 - **Drift** — explainable feed ranking over candidate posts.
 - **Scribe** — lightweight search (bag-of-words + semantic transformer backends).
+- **Echo** — face recognition and similarity search using face_recognition and FAISS.
 - **API** — FastAPI service bundling the full stack (UVicorn runner in `api.main`).
 
 ## ⚙️ Environment Setup
@@ -165,6 +166,63 @@ Related timeout knob (demo/API):
   - Align PyTorch/TensorFlow wheels with installed driver/CUDA version.
   - Force CPU: set `CUDA_VISIBLE_DEVICES=`.
 - **FFmpeg missing**: install via package manager (Chocolatey, Homebrew, apt, dnf) and ensure `ffmpeg -version` works.
+
+## 👤 Echo Face Recognition
+
+Echo provides face embedding and similarity search capabilities:
+
+### Setup
+
+- Reference faces are stored in `Mesh/Echo/known/` organized by label (subdirectory name)
+- Query images go in `Mesh/Echo/queries/`
+- Index files are stored in `indexes/echo_faiss_index.bin` and `indexes/echo_faiss_meta.json`
+
+### Building the Index
+
+```bash
+python -m Echo.scripts.build_index --known Mesh/Echo/known --model hog --metric l2
+```
+
+Options:
+- `--model`: `hog` (CPU, default) or `cnn` (GPU-accelerated)
+- `--metric`: `cosine` or `l2` (default)
+- `--verbose`: Enable detailed logging
+
+### Querying
+
+```bash
+python -m Echo.scripts.query /path/to/image.jpg --k 5 --threshold 0.6
+```
+
+Returns top-k matches with similarity scores. Thresholds default to 0.65 (cosine) or 0.6 (L2).
+
+### Live Webcam Search
+
+```bash
+python -m Echo.scripts.live_search --cam 0 --k 3 --threshold 0.65
+```
+
+Requires OpenCV. Press `q` to quit.
+
+### Avatar Scraping
+
+```bash
+python -m Echo.scripts.pull_avatar https://example.com/profile --out Mesh/Echo/known/username
+python -m Echo.scripts.pull_avatar --from-file profiles.txt --skip-existing
+```
+
+Extracts `og:image` and `twitter:image` metadata from public profiles.
+
+### Web UI Integration
+
+Echo is integrated into the main web UI at `/ui` with photo upload and search capabilities.
+
+### Testing
+
+Echo includes fake embedding mode for testing without dlib:
+```bash
+FAKE_EMB=1 pytest tests/test_echo_*.py
+```
 
 ## 🤝 Contributing
 
