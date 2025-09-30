@@ -63,4 +63,4 @@
 - Use the web UI at `/ui` to upload photos and search the index
 - Index files stored in `indexes/echo_faiss_index.bin` and `indexes/echo_faiss_meta.json`
 
-Need authentication, caching, or embeddings? Check the [developer manual](MANUAL.md).
+Need authentication, caching, or embeddings? Check the [developer manual](DEVELOPER.md).
