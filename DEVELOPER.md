@@ -58,10 +58,7 @@
 
 ## What is Knot-Labs?
 
-Knot-Labs is a **social media sandbox** - a complete, working social media platform built for experimentation and learning. It's modular, meaning each component can work independently or as part of the whole system.
-
-**The Big Picture:**
-Think of it like a real social media app (TikTok, Instagram, etc.) but smaller and fully transparent. Users create posts (videos/images), the system classifies content, ranks it for personalized feeds, allows searching, and even has face recognition for profile pictures.
+Knot-Labs is a **social media sandbox** - a complete, working social media platform built for experimentation and learning. It's modular, meaning each component can work independently or as part of the whole system. Users create posts (videos/images), the system classifies content, ranks it for personalized feeds, allows searching, and even has face recognition for profile pictures.
 
 **Tech Stack:**
 
